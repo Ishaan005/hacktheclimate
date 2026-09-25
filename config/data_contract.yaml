@@ -1,0 +1,97 @@
+canonical_interval: 30min
+region: IE
+
+source_fields:
+  generation:
+    required: [DateTime, MapCode, ActualGenerationOutput, ProductionType]
+  load:
+    required: [DateTime, MapCode, TotalLoadValue]
+  prices:
+    required: [DateTime, MapCode, "Price[Currency/MWh]", "UpdateTime(UTC)"]
+
+canonical_features:
+  timestamp: datetime
+  load_mw: float
+  wind_onshore_mw: float
+  solar_mw: float
+  fossil_gas_mw: float
+  fossil_hard_coal_mw: float
+  fossil_oil_mw: float
+  fossil_peat_mw: float
+  hydro_pumped_storage_mw: float
+  hydro_run_of_river_mw: float
+  other_mw: float
+  sem_price_currency_per_mwh: float
+  renewable_vre_mw: float
+  renewable_vre_share: float
+  residual_load_mw: float
+  known_generation_mw: float
+  generation_complete: bool
+  load_complete: bool
+  price_complete: bool
+
+# These are the REAL labels we want once EirGrid DD half-hourly data is integrated.
+# Keep MW and MWh separate: a 30-minute interval converts MW to MWh with * 0.5.
+targets:
+  dispatch_down_total_mw_equiv: float
+  dispatch_down_total_mwh: float
+  constraint_mw_equiv: float
+  constraint_mwh: float
+  curtailment_mw_equiv: float
+  curtailment_mwh: float
+  dd_constraint_tso_testing_mwh: float
+  wind_dispatch_down_mwh: float
+  solar_dispatch_down_mwh: float
+  dd_curtailment_snsp_mwh: float
+  dd_curtailment_rocof_inertia_mwh: float
+  dd_curtailment_highfreq_mingen_mwh: float
+  dd_constraint_transmission_mwh: float
+
+feature_groups:
+  forecast_safe:
+    - calendar encodings
+    - lagged load/wind/price
+    - rolling statistics computed only from historical periods
+    - future weather forecasts
+    - future wind/load forecasts
+    - confirmed future-known market prices
+  contemporaneous_nowcast_only:
+    - renewable_vre_share
+    - residual_load_mw
+    - same-period actual generation
+    - same-period actual load
+  unresolved_until_metadata_confirmed:
+    - sem_price_currency_per_mwh
+    - UpdateTime(UTC)
+
+context_features_from_eirgrid:
+  eirgrid_ie_generation_mw: float
+  eirgrid_ie_demand_mw: float
+  eirgrid_ie_wind_availability_mw: float
+  eirgrid_ie_wind_generation_mw: float
+  eirgrid_ie_solar_availability_mw: float
+  eirgrid_ie_solar_generation_mw: float
+  eirgrid_ie_hydro_mw: float
+  eirgrid_ewic_ic_mw: float
+  eirgrid_greenlink_ic_mw: float
+  eirgrid_moyle_ic_mw: float
+  eirgrid_interjurisdictional_flow_mw: float
+  eirgrid_ai_generation_mw: float
+  eirgrid_ai_demand_mw: float
+  eirgrid_ai_wind_availability_mw: float
+  eirgrid_ai_wind_generation_mw: float
+  eirgrid_ai_solar_availability_mw: float
+  eirgrid_ai_solar_generation_mw: float
+  eirgrid_ai_oversupply_mw: float
+  eirgrid_ai_oversupply_pct: float
+  eirgrid_snsp_pct: float
+  eirgrid_ie_vre_actual_mw: float
+  eirgrid_ie_vre_available_mw: float
+  eirgrid_ie_vre_availability_gap_proxy_mw: float
+  eirgrid_ie_gb_interconnector_net_mw: float
+
+weak_diagnostics_not_targets:
+  - eirgrid_ie_wind_availability_gap_mw
+  - eirgrid_ie_solar_availability_gap_mw
+  - eirgrid_ie_vre_availability_gap_proxy_mw
+  - eirgrid_ai_oversupply_mw
