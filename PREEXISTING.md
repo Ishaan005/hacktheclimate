@@ -2,7 +2,11 @@
 
 This repository scaffold was prepared before the event coding period.
 
-Record the pre-hackathon Git commit SHA here immediately before the event starts:
+Local pre-hackathon baseline committed on 2026-09-25:
+
+- Baseline commit SHA: `f0f7e32cca7592f3950abb5e70ff726eb1191bd8`
+
+Record the final pre-event Git commit SHA immediately before the event starts:
 
 - Commit SHA: `TODO`
 - Timestamp: `TODO`
