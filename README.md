@@ -7,8 +7,9 @@ Data and modelling starter for the Ireland renewable dispatch-down challenge. Th
 Use Python 3.11. From the repository root:
 
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
+python --version  # should report Python 3.11
 python -m pip install -r requirements.txt
 python -m pytest -q
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
