@@ -30,7 +30,7 @@ canonical_features:
   load_complete: bool
   price_complete: bool
 
-# These are the REAL labels we want once EirGrid DD half-hourly data is integrated.
+# Official EirGrid DD half-hourly labels are included in the processed data.
 # Keep MW and MWh separate: a 30-minute interval converts MW to MWh with * 0.5.
 targets:
   dispatch_down_total_mw_equiv: float
@@ -40,8 +40,8 @@ targets:
   curtailment_mw_equiv: float
   curtailment_mwh: float
   dd_constraint_tso_testing_mwh: float
-  wind_dispatch_down_mwh: float
-  solar_dispatch_down_mwh: float
+  wind_dispatch_down_total_mwh: float
+  solar_dispatch_down_total_mwh: float
   dd_curtailment_snsp_mwh: float
   dd_curtailment_rocof_inertia_mwh: float
   dd_curtailment_highfreq_mingen_mwh: float

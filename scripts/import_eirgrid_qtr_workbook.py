@@ -72,6 +72,14 @@ def _col_num(ref: str) -> int:
     return n
 
 
+def _irish_local_to_utc(timestamp: pd.Series) -> pd.Series:
+    return (
+        timestamp.dt.tz_localize("Europe/Dublin", ambiguous="raise", nonexistent="raise")
+        .dt.tz_convert("UTC")
+        .dt.tz_localize(None)
+    )
+
+
 def _iter_system_rows(path: Path):
     """Stream the first worksheet from the official workbook without loading 8MB into memory."""
     with zipfile.ZipFile(path) as z:
@@ -153,6 +161,9 @@ def load_context(path: Path, year: int, month: int) -> pd.DataFrame:
     out = pd.DataFrame(output).sort_values("timestamp")
     if out.empty:
         raise ValueError(f"No rows found for {year}-{month:02d}")
+    # The workbook's DateTime column is Irish local clock time. Use UTC to align
+    # with DD-HH labels, whose GMT_OFFSET has already been applied by its importer.
+    out["timestamp"] = _irish_local_to_utc(out["timestamp"])
     return out
 
 

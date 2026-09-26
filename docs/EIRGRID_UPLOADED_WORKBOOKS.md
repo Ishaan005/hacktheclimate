@@ -39,6 +39,6 @@ The KPI tab reports, among other values:
 
 These aggregate percentages should not be expanded into half-hour labels.
 
-## Still required for supervised training
+## Supervised labels now included
 
-The remaining target source is EirGrid's **DD Half-Hourly Data** publication. The real training target should use its half-hourly fields such as dispatch-down, constraint and curtailment MWh. Until that workbook is available, `eirgrid_ie_vre_availability_gap_proxy_mw` is a weak diagnostic/UI proxy only.
+The official **DD Half-Hourly Data** workbooks for 2021–2026 are now integrated. The real training target uses their half-hourly dispatch-down, constraint and curtailment MWh fields. See the [label profile](DD_LABEL_PROFILE.md). `eirgrid_ie_vre_availability_gap_proxy_mw` remains a weak diagnostic/UI proxy only.

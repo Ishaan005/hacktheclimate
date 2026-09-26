@@ -31,13 +31,14 @@ Uses contemporaneous system state (demand, wind/solar availability and output, S
 ### 1-hour-ahead operational forecast
 
 Uses measured system state at time `t` to predict official dispatch-down at `t + 1 hour`, with recent 1-hour deltas and target-time calendar features.
+The chronological split is applied to the **target timestamp** so no training label falls inside the holdout period.
 
 - PR-AUC: **0.983**
-- ROC-AUC: **0.951**
-- Precision @ 0.5: **0.981**
-- Recall @ 0.5: **0.749**
+- ROC-AUC: **0.952**
+- Precision @ 0.5: **0.986**
+- Recall @ 0.5: **0.747**
 - Expected-volume MAE: **41.1 MWh**
-- Zero-prediction MAE on the same test period: **67.8 MWh**
+- Zero-prediction MAE on the same test period: **67.7 MWh**
 
 ## Critical caveat
 

@@ -1,5 +1,7 @@
 {
-  "warning": "Hackathon baseline on one month only. Use rolling multi-month backtests before making performance claims.",
+  "warning": "Exploratory chronological holdout only. Use rolling-origin backtests and verify point-in-time feature availability before making forecast performance claims.",
+  "input_start": "2026-01-01 00:00:00",
+  "input_end": "2026-01-31 23:30:00",
   "event_definition": "dispatch_down_total_mwh > 5.0",
   "chronological_split": "2026-01-24",
   "nowcast_same_period": {
@@ -15,15 +17,15 @@
     "train_mean_baseline_mae_mwh": 56.90798917289402
   },
   "forecast_1h_ahead": {
-    "train_rows": 1104,
-    "test_rows": 382,
-    "test_event_rate": 0.7198952879581152,
-    "occurrence_pr_auc": 0.9825891600436928,
-    "occurrence_roc_auc": 0.9513508920985556,
-    "precision_at_0_5": 0.9809523809523809,
-    "recall_at_0_5": 0.7490909090909091,
-    "expected_volume_mae_mwh": 41.14514798471742,
-    "zero_baseline_mae_mwh": 67.8246335078534,
-    "train_mean_baseline_mae_mwh": 57.1462989746946
+    "train_rows": 1102,
+    "test_rows": 384,
+    "test_event_rate": 0.7213541666666666,
+    "occurrence_pr_auc": 0.982858745631049,
+    "occurrence_roc_auc": 0.951853976180033,
+    "precision_at_0_5": 0.9857142857142858,
+    "recall_at_0_5": 0.7472924187725631,
+    "expected_volume_mae_mwh": 41.14116165790143,
+    "zero_baseline_mae_mwh": 67.6839765625,
+    "train_mean_baseline_mae_mwh": 56.89789982701905
   }
 }

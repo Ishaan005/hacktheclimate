@@ -41,6 +41,16 @@ def calendar_features(df: pd.DataFrame, timestamp: pd.Series, prefix: str = "") 
     return cols
 
 
+def add_one_hour_target(df: pd.DataFrame) -> pd.DataFrame:
+    """Pair each input with a label exactly one hour later, if one exists."""
+    ahead = df.copy()
+    ahead["target_1h_timestamp"] = ahead["timestamp"].shift(-2)
+    ahead["target_1h_mwh"] = ahead["dispatch_down_total_mwh"].shift(-2)
+    exact_hour = ahead["target_1h_timestamp"].eq(ahead["timestamp"] + pd.Timedelta(hours=1))
+    ahead.loc[~exact_hour, "target_1h_mwh"] = np.nan
+    return ahead
+
+
 def fit_hurdle(df: pd.DataFrame, features: list[str], target: str, train_mask: pd.Series, test_mask: pd.Series, threshold: float):
     X = df[features]
     y = df[target]
@@ -94,8 +104,7 @@ def main():
     )
 
     # True operational 1-hour-ahead setup: measurements at t predict DD at t+1h.
-    ahead = df.copy()
-    ahead["target_1h_mwh"] = ahead["dispatch_down_total_mwh"].shift(-2)
+    ahead = add_one_hour_target(df)
     forecast_features = list(features)
     for col in [
         "eirgrid_ie_demand_mw", "eirgrid_ie_wind_availability_mw", "eirgrid_ie_wind_generation_mw",
@@ -107,8 +116,10 @@ def main():
             forecast_features.append(name)
     forecast_features += calendar_features(ahead, ahead["timestamp"] + pd.Timedelta(hours=1), prefix="target_")
     valid = ahead["target_1h_mwh"].notna()
-    train_1h = (ahead["timestamp"] < split) & valid
-    test_1h = (ahead["timestamp"] >= split) & valid
+    # Split by the label's time, not the input's time, so training never sees a
+    # target from the holdout period at the boundary.
+    train_1h = (ahead["target_1h_timestamp"] < split) & valid
+    test_1h = (ahead["target_1h_timestamp"] >= split) & valid
     fc_clf, fc_reg, fc_metrics = fit_hurdle(
         ahead, forecast_features, "target_1h_mwh", train_1h, test_1h, args.event_threshold_mwh
     )
@@ -120,7 +131,9 @@ def main():
     joblib.dump({"model": fc_reg, "features": forecast_features, "threshold_mwh": args.event_threshold_mwh}, args.output_dir / "forecast_1h_volume.joblib")
 
     metrics = {
-        "warning": "Hackathon baseline on one month only. Use rolling multi-month backtests before making performance claims.",
+        "warning": "Exploratory chronological holdout only. Use rolling-origin backtests and verify point-in-time feature availability before making forecast performance claims.",
+        "input_start": str(df["timestamp"].min()),
+        "input_end": str(df["timestamp"].max()),
         "event_definition": f"dispatch_down_total_mwh > {args.event_threshold_mwh}",
         "chronological_split": args.split,
         "nowcast_same_period": now_metrics,

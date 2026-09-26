@@ -25,6 +25,8 @@ def _get_json(url: str, *, params: dict[str, str] | None = None, attempts: int =
             payload = r.json()
             if not isinstance(payload, dict) or "Rows" not in payload:
                 raise ValueError(f"Unexpected response shape from {r.url}")
+            if payload.get("Status") == "Error":
+                raise ValueError(f"Upstream error from {r.url}: {payload.get('ErrorMessage')}")
             return payload
         except (requests.RequestException, ValueError) as exc:
             last = exc
@@ -48,57 +50,84 @@ def _dashboard_date(ts: pd.Timestamp) -> str:
     return ts.strftime("%d-%b-%Y")
 
 
+def _path_chunks(start: pd.Timestamp, end_exclusive: pd.Timestamp):
+    """VARGEN and interconnector endpoints reject ranges longer than 30 days."""
+    cursor = start
+    while cursor < end_exclusive:
+        following = min(cursor + pd.Timedelta(days=30), end_exclusive)
+        yield cursor, following
+        cursor = following
+
+
 def _rows(payload: dict[str, Any]) -> pd.DataFrame:
     return pd.DataFrame(payload.get("Rows", []))
 
 
+def _vargen_frame(df: pd.DataFrame, area: str) -> pd.DataFrame:
+    """Normalize the two observed Smart Grid Dashboard VARGEN response shapes."""
+    ts_col = "Effective_Date" if "Effective_Date" in df.columns else "EffectiveTime"
+    df = df.copy()
+    df["timestamp"] = pd.to_datetime(df[ts_col], dayfirst=True, errors="coerce")
+    prefix = f"eirgrid_{area.lower()}"
+
+    if {"MW_ACTUAL", "MW_FORECAST"}.issubset(df.columns):
+        values = df.set_index("timestamp")[["MW_ACTUAL", "MW_FORECAST"]].apply(
+            pd.to_numeric, errors="coerce"
+        )
+        return values.groupby(level=0).mean().rename(columns={
+            "MW_ACTUAL": f"{prefix}_actual_mw",
+            "MW_FORECAST": f"{prefix}_forecast_mw",
+        })
+
+    if {"FieldName", "Value"}.issubset(df.columns):
+        df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
+        wide = df.pivot_table(index="timestamp", columns="FieldName", values="Value", aggfunc="mean")
+        wide.columns = [str(c).lower() for c in wide.columns]
+        return wide.rename(columns={
+            f"{area.lower()}_actual": f"{prefix}_actual_mw",
+            f"{area.lower()}_fcast": f"{prefix}_forecast_mw",
+            "mw_actual": f"{prefix}_actual_mw",
+            "mw_forecast": f"{prefix}_forecast_mw",
+        })
+
+    raise ValueError(f"Unexpected {area} VARGEN columns: {list(df.columns)}")
+
+
 def fetch_month(year: int, month: int, raw_dir: Path) -> pd.DataFrame:
     start, end_exclusive = _month_bounds(year, month)
-    end_inclusive = end_exclusive - pd.Timedelta(minutes=1)
     raw_dir.mkdir(parents=True, exist_ok=True)
 
     frames: list[pd.DataFrame] = []
 
     # Wind/solar actual + forecast (15-min), Republic of Ireland.
     for area in ("WIND", "SOLAR"):
-        url = VARGEN_URL.format(
-            start=_path_ts(start), end=_path_ts(end_inclusive), region="ROI", area=area
-        )
-        payload = _get_json(url, params={"FORMAT": "JSON"})
-        (raw_dir / f"{area.lower()}_roi_{year}_{month:02d}.json").write_text(json.dumps(payload))
-        df = _rows(payload)
+        parts = []
+        for chunk_start, chunk_end in _path_chunks(start, end_exclusive):
+            url = VARGEN_URL.format(
+                start=_path_ts(chunk_start),
+                end=_path_ts(chunk_end - pd.Timedelta(minutes=1)),
+                region="ROI", area=area,
+            )
+            payload = _get_json(url, params={"FORMAT": "JSON"})
+            (raw_dir / f"{area.lower()}_roi_{_path_ts(chunk_start)}.json").write_text(json.dumps(payload))
+            parts.append(_rows(payload))
+        df = pd.concat(parts, ignore_index=True)
         if not df.empty:
-            ts_col = "Effective_Date" if "Effective_Date" in df.columns else "EffectiveTime"
-            df["timestamp"] = pd.to_datetime(df[ts_col], dayfirst=True, errors="coerce")
-            value_col = "Value"
-            name_col = "FieldName"
-            wide = df.pivot_table(index="timestamp", columns=name_col, values=value_col, aggfunc="mean")
-            wide.columns = [str(c).lower() for c in wide.columns]
-            rename = {}
-            if area == "WIND":
-                rename.update({
-                    "wind_actual": "eirgrid_wind_actual_mw",
-                    "wind_fcast": "eirgrid_wind_forecast_mw",
-                    "mw_actual": "eirgrid_wind_actual_mw",
-                    "mw_forecast": "eirgrid_wind_forecast_mw",
-                })
-            else:
-                rename.update({
-                    "solar_actual": "eirgrid_solar_actual_mw",
-                    "solar_fcast": "eirgrid_solar_forecast_mw",
-                    "mw_actual": "eirgrid_solar_actual_mw",
-                    "mw_forecast": "eirgrid_solar_forecast_mw",
-                })
-            wide = wide.rename(columns=rename)
-            frames.append(wide)
+            frames.append(_vargen_frame(df, area))
 
     # All-island interconnector feed includes EWIC, Greenlink, Moyle and Net.
-    url = INTERCONN_URL.format(start=_path_ts(start), end=_path_ts(end_inclusive))
-    payload = _get_json(url, params={"format": "json"})
-    (raw_dir / f"interconnection_all_{year}_{month:02d}.json").write_text(json.dumps(payload))
-    df = _rows(payload)
+    parts = []
+    for chunk_start, chunk_end in _path_chunks(start, end_exclusive):
+        url = INTERCONN_URL.format(
+            start=_path_ts(chunk_start), end=_path_ts(chunk_end - pd.Timedelta(minutes=1))
+        )
+        payload = _get_json(url, params={"format": "json"})
+        (raw_dir / f"interconnection_all_{_path_ts(chunk_start)}.json").write_text(json.dumps(payload))
+        parts.append(_rows(payload))
+    df = pd.concat(parts, ignore_index=True)
     if not df.empty:
         df["timestamp"] = pd.to_datetime(df["Effective_Date"], dayfirst=True, errors="coerce")
+        df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
         wide = df.pivot_table(index="timestamp", columns="Field_Name", values="Value", aggfunc="mean")
         wide = wide.rename(columns={
             "INTER_EWIC": "interconnector_ewic_mw",
@@ -133,6 +162,7 @@ def fetch_month(year: int, month: int, raw_dir: Path) -> pd.DataFrame:
             ts_col = "EffectiveTime" if "EffectiveTime" in df.columns else "Effective_Date"
             df["timestamp"] = pd.to_datetime(df[ts_col], dayfirst=True, errors="coerce")
             value_col = "Value"
+            df[value_col] = pd.to_numeric(df[value_col], errors="coerce")
             one = df.groupby("timestamp", as_index=True)[value_col].mean().rename(out_name).to_frame()
             frames.append(one)
 
@@ -142,6 +172,7 @@ def fetch_month(year: int, month: int, raw_dir: Path) -> pd.DataFrame:
     merged = pd.concat(frames, axis=1).sort_index()
     # Canonical training data are 30-minute. Average 15-min point measurements within each half-hour.
     merged = merged.resample("30min").mean()
+    merged = merged.loc[(merged.index >= start) & (merged.index < end_exclusive)]
     merged.index.name = "timestamp"
     return merged.reset_index()
 

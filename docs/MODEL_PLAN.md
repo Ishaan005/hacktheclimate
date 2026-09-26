@@ -51,17 +51,17 @@ Report separately:
 - weighted MWh error during the highest-risk periods
 - product metric: MWh successfully absorbable by the optimiser under the predicted schedule
 
-## 6. Until labels arrive
+## 6. UI pressure proxy
 
-`pressure_proxy` exists only so the dashboard/API can be built now. It combines high VRE share, low residual load and low price. Do not call it a probability, model prediction or curtailment estimate.
+`pressure_proxy` remains only a UI diagnostic, even though real labels are now included. It combines high VRE share, low residual load and low price. Do not call it a probability, model prediction or curtailment estimate.
 
 ## 7. Features now available from the official 2026 quarter-hourly workbook
 
-For a **nowcast/operator** model, the January table now includes measured IE/all-island demand and generation, wind/solar availability and output, SNSP, EWIC/Greenlink/Moyle flow, inter-jurisdictional flow, hydro, NI batteries, and all-island oversupply.
+For a **nowcast/operator** model, the January table and the [January–August EirGrid table](../data/processed/training_table_eirgrid_2026_jan_aug.csv) include measured IE/all-island demand and generation, wind/solar availability and output, SNSP, EWIC/Greenlink/Moyle flow, inter-jurisdictional flow, hydro, NI batteries, and all-island oversupply. The latter is aligned to the DD labels in UTC and has no organiser price outside January.
 
 For a **forecast** model, do not feed same-period actual values directly. Convert these into historical lags/rolling statistics, and replace contemporaneous actuals with point-in-time forecasts where available.
 
-The most promising physical feature families to test once DD labels arrive are:
+The most promising physical feature families to test against the DD labels are:
 
 1. SNSP level and recent trajectory.
 2. Wind/solar availability and historical ramps.
@@ -72,4 +72,4 @@ The most promising physical feature families to test once DD labels arrive are:
 7. Calendar/seasonal features.
 8. Network/constraint-group features if the DD workbook exposes location or reason detail.
 
-Do **not** train or report accuracy against the availability-gap proxy. Use it only for exploratory plots and plumbing until the real DD half-hourly MWh labels are present.
+Do **not** train or report accuracy against the availability-gap proxy. Use the official DD half-hourly MWh labels for supervised training; keep the proxy for exploratory plots and plumbing only.
