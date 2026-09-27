@@ -51,6 +51,27 @@ def add_one_hour_target(df: pd.DataFrame) -> pd.DataFrame:
     return ahead
 
 
+def prepare_one_hour_frame(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    """Build the same 1-hour operational features for training and inference."""
+    prepared = df.sort_values("timestamp").reset_index(drop=True).copy()
+    features = [c for c in BASE_FEATURES if c in prepared.columns]
+    features += calendar_features(prepared, prepared["timestamp"])
+
+    ahead = add_one_hour_target(prepared)
+    forecast_features = list(features)
+    for col in [
+        "eirgrid_ie_demand_mw", "eirgrid_ie_wind_availability_mw", "eirgrid_ie_wind_generation_mw",
+        "eirgrid_snsp_pct", "sem_price_currency_per_mwh", "eirgrid_ewic_ic_mw", "eirgrid_greenlink_ic_mw"
+    ]:
+        if col in ahead:
+            name = f"{col}_delta_1h"
+            prior_is_one_hour = ahead["timestamp"].sub(ahead["timestamp"].shift(2)).eq(pd.Timedelta(hours=1))
+            ahead[name] = (ahead[col] - ahead[col].shift(2)).where(prior_is_one_hour)
+            forecast_features.append(name)
+    forecast_features += calendar_features(ahead, ahead["timestamp"] + pd.Timedelta(hours=1), prefix="target_")
+    return ahead, forecast_features
+
+
 def fit_hurdle(df: pd.DataFrame, features: list[str], target: str, train_mask: pd.Series, test_mask: pd.Series, threshold: float):
     X = df[features]
     y = df[target]
@@ -104,17 +125,7 @@ def main():
     )
 
     # True operational 1-hour-ahead setup: measurements at t predict DD at t+1h.
-    ahead = add_one_hour_target(df)
-    forecast_features = list(features)
-    for col in [
-        "eirgrid_ie_demand_mw", "eirgrid_ie_wind_availability_mw", "eirgrid_ie_wind_generation_mw",
-        "eirgrid_snsp_pct", "sem_price_currency_per_mwh", "eirgrid_ewic_ic_mw", "eirgrid_greenlink_ic_mw"
-    ]:
-        if col in ahead:
-            name = f"{col}_delta_1h"
-            ahead[name] = ahead[col] - ahead[col].shift(2)
-            forecast_features.append(name)
-    forecast_features += calendar_features(ahead, ahead["timestamp"] + pd.Timedelta(hours=1), prefix="target_")
+    ahead, forecast_features = prepare_one_hour_frame(df)
     valid = ahead["target_1h_mwh"].notna()
     # Split by the label's time, not the input's time, so training never sees a
     # target from the holdout period at the boundary.

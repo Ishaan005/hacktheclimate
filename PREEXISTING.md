@@ -26,3 +26,7 @@ The following were added before the 28 September hackathon start:
 ## 25 Sep 2026 — official EirGrid workbook integration
 
 Before the hackathon, the repository was extended to import the official 2026 quarter-hourly system workbook, aggregate it to 30 minutes, retain Ireland/all-island renewable and interconnector context, and produce a merged January context table. Availability-gap fields are explicitly documented as weak diagnostics rather than authoritative dispatch-down labels.
+
+## 27 Sep 2026 — operational backtest and retrospective demo
+
+Before the hackathon, the team added an April–August expanding-window backtest of the 1-hour operational baseline and a FastAPI route that replays held-out January estimates into the flexible-load optimiser. The route is explicitly retrospective and its absorbable-energy assumption is unvalidated. No weather forecast sample or day-ahead model was available at this stage.

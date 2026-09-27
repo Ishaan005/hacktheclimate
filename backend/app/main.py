@@ -4,8 +4,10 @@ from pathlib import Path
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from .proxy import add_pressure_proxy
+from .demo import router as demo_router
 
 app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
+app.include_router(demo_router)
 DATA = Path("data/processed/canonical_ie.csv")
 LABELED_DATA = Path("data/processed/training_table_labeled_jan2026.csv")
 

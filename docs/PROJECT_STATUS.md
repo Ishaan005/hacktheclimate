@@ -1,6 +1,6 @@
 # Verified state and remaining work
 
-Checked locally on 26 September 2026, before the hackathon. This is a prototype status, not a performance or impact claim.
+Checked locally on 27 September 2026, before the hackathon. This is a prototype status, not a performance or impact claim.
 
 ## What runs
 
@@ -8,15 +8,17 @@ Checked locally on 26 September 2026, before the hackathon. This is a prototype 
 - The organiser CSVs, January EirGrid workbook context, six DD workbooks, and January labeled table rebuild from the original local sources. Rebuilt values and coverage match the included files.
 - The EirGrid system workbook converts Irish local time to UTC. Its January–August context has **11,662 unique half-hours**, and every one matches an official 2026 DD label in [`training_table_eirgrid_2026_jan_aug.csv`](../data/processed/training_table_eirgrid_2026_jan_aug.csv).
 - The January baseline retrains and its saved artifacts load. The API serves health and both historical sample routes at their 336-row limit, representing source gaps as JSON `null`.
+- An expanding-window backtest trains on all prior labeled months and evaluates April, May, June, July, and August 2026 separately. The five folds have event PR-AUC **0.897–0.975**; each fold's prevalence and error baselines are in [`artifacts/rolling_1h/metrics.json`](../artifacts/rolling_1h/metrics.json). This is retrospective evaluation of a 1-hour operational model, not day-ahead validation.
+- `POST /v1/demo/absorption` replays January held-out model predictions into the flexible-load optimiser and returns an illustrative schedule, along with source/target times and observed dispatch-down for comparison.
 - The optional Smart Grid Dashboard fetcher returns 1,488 January half-hours after respecting the upstream 30-day range limit. Its CO₂ series has about 95% coverage, so it is exploratory; the versioned workbook remains the baseline source.
 
 ## What is still missing for the product
 
 1. **A point-in-time day-ahead forecast.** The current 1-hour baseline uses measured system state at time `t`. Weather and other forecasts available at the actual issue time are not integrated. Publication delays for operational measurements also need checking.
-2. **Reliable evaluation across regimes.** The saved models use a January-only split. A temporary January–June train / July–August test on the included multi-month table produced 1-hour event PR-AUC about **0.935** and expected-volume MAE about **26.0 MWh**. This is one retrospective holdout, not rolling validation or a final accuracy claim. Fold-level prevalence and separate constraint/curtailment targets remain to be evaluated.
-3. **An end-to-end intervention demo.** `optimize_absorption` runs, but it takes supplied surplus MW; no route or UI connects a forecast to a flexible-load schedule and measured avoided dispatch-down MWh.
-4. **Team distribution and event record.** This local Git repo has no remote. The final pre-event commit SHA and timestamp in [`PREEXISTING.md`](../PREEXISTING.md) must be recorded at the event boundary. Review data redistribution terms before making a public repo; the current handoff assumes a private team repo.
+2. **Evaluation of the intervention target.** The five monthly folds validate total dispatch-down prediction retrospectively, but separate constraint and curtailment targets, calibration, and a comparison against historical/forecast-only inputs remain. PR-AUC varies with each fold's event prevalence.
+3. **Measured intervention impact.** The demo assumes all predicted total dispatch-down MWh are locally absorbable, which is an unvalidated upper bound. It does not establish flexible-load location, actual demand response, or avoided dispatch-down. A judged impact claim needs site/network feasibility and a counterfactual or controlled measurement.
+4. **Day-ahead inputs and event record.** No weather-forecast sample is available yet. Obtain issue-time-stamped weather/grid forecasts and check operational data publication latency. The repo is now on GitHub for teammates; record the final pre-event commit SHA and timestamp in [`PREEXISTING.md`](../PREEXISTING.md) at the event boundary.
 
 See the [model plan](MODEL_PLAN.md) for feature boundaries and the [data guide](DATA_GUIDE.md) for source and output files.
 
-The multi-month holdout can be repeated with `python scripts/train_real_baseline.py --input data/processed/training_table_eirgrid_2026_jan_aug.csv --split 2026-07-01 --output-dir .cache/jul-aug-check`.
+Repeat the monthly evaluation with `python scripts/backtest_1h_operational.py --output .cache/rolling-check.json`.
