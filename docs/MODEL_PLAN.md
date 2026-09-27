@@ -35,6 +35,7 @@ A histogram gradient-boosting baseline is included because it works well on tabu
 - Historical price lags and rolling statistics.
 - Wind/load ramps.
 - Future weather forecasts: wind speed/direction at hub-height proxies, temperature, irradiance/cloud cover.
+- Check each provider's actual height, issue-time semantics, and retention rights before using its forecasts for training; see [weather options](WEATHER_OPTIONS.md).
 - Future wind and demand forecasts when supplied by EirGrid/organisers.
 - Confirmed day-ahead SEM price if its publication semantics are verified.
 - Interconnector flow/availability and outage indicators when available.
