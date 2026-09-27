@@ -53,7 +53,7 @@ When a source and its retention rights are confirmed, normalize the permitted ou
 | `wind_speed_mps`, `wind_direction_deg`, `wind_height_m` | Wind values and documented height; height null for Azure Maps hourly |
 | `wind_gust_mps`, `cloud_cover_pct`, `temperature_c`, `precipitation_probability_pct` | Optional provider values with explicit units |
 
-For evaluation, only join forecasts that were already received before the decision time. Preserve the original provider and unit metadata. Do not train on the existing same-period measured grid state while calling the result day-ahead. The [model plan](MODEL_PLAN.md) describes the other forecast-safe inputs.
+For evaluation, only join forecasts that were already received before the decision time. Preserve the original provider and unit metadata. Both sources can produce hourly weather while the dispatch-down target is half-hourly; define and record a mapping to each target interval without implying that the weather source has 30-minute precision. Do not train on the existing same-period measured grid state while calling the result day-ahead. The [model plan](MODEL_PLAN.md) describes the other forecast-safe inputs.
 
 ## First checks when access arrives
 
