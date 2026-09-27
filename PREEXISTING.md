@@ -34,3 +34,7 @@ Before the hackathon, the team added an April–August expanding-window backtest
 ## 27 Sep 2026 — local container and Azure handoff
 
 Before the hackathon, the team prepared a minimal API container and a preview-first Container Apps command for later access. No Azure resource, paid weather feed, or hosted endpoint was created as part of this preparation.
+
+## 27 Sep 2026 — Microsoft weather-source review
+
+Before the hackathon, the team documented Azure Maps Weather and Aurora 1.5 capabilities, timing, costs, input requirements, and Azure Maps forecast-retention questions. No weather data was fetched or model endpoint deployed.
