@@ -68,3 +68,5 @@ python scripts/backtest_1h_operational.py --output .cache/rolling-check.json
 ```
 
 The optional Smart Grid Dashboard API fetcher is in `scripts/fetch_eirgrid_context.py`. Its output is separate from the preferred versioned EirGrid workbook import and should be checked for coverage before use.
+
+Pull requests and pushes run the same dependency and test checks in [GitHub Actions](.github/workflows/tests.yml).
