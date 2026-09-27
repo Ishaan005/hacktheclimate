@@ -10,6 +10,7 @@ Checked locally on 27 September 2026, before the hackathon. This is a prototype 
 - The January baseline retrains and its saved artifacts load. The API serves health and both historical sample routes at their 336-row limit, representing source gaps as JSON `null`.
 - An expanding-window backtest trains on all prior labeled months and evaluates April, May, June, July, and August 2026 separately. The five folds have event PR-AUC **0.897–0.975**; each fold's prevalence and error baselines are in [`artifacts/rolling_1h/metrics.json`](../artifacts/rolling_1h/metrics.json). This is retrospective evaluation of a 1-hour operational model, not day-ahead validation.
 - `POST /v1/demo/absorption` replays January held-out model predictions into the flexible-load optimiser and returns an illustrative schedule, along with source/target times and observed dispatch-down for comparison.
+- A local Docker image packages the API and the small subset of data/model files it needs. The container and a preview-first Azure Container Apps handoff are documented in [`AZURE_HANDOFF.md`](AZURE_HANDOFF.md); no cloud deployment or paid weather calls have been made for this preparation.
 - The optional Smart Grid Dashboard fetcher returns 1,488 January half-hours after respecting the upstream 30-day range limit. Its CO₂ series has about 95% coverage, so it is exploratory; the versioned workbook remains the baseline source.
 
 ## What is still missing for the product
