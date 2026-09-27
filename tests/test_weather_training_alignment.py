@@ -1,6 +1,7 @@
 import pandas as pd
+import pytest
 
-from scripts.train_weather_forecast import prepare_weather_frame
+from scripts.train_weather_forecast import prepare_weather_frame, train
 
 
 def test_weather_join_uses_only_forecasts_available_at_decision_time():
@@ -42,3 +43,23 @@ def test_weather_join_drops_stale_forecasts():
     })
     frame, _ = prepare_weather_frame(labels, forecasts, location_id="galway", max_age_hours=6)
     assert pd.isna(frame.loc[0, "wind_speed_mps"])
+
+
+def test_training_refuses_weather_that_does_not_overlap_labels(tmp_path):
+    labels_path = tmp_path / "labels.csv"
+    weather_path = tmp_path / "weather.csv"
+    output_dir = tmp_path / "model"
+    pd.DataFrame({
+        "timestamp": ["2026-08-31T22:30:00Z"],
+        "dispatch_down_total_mwh": [5.0],
+    }).to_csv(labels_path, index=False)
+    pd.DataFrame({
+        "provider": ["azure_maps"],
+        "location_id": ["galway"],
+        "valid_time_utc": ["2026-09-28T16:00:00Z"],
+        "retrieved_at_utc": ["2026-09-27T16:00:00Z"],
+        "wind_speed_mps": [3.0],
+    }).to_csv(weather_path, index=False)
+    with pytest.raises(ValueError, match="Only 0 aligned labeled rows"):
+        train(labels_path, weather_path, output_dir, location_id="galway")
+    assert not output_dir.exists()
