@@ -29,6 +29,25 @@ Five successful requests were made in the current Azure CLI subscription: `durat
 
 The direct request count is **5 Weather requests** for this check, far below the published monthly allowance. Azure Monitor later reported `Usage` with `Count=5` for `ApiCategory=Weather` and `ApiName=Weather.GetHourlyForecast`. Use the metric's supported **Count** aggregation; its `Total` output is not the call count. Cost Analysis and the final bill have not been checked. No raw response was stored in the repository.
 
+### Using weather in model training
+
+The [weather training script](../scripts/train_weather_forecast.py) accepts a **separately approved, historical point-in-time forecast archive**. The five manual Maps responses were inspected in memory and are not that archive. They were retrieved in September 2026, while the included official dispatch-down labels end in August 2026, so there are **zero overlapping labeled rows**. Azure Maps' historical daily actuals are not past issued hourly forecasts and cannot repair this gap.
+
+The training input is a CSV with one row per forecast version, valid hour, and location. Required columns are `provider`, `location_id`, `retrieved_at_utc`, `valid_time_utc`, and `wind_speed_mps`. Optional numeric columns are `wind_gust_mps`, `wind_direction_deg`, `cloud_cover_pct`, `temperature_c`, `relative_humidity_pct`, and `precipitation_probability_pct`. Times must be parseable as UTC or with an explicit offset. For Azure Maps, convert metric wind speed and gust from km/h to m/s by dividing by 3.6 and keep `retrieved_at_utc` distinct from the forecast's valid time. Do not invent a provider issue time.
+
+For a 24-hour target, the script selects the latest weather row retrieved **at or before** each decision time (`target_time - 24h`), within a six-hour freshness limit. It maps both half-hour labels within one UTC hour to that hour's weather value. It trains a weather-and-calendar model only after at least 500 labeled rows align, with a chronological day-boundary holdout, and reports a calendar-only comparison on the same rows. It does not use same-period measured grid features. This is an initial experiment, not a claim that a single point predicts national curtailment.
+
+After source rights and overlapping historical coverage are confirmed, run:
+
+```bash
+python scripts/train_weather_forecast.py \
+  --weather-input data/raw/weather_forecasts_approved.csv \
+  --location-id galway \
+  --output-dir .cache/weather-model
+```
+
+The command does not call Azure or collect data. Keep any licensed archive in `data/raw/`, which is ignored by Git. Do not build a long-running Azure Maps forecast archive or train on Maps results until the team's agreement explicitly permits that use. [Microsoft's Azure Maps Product Terms](https://www.microsoft.com/licensing/terms/en-US/productoffering/MicrosoftAzureServices/MCA) restrict derived databases, combinations with other databases, and storage of API results; they do not clearly grant this training workflow.
+
 Azure Maps' weather feed is sourced with [AccuWeather](https://learn.microsoft.com/en-us/azure/azure-maps/weather-services-faq). It is a hosted weather service, not an Aurora run. Microsoft says hourly forecasts update multiple times a day and may be cached for up to 30 minutes. The API documentation lists historical **daily actuals/normals/records**, not an archive of past issued hourly forecasts. Thus the repo cannot backfill a point-in-time 2026 forecast training set from this API alone. [Weather API index](https://learn.microsoft.com/en-us/rest/api/maps/weather/).
 
 Cost guardrail: [Azure Maps pricing](https://azure.microsoft.com/en-us/pricing/details/azure-maps/) currently lists **1,000 free Weather transactions per month**, and [one Weather request counts as one transaction](https://learn.microsoft.com/en-us/azure/azure-maps/understanding-azure-maps-transactions). Four chosen coordinates queried every six hours for 30 days would be about **480 requests**; eight coordinates hourly would be about **5,760**. The free allowance can be shared with other uses, and pricing varies by subscription. Select future points from actual Irish wind/solar geography and confirm the team's subscription and usage before increasing cadence. The test account is **Gen2/G2**; check the tier and price again if the team uses another account.
