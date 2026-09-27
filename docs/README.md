@@ -2,7 +2,7 @@
 
 Start with the [repository README](../README.md) to run the API. Then use the pages below for the part you are changing.
 
-The [project status](PROJECT_STATUS.md) records what was verified on 26 September and what remains before a judged demo.
+The [project status](PROJECT_STATUS.md) records what was verified on 27 September and what remains before a judged demo.
 
 | If you are working on… | Read |
 | --- | --- |
@@ -12,4 +12,4 @@ The [project status](PROJECT_STATUS.md) records what was verified on 26 Septembe
 | Model features and evaluation | [Model plan](MODEL_PLAN.md), [real-label baseline](REAL_BASELINE.md), [project status](PROJECT_STATUS.md) |
 | Team changes and event provenance | [Contribution guide](../CONTRIBUTING.md), [pre-existing work log](../PREEXISTING.md) |
 
-The [data contract](../config/data_contract.yaml) lists field names and distinguishes forecast-safe inputs from same-period measurements. Current predictions are trained offline; the API routes expose samples, not predictions.
+The [data contract](../config/data_contract.yaml) lists field names and distinguishes forecast-safe inputs from same-period measurements. The API exposes historical samples and one retrospective model-to-optimiser scenario; see the [README](../README.md) for a request example.
