@@ -44,7 +44,7 @@ The chronological split is applied to the **target timestamp** so no training la
 
 January has strong regime shifts: the final-week test set contains many more material events than some earlier January windows. These headline numbers are therefore only proof that the signal is learnable, **not** a credible final accuracy claim.
 
-Before presenting model performance to judges, run rolling multi-month / rolling-origin validation once matching system-context data for more months is available. Report fold-by-fold event prevalence alongside PR-AUC because PR-AUC changes substantially with prevalence.
+An expanding-window monthly backtest on matching January–August system context is now included in [`artifacts/rolling_1h/metrics.json`](../artifacts/rolling_1h/metrics.json). April–August event PR-AUC ranges from **0.897 to 0.975**, with August event prevalence at **0.307** versus **0.535–0.632** in the other four folds. Expected-volume MAE ranges from **19.8 to 57.6 MWh**, below the corresponding zero-prediction MAE in each fold. Reproduce it with `python scripts/backtest_1h_operational.py --output .cache/rolling-check.json`. This remains retrospective: operational publication latency is unknown, and it does not validate a day-ahead product.
 
 Also keep these products separate:
 

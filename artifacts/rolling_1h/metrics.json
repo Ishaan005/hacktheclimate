@@ -1,0 +1,80 @@
+{
+  "product": "1-hour operational forecast from measured system state at t",
+  "caveat": "Retrospective expanding-window backtest; publication latency and weather forecast availability are not established. This is not a day-ahead forecast.",
+  "input": "data/processed/training_table_eirgrid_2026_jan_aug.csv",
+  "event_threshold_mwh": 5.0,
+  "feature_count": 24,
+  "folds": [
+    {
+      "test_month": "2026-04",
+      "train_rows": 4318,
+      "test_rows": 1440,
+      "test_event_rate": 0.5347222222222222,
+      "occurrence_pr_auc": 0.9750224658358471,
+      "occurrence_roc_auc": 0.9712579957356077,
+      "precision_at_0_5": 0.925,
+      "recall_at_0_5": 0.912987012987013,
+      "expected_volume_mae_mwh": 57.589554251601484,
+      "zero_baseline_mae_mwh": 186.5266263888889,
+      "train_mean_baseline_mae_mwh": 196.66579967352425
+    },
+    {
+      "test_month": "2026-05",
+      "train_rows": 5758,
+      "test_rows": 1488,
+      "test_event_rate": 0.5551075268817204,
+      "occurrence_pr_auc": 0.9483768325312883,
+      "occurrence_roc_auc": 0.9266109741556513,
+      "precision_at_0_5": 0.9722735674676525,
+      "recall_at_0_5": 0.6368038740920097,
+      "expected_volume_mae_mwh": 41.69316341798863,
+      "zero_baseline_mae_mwh": 105.7973561827957,
+      "train_mean_baseline_mae_mwh": 143.63667028948973
+    },
+    {
+      "test_month": "2026-06",
+      "train_rows": 7246,
+      "test_rows": 1440,
+      "test_event_rate": 0.6319444444444444,
+      "occurrence_pr_auc": 0.9651303789596031,
+      "occurrence_roc_auc": 0.9366545718432511,
+      "precision_at_0_5": 0.941970310391363,
+      "recall_at_0_5": 0.7670329670329671,
+      "expected_volume_mae_mwh": 47.00868096503523,
+      "zero_baseline_mae_mwh": 143.43919583333332,
+      "train_mean_baseline_mae_mwh": 164.23078575708436
+    },
+    {
+      "test_month": "2026-07",
+      "train_rows": 8686,
+      "test_rows": 1488,
+      "test_event_rate": 0.5745967741935484,
+      "occurrence_pr_auc": 0.9562546587054754,
+      "occurrence_roc_auc": 0.9377631809909185,
+      "precision_at_0_5": 0.9125827814569536,
+      "recall_at_0_5": 0.8058479532163743,
+      "expected_volume_mae_mwh": 33.62776326434914,
+      "zero_baseline_mae_mwh": 92.97054704301075,
+      "train_mean_baseline_mae_mwh": 131.6816577390016
+    },
+    {
+      "test_month": "2026-08",
+      "train_rows": 10174,
+      "test_rows": 1486,
+      "test_event_rate": 0.30686406460296095,
+      "occurrence_pr_auc": 0.8974394780472871,
+      "occurrence_roc_auc": 0.9441619826264691,
+      "precision_at_0_5": 0.7652671755725191,
+      "recall_at_0_5": 0.8793859649122807,
+      "expected_volume_mae_mwh": 19.823296792355286,
+      "zero_baseline_mae_mwh": 39.58752826379542,
+      "train_mean_baseline_mae_mwh": 120.81304792531883
+    }
+  ],
+  "summary": {
+    "median_pr_auc": 0.9562546587054754,
+    "min_pr_auc": 0.8974394780472871,
+    "max_pr_auc": 0.9750224658358471,
+    "mean_expected_volume_mae_mwh": 39.94849173826596
+  }
+}
