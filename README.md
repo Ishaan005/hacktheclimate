@@ -70,3 +70,7 @@ python scripts/backtest_1h_operational.py --output .cache/rolling-check.json
 The optional Smart Grid Dashboard API fetcher is in `scripts/fetch_eirgrid_context.py`. Its output is separate from the preferred versioned EirGrid workbook import and should be checked for coverage before use.
 
 Pull requests and pushes run the same dependency and test checks in [GitHub Actions](.github/workflows/tests.yml).
+
+For hackathon-day hosting, use the [Azure handoff](docs/AZURE_HANDOFF.md). It includes a small local container and a preview-first Container Apps command for use **after** the team receives access. No Azure resource or paid weather service is needed to develop or run the API locally.
+
+The [Microsoft weather options](docs/WEATHER_OPTIONS.md) compare Azure Maps' hourly feed with Aurora 1.5 and record the data, cost, and retention questions to resolve when access arrives.
