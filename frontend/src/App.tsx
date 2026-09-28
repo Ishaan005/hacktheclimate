@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import DispatchDownCard from './components/DispatchDownCard';
 import ForecastPanel from './components/ForecastPanel';
 import NetworkDecisionPanel from './components/NetworkDecisionPanel';
 import ScenarioPanel from './components/ScenarioPanel';
@@ -78,6 +79,7 @@ function App() {
       </div>
       <main className="app-main">
         <h1 className="page-title">{COPY.appTitle}</h1>
+        <DispatchDownCard />
         <SummaryStrip view={view} loading={loading} selectedOutage={selectedOutage} />
         <div className="app-grid">
           <ForecastPanel
