@@ -70,7 +70,8 @@ export function resolveSituation(description: string, scenarios: WorkspaceScenar
   return best;
 }
 
-const DISPATCH_DOWN_PATTERN = /dispatch[\s-]*down/i;
+// Loose on purpose: operators say "DD", "risk next hour" or "show the graph".
+const DISPATCH_DOWN_PATTERN = /\b(dispatch[\s-]*down|dispatch|dd|risk|forecast|graph|chart|next[\s-]*hour)\b/i;
 const TARGET_PATTERN = /(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/;
 
 // Offline fixture only: questions about dispatch-down risk get the replay

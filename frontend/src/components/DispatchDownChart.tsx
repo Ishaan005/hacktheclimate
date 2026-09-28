@@ -5,7 +5,7 @@ import './DispatchDown.css';
 
 const W = 760;
 const H = 300;
-const PAD = { top: 16, right: 56, bottom: 36, left: 48 };
+const PAD = { top: 32, right: 56, bottom: 36, left: 48 };
 const PLOT_W = W - PAD.left - PAD.right;
 const PLOT_H = H - PAD.top - PAD.bottom;
 
@@ -100,11 +100,7 @@ function DispatchDownChart({ target }: Props) {
                 <text className="ddc-axis" x={W - PAD.right + 8} y={yP(t) + 4}>{Math.round(maxMwh * t)}</text>
               </g>
             ))}
-            <text className="ddc-axis" x={W - PAD.right + 8} y={PAD.top - 4}>MWh</text>
-            <line className="ddc-threshold" x1={PAD.left} x2={W - PAD.right} y1={yP(0.7)} y2={yP(0.7)} />
-            <text className="ddc-threshold-label" x={PAD.left + 4} y={yP(0.7) - 4}>High (70%)</text>
-            <line className="ddc-threshold" x1={PAD.left} x2={W - PAD.right} y1={yP(0.3)} y2={yP(0.3)} />
-            <text className="ddc-threshold-label" x={PAD.left + 4} y={yP(0.3) - 4}>Elevated (30%)</text>
+            <text className="ddc-axis" x={W - PAD.right + 8} y={PAD.top - 16}>MWh</text>
 
             {points.map((p, i) => (
               <rect
@@ -116,11 +112,16 @@ function DispatchDownChart({ target }: Props) {
                 height={Math.max(0, PAD.top + PLOT_H - yM(p.expected_dispatch_down_mwh))}
               />
             ))}
+            <line className="ddc-threshold" x1={PAD.left} x2={W - PAD.right} y1={yP(0.7)} y2={yP(0.7)} />
+            <line className="ddc-threshold" x1={PAD.left} x2={W - PAD.right} y1={yP(0.3)} y2={yP(0.3)} />
             <path className="ddc-line" d={line} />
             {selected >= 0 && <line className="ddc-selected" x1={x(selected)} x2={x(selected)} y1={PAD.top} y2={PAD.top + PLOT_H} />}
             {activePoint && active !== null && (
               <circle className="ddc-dot" cx={x(active)} cy={yP(activePoint.event_probability)} r={5} />
             )}
+            {/* Band labels last, with a halo, so bars and the line never cover them. */}
+            <text className="ddc-threshold-label" x={PAD.left + 6} y={yP(0.7) - 6}>High (70%)</text>
+            <text className="ddc-threshold-label" x={PAD.left + 6} y={yP(0.3) - 6}>Elevated (30%)</text>
             {points.map((p, i) => (i % 6 === 0 ? (
               <text key={`t${i}`} className="ddc-axis" x={x(i)} y={H - PAD.bottom + 18} textAnchor="middle">{timeOf(p.target_timestamp)}</text>
             ) : null))}

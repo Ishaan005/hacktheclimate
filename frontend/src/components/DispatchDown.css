@@ -155,8 +155,14 @@
 
 .ddc-threshold-label {
   font-size: var(--font-size-12);
-  font-weight: var(--font-weight-medium);
-  fill: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+  fill: var(--color-text);
+  /* Surface-coloured halo keeps the label readable over bars. */
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
 .ddc-bar {

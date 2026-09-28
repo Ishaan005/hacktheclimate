@@ -100,5 +100,8 @@ describe('situation matcher', () => {
     expect(resolveFixtureSolver('dispatch down 2026-03-01 10:00', illustrativeScenarios))
       .toEqual({ kind: 'dispatch_down_risk', target: DEFAULT_TARGET });
     expect(resolveFixtureSolver('overload in the west', illustrativeScenarios)?.kind).toBe('scenario');
+    for (const phrase of ['DD next hour', 'show the graph', 'dispatch down', 'risk?', 'Dispatchdown forecast']) {
+      expect(resolveFixtureSolver(phrase, illustrativeScenarios)?.kind).toBe('dispatch_down_risk');
+    }
   });
 });
