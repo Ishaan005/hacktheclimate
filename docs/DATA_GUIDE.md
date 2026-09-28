@@ -11,9 +11,12 @@ The processed data and trained artifacts are included so a teammate can clone th
 | [`dispatch_down_labels_ie_2021_2026.csv`](../data/processed/dispatch_down_labels_ie_2021_2026.csv) | Official dispatch-down, constraint, and curtailment targets for 99,310 Irish half-hours through August 2026 |
 | [`training_table_labeled_jan2026.csv`](../data/processed/training_table_labeled_jan2026.csv) | January canonical data, EirGrid context, and real labels joined by timestamp; input to baseline training and the dispatch-down sample route |
 | [`training_table_eirgrid_2026_jan_aug.csv`](../data/processed/training_table_eirgrid_2026_jan_aug.csv) | 11,662 EirGrid system-context half-hours joined to official labels on UTC timestamps; use for multi-month model experiments, without organiser prices |
+| [`gfs_daily_2026_jan_aug.csv`](../data/processed/gfs_daily_2026_jan_aug.csv) | 243 daily 00Z NOAA GFS vintages at five Irish points, with 100 m wind, temperature, radiation, 06Z decision time and checked source availability; see the [source manifests](GFS_CONSTRAINT_TRAINING.md) |
+| [`gfs_constraint_training_2026_jan_aug.csv`](../data/processed/gfs_constraint_training_2026_jan_aug.csv) | 11,649 unique half-hour constraint targets joined to forecast-safe GFS and calendar features; excludes measured grid state as predictors |
 | [`training_table_context_jan2026.csv`](../data/processed/training_table_context_jan2026.csv) | Earlier context-only join; use the labeled table for supervised work |
 | `dd_ie_2021.csv` … `dd_ie_2025.csv`, `dispatch_down_labels_ie_2026.csv` | Annual label extracts retained for inspection; the combined label file is the default |
 | [`artifacts/real_baseline/`](../artifacts/real_baseline/) | Four January model files and [`metrics.json`](../artifacts/real_baseline/metrics.json); smoke-test artifacts, not a validated deployment |
+| [`artifacts/gfs_constraint/`](../artifacts/gfs_constraint/) | National 0.5–24 hour weather model, calendar baseline, monthly backtest metrics, held-out predictions and a final candidate calibrated on August; research artifact, not a validated operating forecast |
 
 The original organiser CSVs and EirGrid XLSX workbooks are **not tracked** in this repo. In the original local workspace they sit one directory above it. A fresh clone can use its included processed files immediately; rebuilding requires a copy of those source files. Keep source files under `data/raw/` or another untracked location and do not commit credentials or private exports.
 
