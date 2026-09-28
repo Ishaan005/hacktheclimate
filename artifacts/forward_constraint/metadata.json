@@ -7,19 +7,33 @@
   },
   "forecast_safety": {
     "principle": "For target T at horizon H, issue time is t_0 = T - H. All grid state features are measured strictly at or before t_0. Only calendar features are evaluated at T.",
-    "leakage_protection": "Chronological target-based splitting ensures no overlap in target timestamps and no post-decision data leakage."
+    "leakage_protection": "Chronological target-based splitting ensures no overlap in target timestamps and no post-decision data leakage.",
+    "unresolved_assumption": "constraint_mwh_t0 / curtailment_mwh_t0 are timestamp-correct but EirGrid publication latency for official DD half-hourly figures has not been confirmed. See module docstring."
+  },
+  "artifact_notes": {
+    "fold_models": "Trained up to each fold's training cutoff \u2014 for evaluation/inspection only. NOT for deployment.",
+    "final_fit_models": "Trained on ALL valid Jan\u2013Aug data after evaluation is complete. These are the deployable artifacts."
   },
   "disclaimers": [
     "National probability and expected constraint MWh only: makes NO location or nodal claim.",
     "Transmission constraints occur at specific physical bottlenecks; national MWh does not specify which transmission line or node is constrained.",
     "Makes NO avoided-energy claim: flexible load can only relieve constraints if physically sited behind the relevant transmission constraint.",
-    "Longer horizons (12h-24h) without prospective NWP weather forecasts suffer performance degradation, as historical system lags decay in predictive power."
+    "Longer horizons (12h-24h) without prospective NWP weather forecasts suffer performance degradation, as historical system lags decay in predictive power.",
+    "Quantile prediction intervals are NOT conformally calibrated; empirical coverage is measured on held-out folds only."
   ],
-  "model_artifacts": {
-    "1h": "artifacts/forward_constraint/model_1h.joblib",
-    "4h": "artifacts/forward_constraint/model_4h.joblib",
-    "12h": "artifacts/forward_constraint/model_12h.joblib",
-    "24h": "artifacts/forward_constraint/model_24h.joblib"
+  "fold_model_artifacts": {
+    "1h": "artifacts/forward_constraint/model_1h_fold.joblib",
+    "4h": "artifacts/forward_constraint/model_4h_fold.joblib",
+    "6h": "artifacts/forward_constraint/model_6h_fold.joblib",
+    "12h": "artifacts/forward_constraint/model_12h_fold.joblib",
+    "24h": "artifacts/forward_constraint/model_24h_fold.joblib"
+  },
+  "final_fit_model_artifacts": {
+    "1h": "artifacts/forward_constraint/model_1h_final_fit.joblib",
+    "4h": "artifacts/forward_constraint/model_4h_final_fit.joblib",
+    "6h": "artifacts/forward_constraint/model_6h_final_fit.joblib",
+    "12h": "artifacts/forward_constraint/model_12h_final_fit.joblib",
+    "24h": "artifacts/forward_constraint/model_24h_final_fit.joblib"
   },
   "feature_count": 45,
   "feature_names": [
