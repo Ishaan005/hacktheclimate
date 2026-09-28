@@ -1,4 +1,5 @@
 import type { NationalForecast, Unavailable } from '../types';
+import './ForecastPanel.css';
 import { COPY, GLOSSARY, STATE_COPY } from '../copy';
 import { formatDateTime } from '../format';
 import Panel from './Panel';

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { OperatorView, ReviewedOutageOption } from '../types';
+import './SummaryStrip.css';
 import { GLOSSARY, STATE_COPY } from '../copy';
 import { formatNumber, formatTime } from '../format';
 import { forecastPeak, runViews, SEVERITY_TEXT, worstRun } from '../insights';
