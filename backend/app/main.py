@@ -24,17 +24,6 @@ def _json_records(df: pd.DataFrame, cols: list[str], limit: int) -> list[dict]:
     return sample.astype(object).where(pd.notna(sample), None).to_dict(orient="records")
 
 
-if FRONTEND_DIST.is_dir():
-    @app.get("/")
-    def root():
-        return FileResponse(FRONTEND_DIST / "index.html")
-    app.mount(
-        "/",
-        StaticFiles(directory=FRONTEND_DIST, html=True),
-        name="frontend",
-    )
-
-
 @app.get("/health")
 def health():
     return {"status": "ok", "canonical_data_exists": DATA.exists()}
@@ -72,3 +61,13 @@ def sample_dispatch_down(limit: int = 96):
     ]
     cols = [c for c in cols if c in df.columns]
     return _json_records(df, cols, limit)
+
+if FRONTEND_DIST.is_dir():
+    @app.get("/")
+    def root():
+        return FileResponse(FRONTEND_DIST / "index.html")
+    app.mount(
+        "/",
+        StaticFiles(directory=FRONTEND_DIST, html=True),
+        name="frontend",
+    )
