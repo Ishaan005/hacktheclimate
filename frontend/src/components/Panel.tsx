@@ -17,7 +17,7 @@ function Panel({ title, scope, caveat, variant, kind, children }: PanelProps) {
   return (
     <section className={`panel panel-${variant}`} aria-labelledby={headingId}>
       <header className="panel-header">
-        <p className="panel-kind">{kind}</p>
+        <p className="eyebrow">{kind}</p>
         <h2 id={headingId}>{title}</h2>
         <p className="panel-scope">{scope}</p>
       </header>

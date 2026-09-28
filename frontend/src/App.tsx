@@ -67,17 +67,18 @@ function App() {
   const forecastLoading = loading && !view;
 
   return (
-    <div className="app">
+    <div className="app" data-theme="team-blue">
       <header className="masthead">
         <div className="masthead-inner">
-          <span className="masthead-title">Team Blue</span>
-          <span className="masthead-org">Hack the Climate 2026</span>
+          <span className="masthead-logo" aria-hidden="true">TB</span>
+          <span className="masthead-title">{COPY.teamName}</span>
+          <span className="masthead-org">{COPY.eventName}</span>
         </div>
       </header>
       <div className="phase-banner">
         <p className="phase-inner">
           <span className="phase-tag">{COPY.appPhase}</span>
-          <span>{USE_FIXTURE ? COPY.fixtureBanner : 'Point-in-time input gated; no safe action recommendation without complete evidence.'}</span>
+          <span>{USE_FIXTURE ? COPY.fixtureBanner : COPY.liveBanner}</span>
         </p>
       </div>
       <main className="app-main">

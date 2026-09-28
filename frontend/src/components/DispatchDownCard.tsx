@@ -59,13 +59,14 @@ function DispatchDownCard({ onTargetChange }: DispatchDownCardProps = {}) {
     <section className="dd-card" aria-labelledby="dd-heading">
       <header className="dd-header">
         <div>
-          <p className="dd-kind">National dispatch-down forecast</p>
+          <p className="eyebrow">National dispatch-down forecast</p>
           <h2 id="dd-heading">Next-hour dispatch-down risk</h2>
         </div>
         <form className="dd-form" onSubmit={submit} noValidate>
           <label className="dd-picker">
             <span>Forecast time (UTC)</span>
             <input
+              className="input"
               type="datetime-local"
               step={1800}
               min={MIN_TARGET}
@@ -76,7 +77,7 @@ function DispatchDownCard({ onTargetChange }: DispatchDownCardProps = {}) {
               onChange={(e) => setDraft(e.target.value)}
             />
           </label>
-          <button type="submit" className="dd-submit" disabled={loading}>
+          <button type="submit" className="button" disabled={loading}>
             {loading ? 'Loading…' : 'Get forecast'}
           </button>
           <p id="dd-hint" className={inputError ? 'dd-hint dd-hint-error' : 'dd-hint'} role={inputError ? 'alert' : undefined}>
@@ -128,7 +129,7 @@ function DispatchDownCard({ onTargetChange }: DispatchDownCardProps = {}) {
           </div>
 
           <dl className="dd-meta">
-            <div><dt>Mode</dt><dd><span className="dd-tag">{modeLabel(data.mode)}</span></dd></div>
+            <div><dt>Mode</dt><dd><span className="tag tag-changed">{modeLabel(data.mode)}</span></dd></div>
             <div><dt>Inputs as of</dt><dd>{formatTime(data.input_timestamp)}</dd></div>
             <div><dt>Forecast for</dt><dd>{formatTime(data.target_timestamp)}</dd></div>
             <div><dt>Horizon</dt><dd>{data.horizon_hours} hour{data.horizon_hours === 1 ? '' : 's'} ahead</dd></div>

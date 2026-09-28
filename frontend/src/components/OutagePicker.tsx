@@ -12,6 +12,7 @@ function OutagePicker({ outages, selectedId, onSelect }: OutagePickerProps) {
     <div className="outage-picker">
       <label htmlFor="outage-select">Reviewed outage</label>
       <select
+        className="input"
         id="outage-select"
         value={selectedId ?? ''}
         onChange={(event) => onSelect(event.target.value || null)}

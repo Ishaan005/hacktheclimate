@@ -61,7 +61,7 @@ function DispatchDownChart({ target }: Props) {
     <section className="dd-card ddc" aria-labelledby="ddc-heading">
       <header className="dd-header">
         <div>
-          <p className="dd-kind">Replay across the day</p>
+          <p className="eyebrow">Replay across the day</p>
           <h2 id="ddc-heading">Dispatch-down risk through {day ? formatDate(day.date) : 'the day'}</h2>
         </div>
         <ul className="ddc-legend" aria-label="Legend">
@@ -82,7 +82,7 @@ function DispatchDownChart({ target }: Props) {
                 <strong>{timeOf(activePoint.target_timestamp)} UTC</strong>
                 <span>{(activePoint.event_probability * 100).toFixed(1)}% chance</span>
                 <span>{activePoint.expected_dispatch_down_mwh.toFixed(1)} MWh expected</span>
-                {active === selected && hover === null && <span className="dd-tag">Selected time</span>}
+                {active === selected && hover === null && <span className="tag tag-changed">Selected time</span>}
               </>
             ) : <span>Hover the chart to inspect a half-hour.</span>}
           </div>
