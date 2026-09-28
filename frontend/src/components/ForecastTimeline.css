@@ -11,39 +11,39 @@
 }
 
 .timeline-axis {
-  stroke: var(--border);
+  stroke: var(--color-border-strong);
 }
 
 .timeline-bar {
-  fill: var(--chart);
+  fill: var(--color-accent);
 }
 
 .timeline-range {
-  stroke: var(--text);
+  stroke: var(--color-text);
   stroke-width: 1.5;
 }
 
 .timeline-probability {
-  fill: var(--chart);
+  fill: var(--color-accent);
 }
 
 .timeline-missing {
-  fill: var(--missing);
+  fill: var(--color-text-faint);
   opacity: 0.25;
 }
 
 .timeline-label {
-  font-size: 20px;
-  fill: var(--text-secondary);
+  font-size: var(--font-size-20);
+  fill: var(--color-text-muted);
 }
 
 .timeline-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
-  margin-top: 8px;
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
+  gap: var(--space-4) var(--space-16);
+  margin-top: var(--space-8);
+  font-size: var(--font-size-13);
+  color: var(--color-text-muted);
 }
 
 .timeline-legend span::before {
@@ -51,22 +51,22 @@
   display: inline-block;
   width: 10px;
   height: 10px;
-  margin-right: 4px;
+  margin-right: var(--space-4);
   vertical-align: middle;
 }
 
 .legend-bar::before,
 .legend-probability::before {
-  background: var(--chart);
+  background: var(--color-accent);
 }
 
-.timeline-legend .legend-range::before {
-  width: 2px;
-  background: var(--text);
+.legend-range::before {
+  width: 2px !important;
+  background: var(--color-text);
 }
 
 .legend-missing::before {
-  background: var(--missing);
+  background: var(--color-text-faint);
   opacity: 0.5;
 }
 

@@ -32,3 +32,19 @@ export function formatPercent(value: number | null, digits = 0): string {
   if (value === null || !Number.isFinite(value)) return COPY.notAvailable;
   return `${value.toFixed(digits)}%`;
 }
+
+const eurFormat = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+
+export function formatEur(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return COPY.notAvailable;
+  return eurFormat.format(value);
+}
+
+// Workspace times drop the UTC suffix; the scenario header states it once.
+export function formatTimeRange(start: string, end: string): string {
+  return `${formatTime(start)}–${formatTime(end)}`;
+}
+
+export function formatDayTime(iso: string | null): string {
+  return iso ? dateTimeFormat.format(new Date(iso)) : COPY.notAvailable;
+}

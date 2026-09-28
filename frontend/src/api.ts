@@ -1,5 +1,7 @@
+import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
 import { fixtureOperatorView, fixtureOutages, fixtureScenario } from './fixtures/operatorView';
-import type { NetworkDecision, OperatorView, ReviewedOutageOption } from './types';
+import { resolveSituation } from './scenarios';
+import type { NetworkDecision, OperatorView, ReviewedOutageOption, WorkspaceScenario } from './types';
 
 // The real endpoint is the normal mode. Explicit fixture mode keeps the
 // documented offline scenario available for development and UI tests.
@@ -80,4 +82,17 @@ export async function fetchReviewedOutages(signal?: AbortSignal): Promise<Review
   if (USE_FIXTURE) return fixtureOutages;
   void signal;
   return [];
+}
+
+// Thrown while the LLM scenario solver is not connected, so the UI can say so
+// instead of showing a generic error.
+export class SolverUnavailableError extends Error {}
+
+// Turns an operator's situation description into one workspace scenario.
+// Fixture mode matches the illustrative scenarios; null means no match.
+// Live mode waits for the LLM solver endpoint, which is not linked yet.
+export async function solveSituation(description: string, signal?: AbortSignal): Promise<WorkspaceScenario | null> {
+  if (USE_FIXTURE) return resolveSituation(description, illustrativeScenarios);
+  void signal;
+  throw new SolverUnavailableError('The scenario solver is not connected yet.');
 }
