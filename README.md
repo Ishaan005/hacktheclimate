@@ -2,7 +2,17 @@
 
 Data and modelling starter for the Ireland renewable dispatch-down challenge. The repository includes a FastAPI service, data-processing scripts, an optimisation module, tests, processed datasets, and trained January 2026 baseline artifacts.
 
-## Start here
+## Requirements
+
+| Tool | Version | Notes |
+| --- | --- | --- |
+| **Python** | Must be **3.11** | Required for the API, scripts, and tests. CI uses 3.11. |
+| **Node.js** | Min **18+** (20 LTS recommended) | Only if you work on the React app in `frontend/`. |
+| **npm** | Min **9+** (bundled with Node) | Comes with Node; used for `frontend/` install and build. |
+
+You do **not** need Node to run the API, run tests, or use `/docs`. Install Node only when developing or building the UI.
+
+## Running the application
 
 Use Python 3.11. From the repository root:
 
