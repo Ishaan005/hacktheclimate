@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import DispatchDownCard from './components/DispatchDownCard';
+import DispatchDownChart from './components/DispatchDownChart';
+import { DEFAULT_TARGET } from './dispatchDown';
 import ForecastPanel from './components/ForecastPanel';
 import NetworkDecisionPanel from './components/NetworkDecisionPanel';
 import ScenarioPanel from './components/ScenarioPanel';
@@ -20,6 +22,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [ddTarget, setDdTarget] = useState(DEFAULT_TARGET);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -79,7 +82,8 @@ function App() {
       </div>
       <main className="app-main">
         <h1 className="page-title">{COPY.appTitle}</h1>
-        <DispatchDownCard />
+        <DispatchDownCard onTargetChange={setDdTarget} />
+        <DispatchDownChart target={ddTarget} />
         <SummaryStrip view={view} loading={loading} selectedOutage={selectedOutage} />
         <div className="app-grid">
           <ForecastPanel

@@ -3,7 +3,7 @@ import StatusMessage from './StatusMessage';
 import { DEFAULT_TARGET, MAX_TARGET, MIN_TARGET, fetchDispatchDown, validateTarget, type DispatchDownForecast } from '../dispatchDown';
 import './DispatchDownCard.css';
 
-const RISK_LABEL: Record<string, string> = { low: 'Low risk', medium: 'Medium risk', high: 'High risk' };
+const RISK_LABEL: Record<string, string> = { low: 'Low risk', elevated: 'Elevated risk', medium: 'Elevated risk', high: 'High risk' };
 
 function formatTime(value: string): string {
   const date = new Date(value.endsWith('Z') || /[+-]\d\d:\d\d$/.test(value) ? value : `${value}Z`);
@@ -17,7 +17,9 @@ function modeLabel(mode: string): string {
   return mode === 'historical_replay' ? 'Historical replay' : mode.replace(/_/g, ' ');
 }
 
-function DispatchDownCard() {
+type DispatchDownCardProps = { onTargetChange?: (target: string) => void };
+
+function DispatchDownCard({ onTargetChange }: DispatchDownCardProps = {}) {
   const [target, setTarget] = useState(DEFAULT_TARGET);
   const [draft, setDraft] = useState(DEFAULT_TARGET);
   const [inputError, setInputError] = useState<string | null>(null);
@@ -47,6 +49,7 @@ function DispatchDownCard() {
     setError(null);
     if (draft === target) setReloadKey((k) => k + 1);
     else setTarget(draft);
+    onTargetChange?.(draft);
   }
 
   const risk = (data?.risk ?? 'unknown').toLowerCase();

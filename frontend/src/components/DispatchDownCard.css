@@ -12,7 +12,7 @@
 .dd-risk-label { font-size: 28px; font-weight: 700; }
 .dd-risk-sub { font-size: 16px; color: var(--text); }
 .dd-risk.dd-risk-high { color: var(--critical); background: var(--critical-bg); }
-.dd-risk.dd-risk-medium { color: var(--caution); background: var(--caution-bg); }
+.dd-risk.dd-risk-medium, .dd-risk.dd-risk-elevated { color: var(--caution); background: var(--caution-bg); }
 .dd-risk.dd-risk-low { color: var(--normal); background: var(--normal-bg); }
 .dd-risk.dd-risk-unknown { color: var(--text-secondary); background: var(--background); }
 .dd-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
@@ -24,7 +24,7 @@
 .dd-bar { height: 10px; background: var(--background); border: 1px solid var(--border-light); overflow: hidden; }
 .dd-bar-fill { display: block; height: 100%; background: var(--chart); }
 .dd-bar-fill.dd-risk-high { background: var(--critical); }
-.dd-bar-fill.dd-risk-medium { background: var(--caution); }
+.dd-bar-fill.dd-risk-medium, .dd-bar-fill.dd-risk-elevated { background: var(--caution); }
 .dd-bar-fill.dd-risk-low { background: var(--normal); }
 .dd-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 0; }
 .dd-meta dt { font-size: 13px; color: var(--text-secondary); }

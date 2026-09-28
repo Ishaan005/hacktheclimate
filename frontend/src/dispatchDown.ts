@@ -56,3 +56,44 @@ export async function fetchDispatchDown(target: string, signal?: AbortSignal): P
   }
   return response.json() as Promise<DispatchDownForecast>;
 }
+
+export type DispatchDownPoint = {
+  target_timestamp: string;
+  event_probability: number;
+  expected_dispatch_down_mwh: number;
+};
+
+export type DispatchDownDay = {
+  mode: string;
+  date: string;
+  horizon_hours: number;
+  points: DispatchDownPoint[];
+};
+
+function fixtureDay(target: string): DispatchDownDay {
+  const date = target.slice(0, 10);
+  const points = Array.from({ length: 48 }, (_, i) => {
+    const hh = String(Math.floor(i / 2)).padStart(2, '0');
+    const mm = i % 2 ? '30' : '00';
+    const p = Math.min(0.98, Math.max(0.02, 0.55 + 0.4 * Math.cos((i - 2) / 7)));
+    return { target_timestamp: `${date}T${hh}:${mm}:00`, event_probability: p, expected_dispatch_down_mwh: p * 40 };
+  });
+  return { mode: 'historical_replay', date, horizon_hours: 1, points };
+}
+
+export async function fetchDispatchDownDay(target: string, signal?: AbortSignal): Promise<DispatchDownDay> {
+  if (USE_FIXTURE) return fixtureDay(target);
+  const path = `/v1/dispatch-down/forecast/day?target_timestamp=${encodeURIComponent(`${target}:00Z`)}`;
+  const response = await fetch(path, { signal });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch {
+      /* keep status */
+    }
+    throw new Error(detail);
+  }
+  return response.json() as Promise<DispatchDownDay>;
+}
