@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .demo import router as demo_router
+from .gfs_forecast import DEFAULT_OUTPUT_DIR, load_current_forecast
 from .network_forecast import build_network_forecast_from_files
 from .network import load_case
 from .network_actions import load_action_candidates
@@ -24,6 +25,7 @@ app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
 app.include_router(demo_router)
 DATA = Path("data/processed/canonical_ie.csv")
 LABELED_DATA = Path("data/processed/training_table_labeled_jan2026.csv")
+GFS_FORECAST_PATH = DEFAULT_OUTPUT_DIR / "latest.json"
 
 
 def _json_records(df: pd.DataFrame, cols: list[str], limit: int) -> list[dict]:
@@ -104,6 +106,15 @@ def operator_view():
         raise HTTPException(503, f"Required operator input is missing: {exc.filename}") from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/v1/forecast/constraint")
+def national_constraint_forecast():
+    """Serve only future rows from the latest checked national GFS forecast."""
+    try:
+        return load_current_forecast(GFS_FORECAST_PATH)
+    except (FileNotFoundError, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(503, f"Checked national forecast unavailable: {exc}") from exc
 
 
 if FRONTEND_DIST.is_dir():
