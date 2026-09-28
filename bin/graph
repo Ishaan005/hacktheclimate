@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Shortcut for the chat graph visualiser. See scripts/draw_chat_graph.py.
+ROOT="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$0")")/.." && pwd)"
+PY="${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/python}"
+[ -x "${PY:-}" ] || PY="$ROOT/.venv/bin/python"
+cd "$ROOT" && exec "$PY" -m scripts.draw_chat_graph "$@"

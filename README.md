@@ -78,6 +78,18 @@ scripts/fetch_azure_openai_env.sh 12   # writes the git-ignored .env from Key Va
 
 A plain `az login` signs in to your personal directory and reports "No subscriptions found". Use the hackathon tenant above. If it is missing from Portal settings → Directories + subscriptions, accept the organiser invitation or ask to be added to `grp-hack-team12`.
 
+To see the chat assistant's LangGraph (no Azure credentials needed):
+
+```bash
+ln -sf ../../bin/graph .venv/bin/graph   # once, so `graph` works whenever the venv is active
+graph            # print it in the terminal
+graph --view     # open an interactive diagram in your browser
+graph --md       # regenerate docs/chat_graph.md after changing backend/app/chat/graph.py
+graph --png      # write docs/chat_graph.png (needs internet)
+```
+
+Without the shortcut, use `bin/graph` or `python -m scripts.draw_chat_graph`.
+
 To open a shell on the team 12 VM after signing in:
 
 ```bash
