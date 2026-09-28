@@ -1,0 +1,8 @@
+# Candidate operator actions, loaded by the chat graph's load_actions node.
+# One action per line: ID | description. Placeholder text for the prototype.
+A1 | Do nothing: keep the current dispatch and monitor the forecast.
+A2 | Dispatch change: ask flexible demand (data centres, electric boilers) to increase load in the constrained region.
+A3 | Dispatch change: charge battery storage in the constrained region during the high-risk intervals.
+A4 | Dispatch change: reduce conventional generation output and replace it with renewables where network limits allow.
+A5 | Operator action: raise interconnector exports to move surplus renewables out of Ireland.
+A6 | Operator action: reschedule or shorten the planned outage that is limiting network capacity.
