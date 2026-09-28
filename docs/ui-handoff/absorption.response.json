@@ -1,0 +1,50 @@
+{
+  "scenario": "retrospective_1h_operational",
+  "assumption": "Treating every predicted dispatch-down MWh as locally absorbable is an unvalidated upper bound. The schedule is illustrative; absorbed MWh is not proven avoided dispatch-down.",
+  "interval_hours": 0.5,
+  "predicted_dispatch_down_mwh": 172.93055864104295,
+  "observed_dispatch_down_mwh": 169.376,
+  "schedule": {
+    "schedule_mw": {
+      "flexible_load": [
+        0.0,
+        0.0,
+        6.0,
+        10.0
+      ]
+    },
+    "absorbed_mwh": 8.0,
+    "available_surplus_mwh": 172.93055864104295,
+    "capture_rate": 0.04626134364491261
+  },
+  "intervals": [
+    {
+      "target_timestamp": "2026-01-24T00:00:00",
+      "input_timestamp": "2026-01-23T23:00:00",
+      "event_probability_gt_5_mwh": 0.9966386698308921,
+      "predicted_dispatch_down_mwh": 46.45496640235165,
+      "observed_dispatch_down_mwh": 40.506
+    },
+    {
+      "target_timestamp": "2026-01-24T00:30:00",
+      "input_timestamp": "2026-01-23T23:30:00",
+      "event_probability_gt_5_mwh": 0.9973602579058672,
+      "predicted_dispatch_down_mwh": 50.74791583812192,
+      "observed_dispatch_down_mwh": 41.131
+    },
+    {
+      "target_timestamp": "2026-01-24T01:00:00",
+      "input_timestamp": "2026-01-24T00:00:00",
+      "event_probability_gt_5_mwh": 0.9540596966110141,
+      "predicted_dispatch_down_mwh": 37.20013258304385,
+      "observed_dispatch_down_mwh": 42.083
+    },
+    {
+      "target_timestamp": "2026-01-24T01:30:00",
+      "input_timestamp": "2026-01-24T00:30:00",
+      "event_probability_gt_5_mwh": 0.9541911296021287,
+      "predicted_dispatch_down_mwh": 38.527543817525526,
+      "observed_dispatch_down_mwh": 45.656000000000006
+    }
+  ]
+}
