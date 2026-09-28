@@ -16,6 +16,7 @@ You do **not** need Node to run the API, run tests, or use `/docs`. Install Node
 
 Use Python 3.11. From the repository root:
 
+## To run the backend + frontend
 ```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
@@ -23,6 +24,13 @@ python --version  # should report Python 3.11
 python -m pip install -r requirements.txt
 python -m pytest -q
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+```
+
+## To run only the frontend
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 On Windows PowerShell, create the environment with `py -3.11 -m venv .venv` and activate it with `.venv\Scripts\Activate.ps1`; then run the same `python` commands. Open [the API documentation](http://127.0.0.1:8000/docs) after starting the server. The processed CSVs needed for the API and the model artifacts are already in the repository. Original source workbooks are optional and are not required to run the API.
