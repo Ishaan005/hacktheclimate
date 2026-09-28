@@ -6,6 +6,12 @@ from fastapi import FastAPI, HTTPException
 from .proxy import add_pressure_proxy
 from .demo import router as demo_router
 
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
+
 app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
 app.include_router(demo_router)
 DATA = Path("data/processed/canonical_ie.csv")
@@ -55,3 +61,13 @@ def sample_dispatch_down(limit: int = 96):
     ]
     cols = [c for c in cols if c in df.columns]
     return _json_records(df, cols, limit)
+
+if FRONTEND_DIST.is_dir():
+    @app.get("/")
+    def root():
+        return FileResponse(FRONTEND_DIST / "index.html")
+    app.mount(
+        "/",
+        StaticFiles(directory=FRONTEND_DIST, html=True),
+        name="frontend",
+    )
