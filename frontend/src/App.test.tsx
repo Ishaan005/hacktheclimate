@@ -51,39 +51,13 @@ function expectNoForbiddenCopy() {
   }
 }
 
-describe('operator screen with the representative response', () => {
-  it('labels both products and shows the forecast as unavailable', async () => {
+describe('app page', () => {
+  it('shows only the dispatch-down forecast and chart', async () => {
     render(<App />);
-    const forecast = screen.getByRole('region', { name: COPY.forecastTitle });
-    const scenario = screen.getByRole('region', { name: COPY.scenarioTitle });
-
-    expect(await within(forecast).findByText(/issue #8/)).toBeInTheDocument();
-    expect(within(forecast).queryByRole('img')).not.toBeInTheDocument();
-    expect(within(scenario).getByText(STATE_COPY.scenarioEmptyTitle)).toBeInTheDocument();
-    expect(within(forecast).getByText(STATE_COPY.forecastUnavailableConsequence)).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Current picture' })).toHaveTextContent('No forecast yet');
-    expectNoForbiddenCopy();
-  });
-
-  it('shows the Cashla–Flagford intact vs outage comparison from the network report', async () => {
-    render(<App />);
-    fireEvent.change(await screen.findByLabelText('Reviewed outage'), {
-      target: { value: fixtureOutages[0].outage_id },
-    });
-    const scenario = screen.getByRole('region', { name: COPY.scenarioTitle });
-
-    expect(await within(scenario).findByRole('heading', { name: new RegExp(COPY.assetMatchConfidence) })).toBeInTheDocument();
-    expect(within(scenario).getByText('Reviewed match')).toBeInTheDocument();
-    const table = within(scenario).getByRole('table');
-    expect(within(table).getByText('153.6 MW')).toBeInTheDocument();
-    expect(within(table).getByLabelText('−45.8 MW compared with all equipment in service')).toBeInTheDocument();
-    expect(within(table).getByText('20.2%')).toBeInTheDocument();
-    // Plain-language finding and summary strip are derived from the same report.
-    expect(within(scenario).getByText(/reduces flow on the monitored branch by 45\.8 MW/)).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Current picture' })).toHaveTextContent('Peak 20.2% of rate A');
-    // The forecast stays unavailable while the scenario renders.
-    expect(screen.getByRole('region', { name: COPY.forecastTitle })).toHaveTextContent(/issue #8/);
-    expectNoForbiddenCopy();
+    expect(await screen.findByRole('region', { name: 'Next-hour dispatch-down risk' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /Dispatch-down risk through/ })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: COPY.forecastTitle })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: COPY.scenarioTitle })).not.toBeInTheDocument();
   });
 });
 

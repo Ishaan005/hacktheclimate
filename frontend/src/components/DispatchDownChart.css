@@ -1,0 +1,129 @@
+/* 24-hour dispatch-down chart. */
+
+.ddc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.ddc-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ddc-key {
+  display: inline-block;
+  width: 16px;
+  border-radius: 2px;
+}
+
+.ddc-key-line {
+  height: 3px;
+  background: var(--brand);
+}
+
+.ddc-key-bar {
+  height: 12px;
+  background: var(--chart);
+  opacity: 0.35;
+}
+
+.ddc-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 28px;
+  margin-bottom: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.ddc-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: var(--space-4);
+}
+
+.ddc-grid {
+  stroke: var(--border-light);
+  stroke-width: 1;
+}
+
+.ddc-axis {
+  font-size: 12px;
+  fill: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ddc-threshold {
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.ddc-threshold-high {
+  stroke: var(--critical);
+}
+
+.ddc-threshold-elev {
+  stroke: var(--caution);
+}
+
+.ddc-threshold-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ddc-threshold-high-text {
+  fill: var(--critical);
+}
+
+.ddc-threshold-elev-text {
+  fill: var(--caution);
+}
+
+.ddc-bar {
+  fill: var(--chart);
+  opacity: 0.25;
+}
+
+.ddc-bar-active {
+  opacity: 0.6;
+}
+
+.ddc-line {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.ddc-selected {
+  stroke: var(--text-secondary);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 3;
+}
+
+.ddc-dot {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.ddc-hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.ddc-note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}

@@ -62,6 +62,32 @@ class DispatchDownPredictor:
             ],
         }
 
+    def predict_day(self, target_timestamp: str) -> dict:
+        """Return every half-hourly replay prediction on the UTC day of a target time."""
+        target = _normalise_timestamp(target_timestamp)
+        day_start = target.normalize()
+        targets = self.frame["target_1h_timestamp"]
+        rows = self.frame.loc[(targets >= day_start) & (targets < day_start + pd.Timedelta(days=1))]
+        if rows.empty:
+            raise ValueError("No historical input data is available for that day.")
+        rows = rows.sort_values("target_1h_timestamp")
+        probability = self.occurrence["model"].predict_proba(rows[self.features])[:, 1]
+        volume = self.volume["model"].predict(rows[self.features]).clip(min=0.0)
+        points = [
+            {
+                "target_timestamp": ts.isoformat(),
+                "event_probability": float(p),
+                "expected_dispatch_down_mwh": float(p * v),
+            }
+            for ts, p, v in zip(rows["target_1h_timestamp"], probability, volume)
+        ]
+        return {
+            "mode": "historical_replay",
+            "date": day_start.date().isoformat(),
+            "horizon_hours": HORIZON_HOURS,
+            "points": points,
+        }
+
 
 @lru_cache(maxsize=1)
 def get_dispatch_down_predictor() -> DispatchDownPredictor:

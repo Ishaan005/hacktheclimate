@@ -5,6 +5,9 @@
 export const COPY = {
   appTitle: 'Constraint outlook',
   appPhase: 'Prototype',
+  teamName: 'Team Blue',
+  eventName: 'Hack the Climate 2026',
+  liveBanner: 'Point-in-time input gated; no safe action recommendation without complete evidence.',
 
   forecastTitle: 'National forecast',
   forecastKind: 'Statistical forecast',
