@@ -1,16 +1,4 @@
-"""Run a reviewed planned outage and selected N-1 in the TYTFS study case.
-
-Example (IDs must first be reviewed against the source publications)::
-
-    python -m scripts.compare_network_scenarios \
-      --case-dir data/raw/network_case \
-      --outage-type branch --outage-id '1:2:1' \
-      --outage-audit data/raw/network_case/outage_audit.json \
-      --contingency-type branch --contingency-id '2:3:1' \
-      --contingency-reference 'selected neighboring circuit in TYTFS study case' \
-      --monitor-type branch --monitor-id '1:3:1' \
-      --output-json data/raw/network_case/scenario.json
-"""
+"""Run a reviewed planned outage and selected N-1 in the TYTFS study case."""
 
 from __future__ import annotations
 
@@ -23,7 +11,7 @@ from backend.app.network_scenarios import Asset, compare_network_scenarios
 
 
 def reviewed_outage(audit_path: Path, selected: Asset) -> dict:
-    """Require #11's reviewed, in-service case match before opening it."""
+    """Require the reviewed, in-service case match before opening it."""
     audit = json.loads(audit_path.read_text())
     item = audit["selected_outage"]
     annual, short_term = item["annual"], item["short_term"]
@@ -46,6 +34,37 @@ def reviewed_outage(audit_path: Path, selected: Asset) -> dict:
         "short_term": short_term,
         "network_match": match,
     }
+
+
+def _print_stress(report: dict) -> None:
+    print("\nSystem-wide stress ranking")
+    for name, stress in report["stress_ranking"]["runs"].items():
+        print(f"{name}: actionable={stress['actionable']}")
+        if not stress["actionable"]:
+            continue
+        breaches = stress["threshold_breaches"]
+        print(
+            "  threshold breaches: "
+            f">80%={breaches['above_80pct']['count']}, "
+            f">90%={breaches['above_90pct']['count']}, "
+            f">100%={breaches['above_100pct']['count']}"
+        )
+        print("  top 10 loading proxies:")
+        for row in stress["top_10_highest_loading_proxies"]:
+            print(
+                f"    {row['asset_type']} {row['asset_id']}: "
+                f"{row['dc_loading_pct_proxy']:.2f}% "
+                f"({row['flow_mw']:.2f} MW / {row['rating_mva']:.2f} MVA)"
+            )
+    for name, stress in report["stress_ranking"]["comparisons_from_intact"].items():
+        if not stress["actionable"]:
+            continue
+        print(f"  {name} largest headroom decreases:")
+        for row in stress["top_10_largest_headroom_decreases"]:
+            print(f"    {row['asset_type']} {row['asset_id']}: {row['headroom_decrease_mw']:.2f} MW")
+        print(f"  {name} largest absolute flow changes:")
+        for row in stress["top_10_largest_absolute_flow_changes"]:
+            print(f"    {row['asset_type']} {row['asset_id']}: {row['abs_delta_flow_mw']:.2f} MW")
 
 
 def main() -> None:
@@ -87,6 +106,7 @@ def main() -> None:
             f"{monitor['flow_mw'] if monitor else 'unavailable'} MW; "
             f"DC loading proxy {monitor['dc_loading_pct_proxy'] if monitor else 'unavailable'}%"
         )
+    _print_stress(report)
 
 
 if __name__ == "__main__":
