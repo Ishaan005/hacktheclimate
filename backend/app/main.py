@@ -18,11 +18,14 @@ from .network_forecast import DEFAULT_CASE_DIR, DEFAULT_CROSSWALK_PATH, DEFAULT_
 from .operator_view import build_operator_view
 from .proxy import add_pressure_proxy
 
+from .constraints.routes import router as constraint_router
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
 app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
 app.include_router(demo_router)
+app.include_router(constraint_router)
 DATA = Path("data/processed/canonical_ie.csv")
 LABELED_DATA = Path("data/processed/training_table_labeled_jan2026.csv")
 GFS_FORECAST_PATH = DEFAULT_OUTPUT_DIR / "latest.json"
@@ -31,7 +34,6 @@ GFS_FORECAST_PATH = DEFAULT_OUTPUT_DIR / "latest.json"
 def _json_records(df: pd.DataFrame, cols: list[str], limit: int) -> list[dict]:
     sample = df[cols].tail(max(1, min(limit, 336)))
     return sample.astype(object).where(pd.notna(sample), None).to_dict(orient="records")
-
 
 @app.get("/health")
 def health():
