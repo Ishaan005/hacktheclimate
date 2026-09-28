@@ -1,59 +1,34 @@
-import { useEffect, useRef, useState } from 'react';
+import ClarificationForm from './components/ClarificationForm';
 import DispatchDownResult from './components/DispatchDownResult';
 import ScenarioWorkspace from './components/ScenarioWorkspace';
 import SituationInput from './components/SituationInput';
 import StatusMessage from './components/StatusMessage';
-import { solveSituation, SolverUnavailableError, USE_FIXTURE } from './api';
+import { USE_FIXTURE } from './api';
 import { COPY, WORKSPACE_COPY } from './copy';
-import type { SolverResult } from './types';
+import { useSituationSolver } from './useSituationSolver';
 import './App.css';
 
-type SolveState =
-  | { status: 'idle' }
-  | { status: 'solving' }
-  | { status: 'solved'; result: SolverResult }
-  | { status: 'no_match' }
-  | { status: 'unavailable'; reason: string }
-  | { status: 'error'; reason: string };
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Unknown error';
-}
-
-// The operator describes the situation; the solver returns either a scenario
-// with its recommended action or the next-hour dispatch-down risk.
+// The operator describes the situation; the solver returns a scenario with
+// its recommended action, the next-hour dispatch-down risk, or follow-up
+// questions when the description is not enough.
 function App() {
-  const [state, setState] = useState<SolveState>({ status: 'idle' });
-  const [lastDescription, setLastDescription] = useState('');
-  const controllerRef = useRef<AbortController | null>(null);
-
-  useEffect(() => () => controllerRef.current?.abort(), []);
-
-  function describeSituation(description: string) {
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    setLastDescription(description);
-    setState({ status: 'solving' });
-    solveSituation(description, controller.signal)
-      .then((result) => {
-        if (controller.signal.aborted) return;
-        setState(result ? { status: 'solved', result } : { status: 'no_match' });
-      })
-      .catch((err) => {
-        if (controller.signal.aborted) return;
-        if (err instanceof SolverUnavailableError) {
-          setState({ status: 'unavailable', reason: err.message });
-          return;
-        }
-        console.error('Error solving situation:', err);
-        setState({ status: 'error', reason: errorMessage(err) });
-      });
-  }
+  const { state, description, describe, answer, retry, cancel } = useSituationSolver();
 
   let result = null;
   if (state.status === 'solving') {
     result = <StatusMessage tone="loading" title={WORKSPACE_COPY.solvingTitle} consequence={WORKSPACE_COPY.solvingConsequence} />;
+  } else if (state.status === 'clarifying') {
+    // Key by round so each new set of questions starts with fresh answers.
+    result = (
+      <ClarificationForm
+        key={state.round}
+        clarification={state.clarification}
+        description={description}
+        round={state.round}
+        onSubmit={answer}
+        onCancel={cancel}
+      />
+    );
   } else if (state.status === 'solved') {
     // Key by content so a new answer resets any time the operator changed.
     result = state.result.kind === 'scenario'
@@ -77,7 +52,7 @@ function App() {
         title={WORKSPACE_COPY.solverErrorTitle}
         consequence={WORKSPACE_COPY.solverErrorConsequence}
         detail={state.reason}
-        onRetry={() => describeSituation(lastDescription)}
+        onRetry={retry}
       />
     );
   }
@@ -98,7 +73,7 @@ function App() {
       </div>
       <main className="app-main">
         <h1 className="page-title">{COPY.appTitle}</h1>
-        <SituationInput onSubmit={describeSituation} />
+        <SituationInput onSubmit={describe} />
         {result}
       </main>
     </div>

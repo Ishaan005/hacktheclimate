@@ -1,0 +1,175 @@
+/* Solver follow-up questions. */
+
+.clarify {
+  border-color: var(--color-accent);
+}
+
+.clarify-reason {
+  margin: 0;
+  font-size: var(--font-size-16);
+}
+
+.clarify-description {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+}
+
+.clarify-form {
+  display: grid;
+  gap: var(--space-16);
+  margin-top: var(--space-16);
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--color-border);
+}
+
+.clarify-question {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.clarify-question legend {
+  margin-bottom: var(--space-8);
+  padding: 0;
+}
+
+.clarify-optional {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+}
+
+.clarify-textarea {
+  resize: vertical;
+  max-width: 640px;
+}
+
+/* Generous hit areas: the whole option is the target. */
+.clarify-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.clarify-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 40px;
+  padding: var(--space-8) var(--space-12);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: var(--font-size-14);
+  cursor: pointer;
+}
+
+.clarify-option:hover {
+  background: var(--color-surface-muted);
+}
+
+.clarify-option:has(input:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  font-weight: var(--font-weight-medium);
+}
+
+.clarify-option:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.clarify-option input {
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.clarify-options[aria-invalid] .clarify-option {
+  border-color: var(--color-danger);
+}
+
+.clarify-number {
+  display: grid;
+  grid-template-columns: minmax(160px, 360px) auto auto;
+  align-items: center;
+  gap: var(--space-4) var(--space-12);
+  justify-content: start;
+}
+
+.clarify-range {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+.clarify-number-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.clarify-number-field .input {
+  width: 7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.clarify-unit {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-14);
+}
+
+.clarify-range-limits {
+  display: flex;
+  grid-column: 1;
+  grid-row: 2;
+  justify-content: space-between;
+  color: var(--color-text-faint);
+  font-size: var(--font-size-12);
+}
+
+.button-ghost {
+  padding: var(--space-4) var(--space-8);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.button-ghost:hover {
+  background: var(--color-accent-soft);
+}
+
+.clarify-progress {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.clarify-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.clarify-actions .button-ghost {
+  margin-left: auto;
+}
+
+@media (max-width: 480px) {
+  .clarify-number {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .clarify-range-limits {
+    grid-row: auto;
+  }
+}

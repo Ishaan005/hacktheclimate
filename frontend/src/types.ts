@@ -286,8 +286,101 @@ export type ActionFamily =
 // until the counterparty confirms it.
 export type Executability = 'executable' | 'conditional' | 'unconfirmed';
 
-export type RecommendedAction = {
-  family: ActionFamily;
+// ---- Family-specific action detail (UX plan phase 2) ----
+// Every field is nullable: null means the solver did not supply it, and the
+// UI shows it as not available, never as zero.
+
+export type GeneratorSetpointDetails = {
+  currentMw: number | null;
+  targetMw: number | null;
+  rampRateMwPerMin: number | null;
+  minStableGenerationMw: number | null;
+  maxOutputMw: number | null;
+  servicesRetained: string[] | null;
+  servicesLost: string[] | null;
+  redispatchCostEur: number | null;
+};
+
+export type CommitmentState = 'online' | 'offline';
+
+export type CommitmentChangeDetails = {
+  currentCommitment: CommitmentState | null;
+  targetCommitment: CommitmentState | null;
+  thermalState: 'hot' | 'warm' | 'cold' | null;
+  // Synchronisation time when starting, shutdown time when stopping.
+  transitionMinutes: number | null;
+  minOnHours: number | null;
+  minOffHours: number | null;
+  inertiaContributionMws: number | null;
+  reserveContributionMw: number | null;
+  reactiveContributionMvar: number | null;
+  startCostEur: number | null;
+  stopCostEur: number | null;
+  minimumRunCostEur: number | null;
+};
+
+export type StorageChargingDetails = {
+  stateOfChargePct: number | null;
+  minStateOfChargePct: number | null;
+  maxStateOfChargePct: number | null;
+  chargingTargetMw: number | null;
+  availableChargingMwh: number | null;
+  rampRateMwPerMin: number | null;
+  roundTripEfficiencyPct: number | null;
+  reboundRequirement: string | null;
+  chargingCostEur: number | null;
+  lossCostEur: number | null;
+  degradationCostEur: number | null;
+};
+
+export type ReactiveControlDetails = {
+  currentVoltageKv: number | null;
+  targetVoltageKv: number | null;
+  currentMvar: number | null;
+  targetMvar: number | null;
+  presentMw: number | null;
+  capabilityMinMvar: number | null;
+  capabilityMaxMvar: number | null;
+  currentTapPosition: number | null;
+  targetTapPosition: number | null;
+  responseTimeSeconds: number | null;
+  voltageMarginImprovement: string | null;
+  sideEffects: string | null;
+};
+
+export type RenewableLimitDetails = {
+  constraintGroup: string | null;
+  affectedUnits: string[] | null;
+  totalReductionMw: number | null;
+  dispatchReason: string | null;
+  expectedDispatchDownWasteMwh: number | null;
+  remainingSecurityMargin: string | null;
+};
+
+export type CoordinationStatus = 'confirmed' | 'unconfirmed' | 'unavailable';
+
+export type InterconnectorRequestDetails = {
+  interconnector: string | null;
+  direction: string | null;
+  requestedMw: number | null;
+  scheduledFlowMw: number | null;
+  transferCapacityMw: number | null;
+  rampLimitMwPerMin: number | null;
+  earliestFeasibleInterval: string | null;
+  coordinationStatus: CoordinationStatus;
+  crossBorderCostEur: number | null;
+};
+
+// The family decides which detail shape the action carries.
+export type ActionFamilyDetails =
+  | { family: 'generator_setpoint'; details: GeneratorSetpointDetails }
+  | { family: 'commitment_change'; details: CommitmentChangeDetails }
+  | { family: 'storage_charging'; details: StorageChargingDetails }
+  | { family: 'reactive_control'; details: ReactiveControlDetails }
+  | { family: 'renewable_limit'; details: RenewableLimitDetails }
+  | { family: 'interconnector_request'; details: InterconnectorRequestDetails };
+
+export type RecommendedAction = ActionFamilyDetails & {
   assetName: string;
   location: string;
   currentState: string;
@@ -334,8 +427,80 @@ export type WorkspaceScenario = {
   guardrails: Guardrail[];
 };
 
+// ---- Solver follow-up questions ----
+// When the description is not enough, the solver asks the operator before it
+// returns a scenario. Each question names its input kind so the UI can render
+// it without knowing the question in advance.
+
+export type ChoiceOption = {
+  value: string;
+  label: string;
+};
+
+type QuestionBase = {
+  // Stable within one request; answers refer back to it.
+  id: string;
+  prompt: string;
+  helpText: string | null;
+  required: boolean;
+};
+
+export type TextQuestion = QuestionBase & {
+  kind: 'text';
+  placeholder: string | null;
+  maxLength: number | null;
+};
+
+export type SingleChoiceQuestion = QuestionBase & {
+  kind: 'single_choice';
+  options: ChoiceOption[];
+};
+
+export type MultiChoiceQuestion = QuestionBase & {
+  kind: 'multi_choice';
+  options: ChoiceOption[];
+  minSelected: number | null;
+  maxSelected: number | null;
+};
+
+// Rendered as a slider with a matching number field.
+export type NumberQuestion = QuestionBase & {
+  kind: 'number';
+  min: number;
+  max: number;
+  step: number;
+  unit: string | null;
+  defaultValue: number | null;
+};
+
+export type ClarificationQuestion = TextQuestion | SingleChoiceQuestion | MultiChoiceQuestion | NumberQuestion;
+
+export type ClarificationRequest = {
+  // Why the solver is asking, in operator language.
+  reason: string;
+  questions: ClarificationQuestion[];
+};
+
+// Null means the operator left an optional question unanswered.
+export type ClarificationAnswerValue = string | string[] | number | null;
+
+export type ClarificationAnswer = {
+  questionId: string;
+  value: ClarificationAnswerValue;
+};
+
+// One request to the solver. Follow-up rounds resend the original
+// description with every answer so far; `threadId` lets a stateful backend
+// keep its own conversation instead.
+export type SolverRequest = {
+  description: string;
+  threadId: string | null;
+  answers: ClarificationAnswer[];
+};
+
 // What the situation solver can return. The LLM chooses the output type from
 // the operator's description; `target` is a UTC half-hour, 'YYYY-MM-DDTHH:MM'.
 export type SolverResult =
   | { kind: 'scenario'; scenario: WorkspaceScenario }
-  | { kind: 'dispatch_down_risk'; target: string };
+  | { kind: 'dispatch_down_risk'; target: string }
+  | { kind: 'clarification'; threadId: string | null; clarification: ClarificationRequest };

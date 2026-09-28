@@ -73,6 +73,19 @@ export const WORKSPACE_COPY = {
   solverUnavailableConsequence: 'No action can be returned yet. Use fixture mode to preview the workspace layout.',
   solverErrorTitle: 'Scenario solver did not respond',
   solverErrorConsequence: 'No action is shown. Try again.',
+  clarifyTitle: 'The solver needs more detail',
+  clarifyRound: 'Round',
+  clarifyDescribed: 'You described',
+  clarifyOptional: 'optional',
+  clarifyNotSet: 'Not set',
+  clarifyClear: 'Clear',
+  clarifySubmit: 'Send answers',
+  clarifyNext: 'Next',
+  clarifySkip: 'Skip',
+  clarifyBack: 'Back',
+  clarifyQuestion: 'Question',
+  clarifyOf: 'of',
+  clarifyCancel: 'Start again',
   comparisonLabel: 'Compare',
   comparisonBaseline: 'Baseline vs recommended action',
   lastModelRun: 'Last model run',
@@ -81,6 +94,10 @@ export const WORKSPACE_COPY = {
   bindingNone: 'No binding condition identified',
   actionTitle: 'Recommended action',
   actionNone: 'No recommended action',
+  actionDetailsSummary: 'Action details',
+  actionCostsTitle: 'Costs',
+  interconnectorNotConfirmed:
+    'Counterparty has not confirmed this request. It is not executable as a direct dispatch instruction.',
   outcomeTitle: 'New outcome',
   baseline: 'Baseline',
   postAction: 'Post-action',
@@ -114,6 +131,23 @@ export const EXECUTABILITY_LABEL = {
   executable: 'Executable',
   conditional: 'Conditional',
   unconfirmed: 'Unconfirmed',
+} as const;
+
+export const COORDINATION_LABEL = {
+  confirmed: 'Confirmed',
+  unconfirmed: 'Unconfirmed',
+  unavailable: 'Unavailable',
+} as const;
+
+export const COMMITMENT_LABEL = {
+  online: 'Online',
+  offline: 'Offline',
+} as const;
+
+export const THERMAL_STATE_LABEL = {
+  hot: 'Hot',
+  warm: 'Warm',
+  cold: 'Cold',
 } as const;
 
 // Plain-language definitions shown in tooltips.

@@ -51,3 +51,34 @@ The frontend should call the Python API; it should not load `.joblib` files in t
 - `GET /v1/network/forecast` and `GET /v1/operator/view` consume a separate 48-row, issue-time-stamped **upstream** forecast input. They do not run the national constraint model themselves. They return 503 until their required input files exist, and the operator view also needs a reviewed action catalog for action results.
 
 For a live inference API, the backend needs an ingestion job that stores each input's observation and availability times, checks missing/stale fields, builds the exact saved model feature order for a requested horizon, runs `bundle.predict`, and returns `issued_at`, `target_timestamp`, horizon, model version, input freshness, event probability, expected constraint MWh and interval bounds. If required inputs were unavailable at issue time, the API should return an explicit unavailable state instead of filling them with later measurements. The UI can then poll that endpoint and label each prediction with its issue time and status. Do not label the current 12- or 24-hour models as validated day-ahead forecasts; their held-out error exceeds the zero baseline, and publication latency remains unresolved.
+
+## Situation solver follow-up questions
+
+When an operator's description is not enough to pick a scenario, the situation solver can ask follow-up questions instead of guessing. It returns this `SolverResult` (types in `frontend/src/types.ts`):
+
+```json
+{
+  "kind": "clarification",
+  "threadId": "optional-backend-thread-id",
+  "clarification": {
+    "reason": "The description does not name a limit or an area.",
+    "questions": [
+      { "id": "limit", "kind": "single_choice", "prompt": "Which limit is closest to binding?", "required": true,
+        "options": [{ "value": "thermal", "label": "Thermal overload" }, { "value": "low_voltage", "label": "Low voltage" }] },
+      { "id": "area", "kind": "multi_choice", "prompt": "Which areas are affected?", "required": true,
+        "minSelected": 1, "maxSelected": 3,
+        "options": [{ "value": "west", "label": "West" }, { "value": "dublin", "label": "Dublin" }] },
+      { "id": "lead_time", "kind": "number", "prompt": "How long until the interval starts?",
+        "min": 0, "max": 240, "step": 15, "unit": "min", "defaultValue": null },
+      { "id": "detail", "kind": "text", "prompt": "Anything else the solver should know?", "maxLength": 300 }
+    ]
+  }
+}
+```
+
+- The UI shows one question at a time with Next, Back and Skip (for blank optional questions). It sends all answers together after the last question. Keep each request short: ask only what the solver needs.
+- Question kinds are `text`, `single_choice`, `multi_choice` and `number`. The UI renders a `number` question as a slider with a matching number field.
+- `helpText`, `placeholder`, `maxLength`, `minSelected`, `maxSelected`, `unit` and `defaultValue` are optional. `required` defaults to false.
+- The frontend checks the payload with `parseClarificationRequest` (`frontend/src/clarification.ts`) before rendering it. A malformed payload shows an error state and renders no form.
+- The next request resends the original description with every answer so far, plus `threadId` if the solver supplied one: `{ "description": "...", "threadId": "...", "answers": [{ "questionId": "limit", "value": "thermal" }] }`. An optional question left blank is sent as `null`.
+- The UI stops after three rounds of questions and shows an error.
