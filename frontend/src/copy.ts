@@ -62,7 +62,7 @@ export const WORKSPACE_COPY = {
   illustrativeNote: 'Illustrative scenario: invented values for layout. Not a model result.',
   live: 'Solver result',
   situationLabel: 'Describe the situation',
-  situationHint: 'Name the area, asset, limit and time. The workspace returns the recommended next action.',
+  situationHint: 'Name the area, asset, limit and time, or ask for dispatch-down risk. The workspace returns the recommended next action or the risk estimate.',
   situationSubmit: 'Find next action',
   situationPlaceholder: 'e.g. line overload in the west after the outage',
   solvingTitle: 'Finding the next action…',

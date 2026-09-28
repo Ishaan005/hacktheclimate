@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
+import DispatchDownResult from './components/DispatchDownResult';
 import ScenarioWorkspace from './components/ScenarioWorkspace';
 import SituationInput from './components/SituationInput';
 import StatusMessage from './components/StatusMessage';
 import { solveSituation, SolverUnavailableError, USE_FIXTURE } from './api';
 import { COPY, WORKSPACE_COPY } from './copy';
-import type { WorkspaceScenario } from './types';
+import type { SolverResult } from './types';
 import './App.css';
 
 type SolveState =
   | { status: 'idle' }
   | { status: 'solving' }
-  | { status: 'solved'; scenario: WorkspaceScenario }
+  | { status: 'solved'; result: SolverResult }
   | { status: 'no_match' }
   | { status: 'unavailable'; reason: string }
   | { status: 'error'; reason: string };
@@ -19,8 +20,8 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
 }
 
-// The operator describes the situation; the solver returns one scenario with
-// its recommended action.
+// The operator describes the situation; the solver returns either a scenario
+// with its recommended action or the next-hour dispatch-down risk.
 function App() {
   const [state, setState] = useState<SolveState>({ status: 'idle' });
   const [lastDescription, setLastDescription] = useState('');
@@ -35,9 +36,9 @@ function App() {
     setLastDescription(description);
     setState({ status: 'solving' });
     solveSituation(description, controller.signal)
-      .then((scenario) => {
+      .then((result) => {
         if (controller.signal.aborted) return;
-        setState(scenario ? { status: 'solved', scenario } : { status: 'no_match' });
+        setState(result ? { status: 'solved', result } : { status: 'no_match' });
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -54,7 +55,10 @@ function App() {
   if (state.status === 'solving') {
     result = <StatusMessage tone="loading" title={WORKSPACE_COPY.solvingTitle} consequence={WORKSPACE_COPY.solvingConsequence} />;
   } else if (state.status === 'solved') {
-    result = <ScenarioWorkspace scenario={state.scenario} />;
+    // Key by content so a new answer resets any time the operator changed.
+    result = state.result.kind === 'scenario'
+      ? <ScenarioWorkspace key={state.result.scenario.id} scenario={state.result.scenario} />
+      : <DispatchDownResult key={state.result.target} target={state.result.target} />;
   } else if (state.status === 'no_match') {
     result = <StatusMessage tone="empty" title={WORKSPACE_COPY.noMatchTitle} consequence={WORKSPACE_COPY.noMatchConsequence} />;
   } else if (state.status === 'unavailable') {
@@ -82,8 +86,8 @@ function App() {
     <div className="app">
       <header className="masthead">
         <div className="masthead-inner">
-          <span className="masthead-title">Team Blue</span>
-          <span className="masthead-org">Hack the Climate 2026</span>
+          <span className="masthead-title">{COPY.teamName}</span>
+          <span className="masthead-org">{COPY.eventName}</span>
         </div>
       </header>
       <div className="phase-banner">

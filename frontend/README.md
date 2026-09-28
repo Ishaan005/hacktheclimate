@@ -13,7 +13,10 @@ workspace shows the returned scenario: binding condition, recommended action,
 baseline vs post-action outcome and guardrails. An LLM scenario solver will
 supply that scenario; until it is linked, live mode says the solver is not
 connected. Connect it in `solveSituation` in `src/api.ts`, which must return a
-`WorkspaceScenario` (see `src/types.ts`) or `null` for no match.
+`SolverResult` (see `src/types.ts`) or `null` for no match. A result is either a
+`scenario` or a `dispatch_down_risk` view for a UTC half-hour; the latter shows
+the next-hour card and day chart from `/v1/dispatch-down/forecast` and
+`/v1/dispatch-down/forecast/day` (historical January 2026 replay).
 
 For layout work without backend inputs, use the offline fixture explicitly:
 
@@ -24,7 +27,9 @@ VITE_API_MODE=fixture npm run dev
 In fixture mode, descriptions are keyword-matched against the invented
 scenarios in `src/fixtures/illustrativeScenarios.ts`, labelled as illustrative.
 They are layout samples, not model results. Try "line overload in the west",
-"low voltage north-west evening" or "SNSP overnight".
+"low voltage north-west evening" or "SNSP overnight". A description containing
+"dispatch-down" returns the replay view, at a time such as "2026-01-20 14:30"
+if one is named.
 
 The workspace follows [UX plan](../docs/UX_PLAN_10PM28.md) phase 1. The earlier
 forecast, planning and network panels are not on screen; their components and

@@ -4,7 +4,8 @@ import App from './App';
 import OutcomeComparisonPanel from './components/OutcomeComparisonPanel';
 import { FORBIDDEN_PHRASES, WORKSPACE_COPY } from './copy';
 import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
-import { dispatchDownReductionPct, resolveSituation } from './scenarios';
+import { DEFAULT_TARGET } from './dispatchDown';
+import { dispatchDownReductionPct, resolveFixtureSolver, resolveSituation } from './scenarios';
 
 const [thermal, voltage, snsp] = illustrativeScenarios;
 
@@ -59,6 +60,16 @@ describe('situation input and workspace', () => {
     expect(within(region).getByText(snsp.noActionReason as string)).toBeInTheDocument();
   });
 
+  it('returns the next-hour dispatch-down risk and its day chart', async () => {
+    render(<App />);
+    submitSituation('What is the dispatch-down risk next hour?');
+    const card = await screen.findByRole('region', { name: 'Next-hour dispatch-down risk' });
+    expect(await within(card).findByText('High risk')).toBeInTheDocument();
+    expect(within(card).getByText('95.4%')).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /Dispatch-down risk through/ })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: thermal.title })).not.toBeInTheDocument();
+  });
+
   it('says so when nothing matches', async () => {
     render(<App />);
     submitSituation('xyzzy plugh');
@@ -80,5 +91,14 @@ describe('situation matcher', () => {
     expect(resolveSituation('SNSP overnight', illustrativeScenarios)?.id).toBe(snsp.id);
     expect(resolveSituation('   ', illustrativeScenarios)).toBeNull();
     expect(resolveSituation('the and for', illustrativeScenarios)).toBeNull();
+  });
+
+  it('routes dispatch-down questions to the replay view at a valid named time', () => {
+    expect(resolveFixtureSolver('dispatch-down risk at 2026-01-20 14:30', illustrativeScenarios))
+      .toEqual({ kind: 'dispatch_down_risk', target: '2026-01-20T14:30' });
+    // Outside the January replay: fall back to the default time.
+    expect(resolveFixtureSolver('dispatch down 2026-03-01 10:00', illustrativeScenarios))
+      .toEqual({ kind: 'dispatch_down_risk', target: DEFAULT_TARGET });
+    expect(resolveFixtureSolver('overload in the west', illustrativeScenarios)?.kind).toBe('scenario');
   });
 });

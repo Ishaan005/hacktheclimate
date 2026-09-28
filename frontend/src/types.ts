@@ -333,3 +333,9 @@ export type WorkspaceScenario = {
   impact: ActionImpact | null;
   guardrails: Guardrail[];
 };
+
+// What the situation solver can return. The LLM chooses the output type from
+// the operator's description; `target` is a UTC half-hour, 'YYYY-MM-DDTHH:MM'.
+export type SolverResult =
+  | { kind: 'scenario'; scenario: WorkspaceScenario }
+  | { kind: 'dispatch_down_risk'; target: string };

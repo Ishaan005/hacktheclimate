@@ -3,7 +3,8 @@
 // the offline fixture.
 
 import { formatTime } from './format';
-import type { RecommendedAction, WorkspaceScenario } from './types';
+import { DEFAULT_TARGET, validateTarget } from './dispatchDown';
+import type { RecommendedAction, SolverResult, WorkspaceScenario } from './types';
 
 // Reads like a dispatch instruction, e.g.
 // "Issued 14:55 — Generator A to 100 MW by 15:10, effective until 16:30."
@@ -67,4 +68,20 @@ export function resolveSituation(description: string, scenarios: WorkspaceScenar
     }
   }
   return best;
+}
+
+const DISPATCH_DOWN_PATTERN = /dispatch[\s-]*down/i;
+const TARGET_PATTERN = /(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/;
+
+// Offline fixture only: questions about dispatch-down risk get the replay
+// view, at the time named in the description when it is a valid replay
+// half-hour. Anything else is matched against the illustrative scenarios.
+export function resolveFixtureSolver(description: string, scenarios: WorkspaceScenario[]): SolverResult | null {
+  if (DISPATCH_DOWN_PATTERN.test(description)) {
+    const match = description.match(TARGET_PATTERN);
+    const named = match ? `${match[1]}T${match[2]}` : null;
+    return { kind: 'dispatch_down_risk', target: named && !validateTarget(named) ? named : DEFAULT_TARGET };
+  }
+  const scenario = resolveSituation(description, scenarios);
+  return scenario ? { kind: 'scenario', scenario } : null;
 }

@@ -1,37 +1,5 @@
 /* Scenario workspace and situation input. */
 
-.chip {
-  display: inline-block;
-  padding: var(--space-2) var(--space-8);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-12);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-relaxed);
-  white-space: nowrap;
-  color: var(--color-text-muted);
-  background: var(--color-surface-muted);
-}
-
-.chip-within_modelled_limit {
-  color: var(--color-status-within-limit);
-  background: var(--color-success-soft);
-}
-
-.chip-breach {
-  color: var(--color-status-breach);
-  background: var(--color-danger-soft);
-}
-
-.chip-unknown {
-  color: var(--color-warning-text);
-  background: var(--color-warning-soft);
-}
-
-.chip-advisory {
-  color: var(--color-accent);
-  background: var(--color-accent-soft);
-}
-
 /* ---- Situation input ---- */
 
 .situation {
@@ -150,36 +118,6 @@
   }
 }
 
-.card {
-  min-width: 0;
-  padding: var(--space-16) var(--space-20);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-}
-
-.card-kicker {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-8);
-  margin-bottom: var(--space-8);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-14);
-  font-weight: var(--font-weight-semibold);
-}
-
-.card-headline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-8);
-  margin: 0 0 var(--space-8);
-  font-size: var(--font-size-20);
-  font-weight: var(--font-weight-semibold);
-}
-
 /* The binding guardrail is the most prominent guardrail object on screen. */
 .card-binding {
   border-left-width: 4px;
@@ -213,24 +151,6 @@
   line-height: var(--line-height-tight);
 }
 
-.fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: var(--space-8) var(--space-16);
-  margin: 0;
-  font-size: var(--font-size-14);
-}
-
-.fields dt {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-12);
-}
-
-.fields dd {
-  margin: 0;
-  font-weight: var(--font-weight-medium);
-}
-
 /* ---- Outcome comparison ---- */
 
 .outcome-columns {
@@ -257,43 +177,10 @@
   font-weight: var(--font-weight-semibold);
 }
 
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: var(--space-12) var(--space-16);
-  margin: 0;
-}
-
 .metrics-row {
   margin-top: var(--space-16);
   padding-top: var(--space-16);
   border-top: 1px solid var(--color-border);
-}
-
-.metric dd {
-  margin: 0;
-}
-
-.metric-label {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-13);
-}
-
-.metric-value {
-  font-size: var(--font-size-20);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-tight);
-  font-variant-numeric: tabular-nums;
-}
-
-.metric-secondary .metric-value {
-  font-size: var(--font-size-16);
-  font-weight: var(--font-weight-medium);
-}
-
-.metric-detail {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-12);
 }
 
 /* ---- Guardrail strip ---- */

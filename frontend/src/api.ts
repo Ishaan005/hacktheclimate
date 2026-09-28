@@ -1,11 +1,11 @@
 import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
 import { fixtureOperatorView, fixtureOutages, fixtureScenario } from './fixtures/operatorView';
-import { resolveSituation } from './scenarios';
-import type { NetworkDecision, OperatorView, ReviewedOutageOption, WorkspaceScenario } from './types';
+import { resolveFixtureSolver } from './scenarios';
+import type { NetworkDecision, OperatorView, ReviewedOutageOption, SolverResult } from './types';
 
-// The real endpoint is the normal mode. Explicit fixture mode keeps the
-// documented offline scenario available for development and UI tests.
-export const USE_FIXTURE = import.meta.env.VITE_API_MODE === 'fixture' || import.meta.env.MODE === 'test';
+import { USE_FIXTURE } from './mode';
+
+export { USE_FIXTURE };
 type BackendOperatorResponse = Omit<NetworkDecision, 'rows'> & { forecast: NetworkDecision['rows'] };
 
 async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
@@ -88,11 +88,12 @@ export async function fetchReviewedOutages(signal?: AbortSignal): Promise<Review
 // instead of showing a generic error.
 export class SolverUnavailableError extends Error {}
 
-// Turns an operator's situation description into one workspace scenario.
-// Fixture mode matches the illustrative scenarios; null means no match.
-// Live mode waits for the LLM solver endpoint, which is not linked yet.
-export async function solveSituation(description: string, signal?: AbortSignal): Promise<WorkspaceScenario | null> {
-  if (USE_FIXTURE) return resolveSituation(description, illustrativeScenarios);
+// Turns an operator's situation description into one solver result: a
+// workspace scenario or a dispatch-down risk view. Null means no match.
+// Fixture mode matches keywords; live mode waits for the LLM solver endpoint,
+// which is not linked yet.
+export async function solveSituation(description: string, signal?: AbortSignal): Promise<SolverResult | null> {
+  if (USE_FIXTURE) return resolveFixtureSolver(description, illustrativeScenarios);
   void signal;
   throw new SolverUnavailableError('The scenario solver is not connected yet.');
 }

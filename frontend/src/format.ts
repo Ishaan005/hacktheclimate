@@ -14,12 +14,18 @@ const dateTimeFormat = new Intl.DateTimeFormat('en-IE', {
   timeZone: 'UTC',
 });
 
+// Historical API timestamps omit the zone but are UTC. Append Z so the
+// browser does not read them as local time.
+export function parseUtc(value: string): Date {
+  return new Date(/(Z|[+-]\d\d:\d\d)$/.test(value) ? value : `${value}Z`);
+}
+
 export function formatTime(iso: string): string {
-  return timeFormat.format(new Date(iso));
+  return timeFormat.format(parseUtc(iso));
 }
 
 export function formatDateTime(iso: string | null): string {
-  return iso ? `${dateTimeFormat.format(new Date(iso))} UTC` : COPY.notAvailable;
+  return iso ? `${dateTimeFormat.format(parseUtc(iso))} UTC` : COPY.notAvailable;
 }
 
 // Null means missing: never render it as zero.
@@ -46,5 +52,5 @@ export function formatTimeRange(start: string, end: string): string {
 }
 
 export function formatDayTime(iso: string | null): string {
-  return iso ? dateTimeFormat.format(new Date(iso)) : COPY.notAvailable;
+  return iso ? dateTimeFormat.format(parseUtc(iso)) : COPY.notAvailable;
 }
