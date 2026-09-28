@@ -1,36 +1,50 @@
 /* Page frame and top-level layout. */
 
 .masthead {
-  background: var(--brand);
-  color: #fff;
+  background: linear-gradient(90deg, var(--brand-strong), var(--blue-800));
+  color: var(--text-inverse);
 }
 
 .masthead-inner,
 .phase-inner,
 .app-main {
-  max-width: 1120px;
+  max-width: var(--page-width);
   margin: 0 auto;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
 }
 
 .masthead-inner {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 16px;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.masthead-logo {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--blue-500);
+  font-size: var(--text-sm);
+  font-weight: 700;
 }
 
 .masthead-title {
   font-weight: 700;
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
+  letter-spacing: -0.01em;
 }
 
 .masthead-org {
-  font-size: 0.875rem;
-  opacity: 0.85;
+  padding-left: var(--space-3);
+  border-left: 1px solid rgb(255 255 255 / 0.25);
+  font-size: var(--text-sm);
+  color: var(--blue-100);
 }
 
 .phase-banner {
@@ -42,34 +56,40 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 10px;
+  gap: var(--space-1) var(--space-3);
   margin-top: 0;
   margin-bottom: 0;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  font-size: 0.875rem;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .phase-tag {
-  padding: 1px 6px;
-  background: var(--caution);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.8125rem;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .app-main {
-  padding-top: 24px;
+  display: grid;
+  gap: var(--space-6);
+  padding-top: var(--space-8);
   padding-bottom: 48px;
 }
 
 .page-title {
-  margin-bottom: 16px;
-  font-size: 2rem;
+  font-size: var(--text-2xl);
+  font-weight: 700;
 }
 
 .app-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
+  gap: var(--space-6);
 }

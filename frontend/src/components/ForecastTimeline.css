@@ -60,8 +60,8 @@
   background: var(--chart);
 }
 
-.legend-range::before {
-  width: 2px !important;
+.timeline-legend .legend-range::before {
+  width: 2px;
   background: var(--text);
 }
 

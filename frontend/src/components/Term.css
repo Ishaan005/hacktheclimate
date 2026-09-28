@@ -7,10 +7,6 @@
   cursor: help;
 }
 
-.term:focus-visible {
-  outline: 3px solid var(--focus);
-}
-
 .term-tip {
   display: none;
   position: absolute;
@@ -20,8 +16,10 @@
   width: max-content;
   max-width: min(18rem, 75vw);
   padding: 8px 10px;
-  background: var(--text);
-  color: #fff;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  background: var(--brand-strong);
+  color: var(--text-inverse);
   font-size: 0.8125rem;
   font-weight: 400;
   line-height: 1.4;
