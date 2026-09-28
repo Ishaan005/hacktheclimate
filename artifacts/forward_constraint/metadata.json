@@ -1,0 +1,96 @@
+{
+  "model_type": "Two-stage hurdle model (HistGradientBoostingClassifier + HistGradientBoostingRegressor) with Quantile Regressors (q=0.05, 0.10, 0.90, 0.95)",
+  "target_separation": {
+    "target": "constraint_mwh",
+    "separated_from": "curtailment_mwh",
+    "rationale": "Transmission constraints reflect physical grid network limitations and TSO testing, whereas curtailment reflects whole-system stability limits (SNSP, high frequency, RoCoF)."
+  },
+  "forecast_safety": {
+    "principle": "For target T at horizon H, issue time is t_0 = T - H. All grid state features are measured strictly at or before t_0. Only calendar features are evaluated at T.",
+    "leakage_protection": "Chronological target-based splitting ensures no overlap in target timestamps and no post-decision data leakage.",
+    "unresolved_assumption": "constraint_mwh_t0 / curtailment_mwh_t0 are timestamp-correct but EirGrid publication latency for official DD half-hourly figures has not been confirmed. See module docstring."
+  },
+  "artifact_notes": {
+    "fold_models": "Trained up to each fold's training cutoff \u2014 for evaluation/inspection only. NOT for deployment.",
+    "final_fit_models": "Trained on ALL valid Jan\u2013Aug data after evaluation is complete. These are the deployable artifacts."
+  },
+  "disclaimers": [
+    "National probability and expected constraint MWh only: makes NO location or nodal claim.",
+    "Transmission constraints occur at specific physical bottlenecks; national MWh does not specify which transmission line or node is constrained.",
+    "Makes NO avoided-energy claim: flexible load can only relieve constraints if physically sited behind the relevant transmission constraint.",
+    "Longer horizons (12h-24h) without prospective NWP weather forecasts suffer performance degradation, as historical system lags decay in predictive power.",
+    "Quantile prediction intervals are NOT conformally calibrated; empirical coverage is measured on held-out folds only."
+  ],
+  "fold_model_artifacts": {
+    "1h": "artifacts/forward_constraint/model_1h_fold.joblib",
+    "4h": "artifacts/forward_constraint/model_4h_fold.joblib",
+    "6h": "artifacts/forward_constraint/model_6h_fold.joblib",
+    "12h": "artifacts/forward_constraint/model_12h_fold.joblib",
+    "24h": "artifacts/forward_constraint/model_24h_fold.joblib"
+  },
+  "final_fit_model_artifacts": {
+    "1h": "artifacts/forward_constraint/model_1h_final_fit.joblib",
+    "4h": "artifacts/forward_constraint/model_4h_final_fit.joblib",
+    "6h": "artifacts/forward_constraint/model_6h_final_fit.joblib",
+    "12h": "artifacts/forward_constraint/model_12h_final_fit.joblib",
+    "24h": "artifacts/forward_constraint/model_24h_final_fit.joblib"
+  },
+  "feature_count": 45,
+  "feature_names": [
+    "target_hour_sin",
+    "target_hour_cos",
+    "target_dow_sin",
+    "target_dow_cos",
+    "target_month_sin",
+    "target_month_cos",
+    "target_is_weekend",
+    "eirgrid_ie_demand_mw_t0",
+    "eirgrid_ie_wind_availability_mw_t0",
+    "eirgrid_ie_wind_generation_mw_t0",
+    "eirgrid_ie_solar_availability_mw_t0",
+    "eirgrid_ie_solar_generation_mw_t0",
+    "eirgrid_ie_hydro_mw_t0",
+    "eirgrid_ewic_ic_mw_t0",
+    "eirgrid_greenlink_ic_mw_t0",
+    "eirgrid_moyle_ic_mw_t0",
+    "eirgrid_interjurisdictional_flow_mw_t0",
+    "eirgrid_snsp_pct_t0",
+    "eirgrid_ai_demand_mw_t0",
+    "eirgrid_ai_generation_mw_t0",
+    "eirgrid_ai_wind_availability_mw_t0",
+    "eirgrid_ai_oversupply_mw_t0",
+    "curtailment_mwh_t0",
+    "constraint_mwh_t0",
+    "eirgrid_ie_demand_mw_delta_1h_t0",
+    "eirgrid_ie_demand_mw_delta_4h_t0",
+    "eirgrid_ie_demand_mw_delta_24h_t0",
+    "eirgrid_ie_wind_availability_mw_delta_1h_t0",
+    "eirgrid_ie_wind_availability_mw_delta_4h_t0",
+    "eirgrid_ie_wind_availability_mw_delta_24h_t0",
+    "eirgrid_snsp_pct_delta_1h_t0",
+    "eirgrid_snsp_pct_delta_4h_t0",
+    "eirgrid_snsp_pct_delta_24h_t0",
+    "constraint_mwh_delta_1h_t0",
+    "constraint_mwh_delta_4h_t0",
+    "constraint_mwh_delta_24h_t0",
+    "eirgrid_ie_wind_availability_mw_roll6h_mean_t0",
+    "eirgrid_ie_wind_availability_mw_roll24h_mean_t0",
+    "eirgrid_ie_wind_availability_mw_roll24h_max_t0",
+    "eirgrid_ie_demand_mw_roll6h_mean_t0",
+    "eirgrid_ie_demand_mw_roll24h_mean_t0",
+    "eirgrid_ie_demand_mw_roll24h_max_t0",
+    "constraint_mwh_roll6h_mean_t0",
+    "constraint_mwh_roll24h_mean_t0",
+    "constraint_mwh_roll24h_max_t0"
+  ],
+  "cal_lag_feature_names": [
+    "target_hour_sin",
+    "target_hour_cos",
+    "target_dow_sin",
+    "target_dow_cos",
+    "target_month_sin",
+    "target_month_cos",
+    "target_is_weekend",
+    "constraint_mwh_t0"
+  ]
+}
