@@ -21,6 +21,11 @@ from .proxy import add_pressure_proxy
 
 from .constraints.routes import router as constraint_router
 
+try:  # chat is optional: install requirements-chat.txt to enable it
+    from .chat.routes import router as chat_router
+except ImportError:  # pragma: no cover
+    chat_router = None
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
@@ -28,6 +33,8 @@ app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
 app.include_router(demo_router)
 app.include_router(dispatch_down_router)
 app.include_router(constraint_router)
+if chat_router is not None:
+    app.include_router(chat_router)
 DATA = Path("data/processed/canonical_ie.csv")
 LABELED_DATA = Path("data/processed/training_table_labeled_jan2026.csv")
 GFS_FORECAST_PATH = DEFAULT_OUTPUT_DIR / "latest.json"

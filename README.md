@@ -64,3 +64,25 @@ curl -sS http://127.0.0.1:8000/v1/demo/absorption \
 - [Documentation index](docs/README.md): source audits, historical baselines, network case and deployment guides.
 
 Original organiser CSVs and EirGrid workbooks are outside Git. Processed datasets and historical model artifacts are retained for reproducibility. Run the GFS inference job after 06:00 UTC to create a current forecast; a clone has no live forecast snapshot until that job succeeds. Pull requests and pushes run the Python checks in [GitHub Actions](.github/workflows/tests.yml). For a local container and later Azure access, use the [Azure handoff](docs/AZURE_HANDOFF.md).
+
+## Chat assistant (Azure OpenAI + LangGraph)
+
+`POST /v1/chat` answers operator questions using the forecast models as tools. Setup:
+
+```bash
+python -m pip install -r requirements-chat.txt
+az login --tenant 6c51c659-9d52-41af-81f7-dde16380e813
+az account set --subscription eb517801-6c35-40b5-8651-3fea5cc570b0
+scripts/fetch_azure_openai_env.sh 12   # writes the git-ignored .env from Key Vault
+```
+
+A plain `az login` signs in to your personal directory and reports "No subscriptions found". Use the hackathon tenant above. If it is missing from Portal settings → Directories + subscriptions, accept the organiser invitation or ask to be added to `grp-hack-team12`.
+
+To open a shell on the team 12 VM after signing in:
+
+```bash
+az extension add --name ssh   # once
+az ssh vm -n vm-hack-team12 -g rg-hack-team12-swc
+```
+
+Send `{"message": "...", "thread_id": "optional", "selected_target": "2026-01-24T01:00"}`; reuse the returned `thread_id` to continue a conversation. `GET /v1/chat/status` shows whether credentials are configured. Change `AZURE_OPENAI_DEPLOYMENT` in `.env` to switch model (`gpt-4.1`, `gpt-4.1-mini`, `gpt-4o`).
