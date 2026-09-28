@@ -55,8 +55,8 @@ under a unity-power-factor assumption; it is not a measured MVA thermal margin.
 
 ## Observed screen on the downloaded case
 
-The same original case injections were used in each solve; the only changes
-were the named branch removals. The active-power flow sign follows the RAW
+The same original case injections and the two scheduled 40 MW Scotland-to-Ireland
+DC transfers were used in each solve; the only changes were the named branch removals. The active-power flow sign follows the RAW
 branch orientation (Cashla to Tynagh).
 The [generator crosswalk](NETWORK_GENERATOR_CROSSWALK.md) currently has only a
 small reviewed station-proxy subset and an illustrative renewable input.
@@ -65,12 +65,12 @@ regional generation and load assumptions is available.
 
 | Run | Cashla–Tynagh flow | DC loading proxy against 761 MVA rate A | Solver status |
 | --- | ---: | ---: | --- |
-| Intact | -157.010 MW | 20.632% | `ok` |
-| Cashla–Flagford removed | -108.265 MW | 14.227% | `ok` |
-| Plus Cashla–Prospect removed | -138.597 MW | 18.212% | `ok` |
+| Intact | -153.557 MW | 20.178% | `ok` |
+| Cashla–Flagford removed | -107.750 MW | 14.159% | `ok` |
+| Plus Cashla–Prospect removed | -136.898 MW | 17.989% | `ok` |
 
-The scheduled-outage change is +48.744 MW in signed flow on this monitor
-relative to intact; the additional contingency changes it by -30.331 MW
+The scheduled-outage change is +45.807 MW in signed flow on this monitor
+relative to intact; the additional contingency changes it by -29.148 MW
 relative to the planned-outage run. These are model outputs, not measured
 flows. No overload is shown on this selected monitor in this case.
 

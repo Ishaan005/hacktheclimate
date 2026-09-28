@@ -45,6 +45,13 @@ from sklearn.metrics import (
     root_mean_squared_error,
 )
 
+
+NETWORK_FORECAST_FEATURE_COLUMNS = [
+    "max_dc_loading_proxy_pct",
+    "minimum_headroom_proxy_mw",
+    "n_assets_above_80pct",
+]
+
 BASE_SYSTEM_COLUMNS = [
     "eirgrid_ie_demand_mw",
     "eirgrid_ie_wind_availability_mw",
@@ -85,10 +92,66 @@ def calendar_encodings(timestamp: pd.Series, prefix: str = "target_") -> pd.Data
     )
 
 
+def _attach_network_forecast_features(
+    df: pd.DataFrame,
+    network_forecast_df: pd.DataFrame,
+    feature_cols: list[str],
+) -> None:
+    """Attach target-time network forecasts that were available by decision time.
+
+    Historical training data must record both `issue_time` (when a network
+    forecast became available) and `valid_time` (the target half-hour). For each
+    decision row we select the latest forecast for its target timestamp whose
+    issue_time is no later than that row's decision timestamp. This prevents
+    target leakage from ex-post network states or later forecast revisions.
+    """
+    required = {"issue_time", "valid_time", *NETWORK_FORECAST_FEATURE_COLUMNS}
+    missing = required - set(network_forecast_df.columns)
+    if missing:
+        raise ValueError(f"network forecast frame missing columns: {sorted(missing)}")
+
+    network = network_forecast_df.copy()
+    network["issue_time"] = pd.to_datetime(network["issue_time"], utc=True).dt.tz_convert(None)
+    network["valid_time"] = pd.to_datetime(network["valid_time"], utc=True).dt.tz_convert(None)
+    if network.duplicated(["issue_time", "valid_time"]).any():
+        raise ValueError("network forecast frame has duplicate issue_time/valid_time rows")
+    if (network["issue_time"] > network["valid_time"]).any():
+        raise ValueError("network forecast issue_time cannot be later than valid_time")
+
+    lookup = pd.DataFrame(
+        {
+            "_network_row": np.arange(len(df)),
+            "_decision_time": pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None),
+            "_target_time": pd.to_datetime(df["target_timestamp"], utc=True).dt.tz_convert(None),
+        }
+    )
+    candidates = lookup.merge(
+        network,
+        left_on="_target_time",
+        right_on="valid_time",
+        how="left",
+    )
+    candidates = candidates[
+        candidates["issue_time"].notna()
+        & (candidates["issue_time"] <= candidates["_decision_time"])
+    ]
+    latest = (
+        candidates.sort_values(["_network_row", "issue_time"])
+        .drop_duplicates("_network_row", keep="last")
+        .set_index("_network_row")
+    )
+    for column in NETWORK_FORECAST_FEATURE_COLUMNS:
+        feature_name = f"network_{column}_target"
+        values = latest[column] if column in latest else pd.Series(dtype=float)
+        df[feature_name] = df.index.to_series().map(values).astype(float)
+        feature_cols.append(feature_name)
+
+
 def prepare_forecast_frame(
     raw_df: pd.DataFrame,
     horizon_hours: float,
     threshold_mwh: float = 5.0,
+    network_forecast_df: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, list[str], list[str]]:
     """Build strictly forecast-safe features for a given horizon H (in hours).
 
@@ -189,6 +252,11 @@ def prepare_forecast_frame(
     if "constraint_mwh" in df.columns:
         is_24h_prior_base = df["timestamp"].sub(df["timestamp"].shift(48)).eq(pd.Timedelta(hours=24))
         df["constraint_mwh_24h_ago_t0"] = df["constraint_mwh"].shift(48).where(is_24h_prior_base)
+
+    # 6. Target-time network features are optional, but when supplied they must
+    # carry point-in-time issue metadata so later revisions cannot leak backward.
+    if network_forecast_df is not None:
+        _attach_network_forecast_features(df, network_forecast_df, feature_cols)
 
     # Target event indicator
     df["target_constraint_event"] = (df["target_constraint_mwh"] > threshold_mwh).astype(float)
