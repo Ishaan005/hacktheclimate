@@ -25,13 +25,26 @@ def _flow_key(flow: Mapping[str, Any]) -> tuple[str, str]:
     return str(flow["asset_type"]), str(flow["asset_id"])
 
 
-def _present_in_flows(asset: Asset, flows: Mapping[tuple[str, str], Any]) -> bool:
-    key = (asset.asset_type, asset.asset_id)
-    if key in flows:
-        return True
-    return asset.asset_type == "transformer" and any(
-        asset_type == "transformer" and asset_id.startswith(asset.asset_id + "/w")
-        for asset_type, asset_id in flows
+def _active_case_asset(case: Any, asset: Asset) -> bool:
+    if asset.asset_type == "branch":
+        return any(
+            row["asset_id"] == asset.asset_id and row["in_service"]
+            for row in case.branches
+        )
+    return any(
+        row["in_service"]
+        and (
+            row["transformer_id"] == asset.asset_id
+            or (
+                row.get("third_bus")
+                and asset.asset_id in {
+                    row["transformer_id"] + "/w1",
+                    row["transformer_id"] + "/w2",
+                    row["transformer_id"] + "/w3",
+                }
+            )
+        )
+        for row in case.transformers
     )
 
 
@@ -40,7 +53,7 @@ def _summarize(result: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "status": result["status"],
         "reason": result.get("reason"),
-        "balance_mw": result.get("balance_mw"),
+        "source_injection_residual_mw": result.get("balance_mw"),
         "islands": result.get("islands", []),
         "flows": [
             {
@@ -51,7 +64,7 @@ def _summarize(result: Mapping[str, Any]) -> dict[str, Any]:
                 "flow_mw": flow["flow_mw"],
                 "rating_mva": flow["rating_mva"],
                 "dc_loading_pct_proxy": flow["loading_pct"],
-                "dc_headroom_mva_proxy": (
+                "dc_headroom_mw_unity_pf_proxy": (
                     flow["rating_mva"] - abs(flow["flow_mw"])
                     if flow["rating_mva"] is not None
                     else None
@@ -109,6 +122,11 @@ def compare_network_scenarios(
     if planned_outage == contingency:
         raise ValueError("contingency must differ from the planned outage")
     if any(
+        asset.asset_type == "transformer" and asset.asset_id.endswith(("/w1", "/w2", "/w3"))
+        for asset in (planned_outage, contingency)
+    ):
+        raise ValueError("disable the parent transformer ID, not an individual winding")
+    if any(
         monitored == disabled
         or (
             monitored.asset_type == disabled.asset_type == "transformer"
@@ -130,17 +148,17 @@ def compare_network_scenarios(
             injection_overrides_mw=overrides,
         )
 
-    intact = solve(())
-    intact_flows = {_flow_key(flow): flow for flow in intact["flows"]}
     for label, asset in (
         ("planned outage", planned_outage),
         ("contingency", contingency),
         ("monitored asset", monitored),
     ):
-        if not _present_in_flows(asset, intact_flows):
+        if not _active_case_asset(case, asset):
             raise ValueError(f"{label} is absent or out of service in the intact case: {asset}")
+    intact = solve(())
+    intact_flows = {_flow_key(flow): flow for flow in intact["flows"]}
     monitor_key = (monitored.asset_type, monitored.asset_id)
-    if monitor_key not in intact_flows:
+    if intact["status"] != "unsolved" and monitor_key not in intact_flows:
         raise ValueError("monitor a specific transformer winding ID, not its three-winding parent")
 
     outage = solve((planned_outage,))

@@ -52,4 +52,4 @@ python scripts/reconcile_network_outages.py \
   --output .cache/outage-audit.json
 ```
 
-The `network_case` CSVs come from the TYTFS import work in issue #10. If they are unavailable, omit the three case arguments and `--reviewed-asset-id` to audit the two publications without an asset switch.
+The `network_case` CSVs come from the TYTFS import work in issue #9. If they are unavailable, omit the three case arguments and `--reviewed-asset-id` to audit the two publications without an asset switch.
