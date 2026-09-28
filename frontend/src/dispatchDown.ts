@@ -1,4 +1,4 @@
-import { USE_FIXTURE } from './api';
+import { USE_FIXTURE } from './mode';
 
 export type DispatchDownRisk = 'low' | 'medium' | 'high';
 

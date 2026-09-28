@@ -3,7 +3,7 @@
 // smoke test can check that copy never overclaims.
 
 export const COPY = {
-  appTitle: 'Constraint outlook',
+  appTitle: 'Scenario decision workspace',
   appPhase: 'Prototype',
   teamName: 'Team Blue',
   eventName: 'Hack the Climate 2026',
@@ -28,7 +28,7 @@ export const COPY = {
   assetMatchConfidence: 'Asset match',
 
   notAvailable: 'Not available',
-  fixtureBanner: 'Offline sample: scenario values copied from docs/NETWORK_SCENARIO_DEMO.md. Not served by the API yet.',
+  fixtureBanner: 'Offline sample: workspace scenarios are illustrative, with invented values. Not served by the API yet.',
 } as const;
 
 // Consequence-led state messages: what the operator can and cannot rely on.
@@ -52,6 +52,68 @@ export const STATE_COPY = {
     'No flow change is shown because the equipment could not be matched to the planning model with enough confidence.',
   retry: 'Try again',
   independence: 'The planning scenario does not change the national forecast. They answer separate questions.',
+} as const;
+
+// Scenario workspace (UX plan phase 1).
+export const WORKSPACE_COPY = {
+  advisory: 'Advisory',
+  advisoryNote: 'Recommends an operator instruction. Does not send instructions to assets.',
+  illustrative: 'Illustrative',
+  illustrativeNote: 'Illustrative scenario: invented values for layout. Not a model result.',
+  live: 'Solver result',
+  situationLabel: 'Describe the situation',
+  situationHint: 'Name the area, asset, limit and time, or ask for dispatch-down risk. The workspace returns the recommended next action or the risk estimate.',
+  situationSubmit: 'Find next action',
+  situationPlaceholder: 'e.g. line overload in the west after the outage',
+  solvingTitle: 'Finding the next action…',
+  solvingConsequence: 'No action is shown until the result arrives.',
+  noMatchTitle: 'No scenario found for this description',
+  noMatchConsequence: 'No action is shown. Add the area, asset or limit and try again.',
+  solverUnavailableTitle: 'Scenario solver not connected',
+  solverUnavailableConsequence: 'No action can be returned yet. Use fixture mode to preview the workspace layout.',
+  solverErrorTitle: 'Scenario solver did not respond',
+  solverErrorConsequence: 'No action is shown. Try again.',
+  comparisonLabel: 'Compare',
+  comparisonBaseline: 'Baseline vs recommended action',
+  lastModelRun: 'Last model run',
+  timeZoneNote: 'All times UTC',
+  bindingTitle: 'Binding condition',
+  bindingNone: 'No binding condition identified',
+  actionTitle: 'Recommended action',
+  actionNone: 'No recommended action',
+  outcomeTitle: 'New outcome',
+  baseline: 'Baseline',
+  postAction: 'Post-action',
+  guardrailTitle: 'Guardrails',
+} as const;
+
+export const GUARDRAIL_STATUS_LABEL = {
+  within_modelled_limit: 'Within modelled limit',
+  breach: 'Breach',
+  unknown: 'Unknown',
+} as const;
+
+export const GUARDRAIL_LABEL = {
+  voltage: 'Voltage',
+  thermal: 'Thermal capacity',
+  snsp: 'SNSP',
+  inertia: 'Inertia',
+  frequency: 'Frequency',
+} as const;
+
+export const ACTION_FAMILY_LABEL = {
+  generator_setpoint: 'Generator active-power output',
+  commitment_change: 'Commitment state change',
+  storage_charging: 'Storage charging',
+  reactive_control: 'Voltage or reactive-power control',
+  renewable_limit: 'Renewable active-power limit',
+  interconnector_request: 'Interconnector flow change',
+} as const;
+
+export const EXECUTABILITY_LABEL = {
+  executable: 'Executable',
+  conditional: 'Conditional',
+  unconfirmed: 'Unconfirmed',
 } as const;
 
 // Plain-language definitions shown in tooltips.
@@ -94,5 +156,8 @@ export const FORBIDDEN_PHRASES = [
   'passes n-1',
   'fails n-1',
   'curtailment forecast',
-  'avoided',
+  'grid safe',
+  'optimised outcome',
+  'high-impact',
+  'best action',
 ];

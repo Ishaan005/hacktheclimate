@@ -247,3 +247,95 @@ export type NetworkDecision = {
     recommendation_reason: string;
   };
 };
+
+// ---- Scenario workspace (UX plan phase 1) ----
+// View model for Scenario → Binding condition → Recommended action → New
+// outcome. Illustrative fixtures and the live operator view both map into it,
+// so no component reads a backend shape directly.
+
+export type GuardrailStatus = 'within_modelled_limit' | 'breach' | 'unknown';
+
+export type GuardrailName = 'voltage' | 'thermal' | 'snsp' | 'inertia' | 'frequency';
+
+export type Guardrail = {
+  name: GuardrailName;
+  baseline: GuardrailStatus;
+  postAction: GuardrailStatus;
+  margin: string | null;
+  timestamp: string | null;
+  note: string | null;
+};
+
+export type BindingCondition = {
+  type: string;
+  metric: string;
+  location: string | null;
+  margin: string | null;
+  status: GuardrailStatus;
+};
+
+export type ActionFamily =
+  | 'generator_setpoint'
+  | 'commitment_change'
+  | 'storage_charging'
+  | 'reactive_control'
+  | 'renewable_limit'
+  | 'interconnector_request';
+
+// Direct dispatch is executable; an interconnector request stays unconfirmed
+// until the counterparty confirms it.
+export type Executability = 'executable' | 'conditional' | 'unconfirmed';
+
+export type RecommendedAction = {
+  family: ActionFamily;
+  assetName: string;
+  location: string;
+  currentState: string;
+  targetState: string;
+  issueTime: string;
+  startTime: string;
+  targetTime: string;
+  effectiveUntil: string;
+  earliestExecution: string | null;
+  executability: Executability;
+};
+
+// Per-state values shown side by side. Null means unknown, never zero.
+export type OutcomeState = {
+  securityResult: GuardrailStatus;
+  dispatchDownWasteMwh: number | null;
+};
+
+// Values that only exist because an action is taken.
+export type ActionImpact = {
+  grossMarketOpportunityEur: number | null;
+  netFinancialValueEur: number | null;
+  estimatedAvoidedEmissionsTco2e: number | null;
+};
+
+export type ScenarioSource = 'illustrative' | 'live';
+// placeholder workspace scenario
+export type WorkspaceScenario = {
+  id: string;
+  title: string;
+  intervalStart: string;
+  intervalEnd: string;
+  source: ScenarioSource;
+  modelRunAt: string | null;
+  summary: string;
+  // Extra words the situation matcher should recognise for this scenario.
+  keywords: string[];
+  binding: BindingCondition | null;
+  action: RecommendedAction | null;
+  noActionReason: string | null;
+  baseline: OutcomeState;
+  postAction: OutcomeState | null;
+  impact: ActionImpact | null;
+  guardrails: Guardrail[];
+};
+
+// What the situation solver can return. The LLM chooses the output type from
+// the operator's description; `target` is a UTC half-hour, 'YYYY-MM-DDTHH:MM'.
+export type SolverResult =
+  | { kind: 'scenario'; scenario: WorkspaceScenario }
+  | { kind: 'dispatch_down_risk'; target: string };

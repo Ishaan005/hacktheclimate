@@ -1,95 +1,79 @@
 /* Page frame and top-level layout. */
 
 .masthead {
-  background: linear-gradient(90deg, var(--brand-strong), var(--blue-800));
-  color: var(--text-inverse);
+  background: var(--color-accent-strong);
+  color: var(--color-text-inverse);
 }
 
 .masthead-inner,
 .phase-inner,
 .app-main {
-  max-width: var(--page-width);
+  max-width: 1120px;
   margin: 0 auto;
-  padding-left: var(--space-4);
-  padding-right: var(--space-4);
+  padding-left: var(--space-16);
+  padding-right: var(--space-16);
 }
 
 .masthead-inner {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-3);
-  padding-top: var(--space-3);
-  padding-bottom: var(--space-3);
-}
-
-.masthead-logo {
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--blue-500);
-  font-size: var(--text-sm);
-  font-weight: 700;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-16);
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-12);
 }
 
 .masthead-title {
-  font-weight: 700;
-  font-size: var(--text-lg);
-  letter-spacing: -0.01em;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-18);
 }
 
 .masthead-org {
-  padding-left: var(--space-3);
-  border-left: 1px solid rgb(255 255 255 / 0.25);
-  font-size: var(--text-sm);
-  color: var(--blue-100);
+  font-size: var(--font-size-14);
+  opacity: 0.85;
 }
 
 .phase-banner {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-strong);
 }
 
 .phase-inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1) var(--space-3);
+  gap: var(--space-4) var(--space-12);
   margin-top: 0;
   margin-bottom: 0;
-  padding-top: var(--space-2);
-  padding-bottom: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+  font-size: var(--font-size-14);
 }
 
 .phase-tag {
-  padding: 1px var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--accent-soft);
-  color: var(--accent-hover);
-  font-weight: 600;
-  font-size: var(--text-xs);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  padding: var(--space-2) var(--space-8);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-strong);
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-12);
 }
 
 .app-main {
   display: grid;
-  gap: var(--space-6);
-  padding-top: var(--space-8);
-  padding-bottom: 48px;
+  gap: var(--space-16);
+  padding-top: var(--space-24);
+  padding-bottom: var(--space-48);
 }
 
+
 .page-title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
+  font-size: var(--font-size-28);
+  font-weight: var(--font-weight-bold);
 }
 
 .app-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
+  gap: var(--space-24);
 }

@@ -1,0 +1,205 @@
+/* Next-hour dispatch-down result: risk card and day chart. Chart colours
+   follow the guide: accent for the model line, muted neutral for bars,
+   neutral dashed lines for display bands. */
+
+.dd-result {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.dd-card {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.dd-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-12) var(--space-24);
+}
+
+.dd-header h2 {
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dd-form {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: end;
+  gap: var(--space-4) var(--space-12);
+}
+
+.dd-form .field-hint {
+  grid-column: 1 / -1;
+}
+
+.dd-body {
+  display: grid;
+  gap: var(--space-16);
+  transition: opacity 0.15s;
+}
+
+.dd-busy {
+  opacity: 0.6;
+}
+
+.dd-headline-time {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-regular);
+}
+
+.meter {
+  display: block;
+  height: var(--space-8);
+  margin-top: var(--space-8);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-strong);
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.dd-limits {
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-13);
+}
+
+.dd-limits-title {
+  margin: 0 0 var(--space-4);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dd-limits ul {
+  margin: 0;
+  padding-left: var(--space-20);
+  color: var(--color-text-muted);
+}
+
+/* ---- Day chart ---- */
+
+.ddc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-13);
+  color: var(--color-text-muted);
+}
+
+.ddc-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.ddc-key {
+  display: inline-block;
+  width: var(--space-16);
+  border-radius: var(--space-2);
+}
+
+.ddc-key-line {
+  height: 3px;
+  background: var(--color-accent);
+}
+
+.ddc-key-bar {
+  height: var(--space-12);
+  background: var(--color-border-strong);
+}
+
+.ddc-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-12);
+  min-height: 28px;
+  font-size: var(--font-size-14);
+  font-variant-numeric: tabular-nums;
+}
+
+.ddc-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ddc-grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.ddc-axis {
+  font-size: var(--font-size-12);
+  fill: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ddc-threshold {
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+}
+
+.ddc-threshold-label {
+  font-size: var(--font-size-12);
+  font-weight: var(--font-weight-semibold);
+  fill: var(--color-text);
+  /* Surface-coloured halo keeps the label readable over bars. */
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.ddc-bar {
+  fill: var(--color-border-strong);
+}
+
+.ddc-bar-active {
+  fill: var(--color-text-muted);
+}
+
+.ddc-line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.ddc-selected {
+  stroke: var(--color-text);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.ddc-dot {
+  fill: var(--color-surface);
+  stroke: var(--color-accent);
+  stroke-width: 3;
+}
+
+.ddc-hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.ddc-note {
+  margin: 0;
+  font-size: var(--font-size-12);
+  color: var(--color-text-muted);
+}

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import StatusMessage from './StatusMessage';
 import { fetchDispatchDownDay, type DispatchDownDay } from '../dispatchDown';
-import './DispatchDownChart.css';
+import './DispatchDown.css';
 
 const W = 760;
 const H = 300;
-const PAD = { top: 16, right: 56, bottom: 36, left: 48 };
+const PAD = { top: 32, right: 56, bottom: 36, left: 48 };
 const PLOT_W = W - PAD.left - PAD.right;
 const PLOT_H = H - PAD.top - PAD.bottom;
 
@@ -58,15 +58,15 @@ function DispatchDownChart({ target }: Props) {
   const peak = points.reduce<number>((best, p, i) => (p.event_probability > (points[best]?.event_probability ?? -1) ? i : best), 0);
 
   return (
-    <section className="dd-card ddc" aria-labelledby="ddc-heading">
+    <section className="card dd-card" aria-labelledby="ddc-heading">
       <header className="dd-header">
         <div>
-          <p className="eyebrow">Replay across the day</p>
+          <p className="card-kicker">Replay across the day</p>
           <h2 id="ddc-heading">Dispatch-down risk through {day ? formatDate(day.date) : 'the day'}</h2>
         </div>
         <ul className="ddc-legend" aria-label="Legend">
-          <li><span className="ddc-key ddc-key-line" />Chance of dispatch-down (left axis)</li>
-          <li><span className="ddc-key ddc-key-bar" />Expected MWh (right axis)</li>
+          <li><span className="ddc-key ddc-key-line" aria-hidden="true" />Chance of dispatch-down (left axis)</li>
+          <li><span className="ddc-key ddc-key-bar" aria-hidden="true" />Expected MWh (right axis)</li>
         </ul>
       </header>
 
@@ -79,10 +79,10 @@ function DispatchDownChart({ target }: Props) {
           <div className="ddc-readout" aria-live="polite">
             {activePoint ? (
               <>
-                <strong>{timeOf(activePoint.target_timestamp)} UTC</strong>
+                <strong className="mono">{timeOf(activePoint.target_timestamp)}</strong>
                 <span>{(activePoint.event_probability * 100).toFixed(1)}% chance</span>
                 <span>{activePoint.expected_dispatch_down_mwh.toFixed(1)} MWh expected</span>
-                {active === selected && hover === null && <span className="tag tag-changed">Selected time</span>}
+                {active === selected && hover === null && <span className="chip chip-advisory">Selected time</span>}
               </>
             ) : <span>Hover the chart to inspect a half-hour.</span>}
           </div>
@@ -100,11 +100,7 @@ function DispatchDownChart({ target }: Props) {
                 <text className="ddc-axis" x={W - PAD.right + 8} y={yP(t) + 4}>{Math.round(maxMwh * t)}</text>
               </g>
             ))}
-            <text className="ddc-axis" x={W - PAD.right + 8} y={PAD.top - 4}>MWh</text>
-            <line className="ddc-threshold ddc-threshold-high" x1={PAD.left} x2={W - PAD.right} y1={yP(0.7)} y2={yP(0.7)} />
-            <text className="ddc-threshold-label ddc-threshold-high-text" x={PAD.left + 4} y={yP(0.7) - 4}>High (70%)</text>
-            <line className="ddc-threshold ddc-threshold-elev" x1={PAD.left} x2={W - PAD.right} y1={yP(0.3)} y2={yP(0.3)} />
-            <text className="ddc-threshold-label ddc-threshold-elev-text" x={PAD.left + 4} y={yP(0.3) - 4}>Elevated (30%)</text>
+            <text className="ddc-axis" x={W - PAD.right + 8} y={PAD.top - 16}>MWh</text>
 
             {points.map((p, i) => (
               <rect
@@ -116,11 +112,16 @@ function DispatchDownChart({ target }: Props) {
                 height={Math.max(0, PAD.top + PLOT_H - yM(p.expected_dispatch_down_mwh))}
               />
             ))}
+            <line className="ddc-threshold" x1={PAD.left} x2={W - PAD.right} y1={yP(0.7)} y2={yP(0.7)} />
+            <line className="ddc-threshold" x1={PAD.left} x2={W - PAD.right} y1={yP(0.3)} y2={yP(0.3)} />
             <path className="ddc-line" d={line} />
             {selected >= 0 && <line className="ddc-selected" x1={x(selected)} x2={x(selected)} y1={PAD.top} y2={PAD.top + PLOT_H} />}
             {activePoint && active !== null && (
               <circle className="ddc-dot" cx={x(active)} cy={yP(activePoint.event_probability)} r={5} />
             )}
+            {/* Band labels last, with a halo, so bars and the line never cover them. */}
+            <text className="ddc-threshold-label" x={PAD.left + 6} y={yP(0.7) - 6}>High (70%)</text>
+            <text className="ddc-threshold-label" x={PAD.left + 6} y={yP(0.3) - 6}>Elevated (30%)</text>
             {points.map((p, i) => (i % 6 === 0 ? (
               <text key={`t${i}`} className="ddc-axis" x={x(i)} y={H - PAD.bottom + 18} textAnchor="middle">{timeOf(p.target_timestamp)}</text>
             ) : null))}
@@ -137,12 +138,12 @@ function DispatchDownChart({ target }: Props) {
               />
             ))}
           </svg>
-          <dl className="dd-meta">
+          <dl className="fields">
             <div><dt>Peak chance</dt><dd>{(points[peak].event_probability * 100).toFixed(1)}% at {timeOf(points[peak].target_timestamp)}</dd></div>
             <div><dt>Expected total for the day</dt><dd>{totalMwh.toFixed(0)} MWh</dd></div>
             <div><dt>Half-hours at high risk</dt><dd>{points.filter((p) => p.event_probability >= 0.7).length} of {n}</dd></div>
           </dl>
-          <p className="ddc-note">Each point is a separate one-hour-ahead historical replay. Expected MWh is chance × predicted volume, national total.</p>
+          <p className="ddc-note">Each point is a separate one-hour-ahead historical replay. Expected MWh is chance × predicted volume, national total. All times UTC.</p>
         </>
       )}
     </section>

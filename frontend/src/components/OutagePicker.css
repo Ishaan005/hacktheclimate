@@ -2,15 +2,21 @@
 
 .outage-picker {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-4);
 }
 
 .outage-picker label {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .outage-picker select {
   width: 100%;
   min-width: 0;
+  padding: var(--space-8);
+  border: 2px solid var(--color-text);
+  border-radius: 0;
+  background: var(--color-surface);
+  font: inherit;
   text-overflow: ellipsis;
 }
+

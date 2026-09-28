@@ -4,36 +4,36 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--color-border);
 }
 
 .source {
   display: grid;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-light);
+  padding: var(--space-8) 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .source-name {
-  font-weight: 700;
+  font-weight: var(--font-weight-semibold);
 }
 
 .source-status {
-  font-weight: 700;
+  font-weight: var(--font-weight-semibold);
 }
 
 .source-stale .source-status {
-  color: var(--caution);
+  color: var(--color-warning-text);
 }
 
 .source-unavailable .source-status {
-  color: var(--critical);
+  color: var(--color-danger);
 }
 
 .source-meta,
 .source-note,
 .context-issued {
   margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-14);
   overflow-wrap: anywhere;
 }
