@@ -153,6 +153,8 @@ def compare_network_scenarios(
     return {
         "scenario_label": "planning scenario",
         "case_type": "static TYTFS study case; approximate DC active-power flow",
+        "case_provenance": dict(case.metadata),
+        "injection_overrides_mw": overrides,
         "rating_basis": "TYTFS RAW rate A (MVA); active-power comparison is a DC screening proxy",
         "outage_reference": outage_reference,
         "contingency_reference": contingency_reference,
