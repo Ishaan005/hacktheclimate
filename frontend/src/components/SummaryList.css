@@ -1,0 +1,37 @@
+/* Key/value rows in the style of public-sector summary lists. */
+
+.summary-list {
+  margin: 0;
+  border-top: 1px solid var(--border-light);
+}
+
+.summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.summary-row dt {
+  font-weight: 700;
+}
+
+.summary-row dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.summary-hint {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+@container (min-width: 520px) {
+  .summary-row {
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: 16px;
+  }
+}
