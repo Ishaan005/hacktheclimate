@@ -1,71 +1,99 @@
-import type { FlowDelta, RunName, ScenarioReport } from '../types';
+import type { ScenarioReport } from '../types';
+import { GLOSSARY } from '../copy';
 import { formatNumber, formatPercent } from '../format';
+import { runViews, SEVERITY_TEXT, signed } from '../insights';
+import type { RunView } from '../insights';
+import Term from './Term';
 
-const RUN_LABELS: Record<RunName, string> = {
-  intact: 'Intact',
-  planned_outage: 'Planned outage',
-  selected_n_minus_one: 'Planned outage + selected N-1',
+const SOLVER_TEXT: Record<RunView['status'], string> = {
+  ok: 'Solved',
+  islanded: 'Part of the network was cut off in this run; figures for that part are not reliable.',
+  unsolved: 'The model could not solve this run, so no flow is shown.',
 };
 
-const RUN_ORDER: RunName[] = ['intact', 'planned_outage', 'selected_n_minus_one'];
-
-function monitorDelta(deltas: FlowDelta[] | null, report: ScenarioReport): number | null {
-  const match = deltas?.find(
-    (item) => item.asset_type === report.monitored.asset_type && item.asset_id === report.monitored.asset_id,
+function Change({ value, unit, digits = 1 }: { value: number | null; unit: string; digits?: number }) {
+  if (value === null) return null;
+  return (
+    <span className="change" aria-label={`${signed(value, unit, digits)} compared with all equipment in service`}>
+      {signed(value, unit, digits)}
+    </span>
   );
-  return match?.delta_flow_mw ?? null;
 }
 
-function formatSigned(value: number | null): string {
-  if (value === null) return formatNumber(null, 'MW');
-  return `${value > 0 ? '+' : ''}${value.toFixed(1)} MW`;
-}
-
-// On narrow screens CSS turns each row into a card; data-label supplies the
-// column name for that layout.
+// On narrow panels CSS turns each row into a labelled block; data-label
+// supplies the column name for that layout.
 function MonitorRunsTable({ report }: { report: ScenarioReport }) {
-  const deltaFromIntact: Record<RunName, number | null> = {
-    intact: null,
-    planned_outage: monitorDelta(report.flow_deltas_from_intact.planned_outage, report),
-    selected_n_minus_one: monitorDelta(report.flow_deltas_from_intact.selected_n_minus_one, report),
-  };
+  const views = runViews(report);
+  const rating = report.monitor_by_run.intact?.rating_mva ?? null;
   return (
     <div className="block runs-block">
-      <h3>Modelled flow on monitored {report.monitored.asset_type}</h3>
+      <h3>Modelled effect on the monitored branch</h3>
       <p className="block-hint">
-        <code>{report.monitored.asset_id}</code> · DC active-power flow in the planning case, by run
+        Branch <code>{report.monitored.asset_id}</code>
+        {rating !== null && (
+          <>
+            {' '}
+            · <Term definition={GLOSSARY.rateA}>rate A</Term> {formatNumber(rating, 'MVA')}
+          </>
+        )}{' '}
+        · <Term definition={GLOSSARY.dcFlow}>DC flow</Term> in the <Term definition={GLOSSARY.tytfs}>TYTFS</Term> 2024 case
+      </p>
+      <p className="block-hint">
+        <span className="change">Purple figures</span> show the change from all equipment in service.
       </p>
       <table className="runs-table">
         <thead>
           <tr>
-            <th scope="col">Run</th>
-            <th scope="col">Solver</th>
-            <th scope="col" className="num">Modelled flow</th>
-            <th scope="col" className="num">Change vs intact</th>
-            <th scope="col" className="num">DC loading proxy</th>
-            <th scope="col" className="num">Headroom proxy</th>
+            <th scope="col">Situation</th>
+            <th scope="col" className="num">
+              <Term definition={GLOSSARY.flowSize}>Flow</Term>
+            </th>
+            <th scope="col" className="num">
+              <Term definition={GLOSSARY.loading}>Loading</Term>
+            </th>
+            <th scope="col" className="num">
+              <Term definition={GLOSSARY.headroom}>Headroom</Term>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {RUN_ORDER.map((name) => {
-            const run = report.runs[name];
-            const flow = report.monitor_by_run[name];
-            return (
-              <tr key={name}>
-                <th scope="row" data-label="Run">{RUN_LABELS[name]}</th>
-                <td data-label="Solver">
-                  {run.status}
-                  {run.reason && <span className="cell-note"> {run.reason}</span>}
-                </td>
-                <td className="num" data-label="Modelled flow">{formatNumber(flow?.flow_mw ?? null, 'MW', 1)}</td>
-                <td className="num" data-label="Change vs intact">{name === 'intact' ? '—' : formatSigned(deltaFromIntact[name])}</td>
-                <td className="num" data-label="DC loading proxy">{formatPercent(flow?.dc_loading_pct_proxy ?? null, 1)}</td>
-                <td className="num" data-label="Headroom proxy">{formatNumber(flow?.dc_headroom_mw_unity_pf_proxy ?? null, 'MW')}</td>
-              </tr>
-            );
-          })}
+          {views.map((view) => (
+            <tr key={view.name} className={view.status === 'ok' ? undefined : 'row-warning'}>
+              <th scope="row" data-label="Situation">
+                {view.name === 'selected_n_minus_one' ? (
+                  <>
+                    Planned outage + <Term definition={GLOSSARY.nMinusOne}>selected N-1</Term>
+                  </>
+                ) : (
+                  view.label
+                )}
+                {view.status !== 'ok' && <span className="cell-note">{SOLVER_TEXT[view.status]}</span>}
+              </th>
+              <td className="num" data-label="Flow">
+                <span className="value">{formatNumber(view.flowSize, 'MW', 1)}</span>
+                <Change value={view.sizeChange} unit="MW" />
+              </td>
+              <td className="num" data-label="Loading">
+                <span className="value">{formatPercent(view.loadingPct, 1)}</span>
+                {view.severity !== 'normal' && (
+                  <Term definition={GLOSSARY.loadingBand}>
+                    <span className={`tag tag-${view.severity}`}>{SEVERITY_TEXT[view.severity]}</span>
+                  </Term>
+                )}
+                <Change value={view.loadingChange} unit="pts" />
+              </td>
+              <td className="num" data-label="Headroom">
+                <span className="value">{formatNumber(view.headroom, 'MW')}</span>
+                <Change value={view.headroomChange} unit="MW" digits={0} />
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
+      <p className="block-hint">
+        Flow is shown without direction. Signed flow follows the planning-case branch orientation:{' '}
+        {views.map((view) => `${view.label} ${formatNumber(view.signedFlow, 'MW', 1)}`).join('; ')}.
+      </p>
     </div>
   );
 }

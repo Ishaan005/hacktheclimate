@@ -1,14 +1,26 @@
+import { STATE_COPY } from '../copy';
+
 type StatusMessageProps = {
-  tone: 'loading' | 'error' | 'unavailable' | 'empty';
-  message: string;
+  tone: 'loading' | 'error' | 'unavailable' | 'empty' | 'stale';
+  title: string;
+  consequence: string;
   detail?: string;
+  onRetry?: () => void;
 };
 
-function StatusMessage({ tone, message, detail }: StatusMessageProps) {
+// Leads with what the operator can or cannot rely on; the technical reason
+// follows in smaller text.
+function StatusMessage({ tone, title, consequence, detail, onRetry }: StatusMessageProps) {
   return (
     <div className={`status status-${tone}`} role={tone === 'error' ? 'alert' : 'status'}>
-      <p>{message}</p>
-      {detail && <p className="status-detail">{detail}</p>}
+      <p className="status-title">{title}</p>
+      <p className="status-consequence">{consequence}</p>
+      {detail && <p className="status-detail">Reason: {detail}</p>}
+      {onRetry && (
+        <button type="button" className="button-secondary" onClick={onRetry}>
+          {STATE_COPY.retry}
+        </button>
+      )}
     </div>
   );
 }
