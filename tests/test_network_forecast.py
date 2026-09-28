@@ -149,8 +149,10 @@ def test_builds_48_half_hour_network_forecast_contract():
     assert set(first["network"]) == {
         "scenario", "worst_asset", "max_dc_loading_proxy_pct",
         "minimum_headroom_proxy_mw", "worst_contingency", "n_assets_above_80pct",
+        "worst_contingency_type",
         "scenarios", "screened_contingency_count", "screened_islanding_contingencies",
         "security_event", "screening_scope",
+        "safety",
     }
     assert first["constraint_probability"] == pytest.approx(0.65)
     assert first["expected_constraint_mwh"] == pytest.approx(20.0)

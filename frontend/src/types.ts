@@ -190,4 +190,60 @@ export type ReviewedOutageOption = {
 export type OperatorView = {
   forecast: NationalForecast | Unavailable<'forecast'>;
   scenario: PlanningScenario | Unavailable<'planning_scenario'> | null;
+  decision?: NetworkDecision;
+};
+
+export type SafetyStatus = 'PASS' | 'FAIL' | 'UNKNOWN';
+
+export type SafetyCheck = {
+  status: SafetyStatus;
+  reason: string;
+  evidence: string | null;
+};
+
+export type SafetyResult = {
+  overall: SafetyStatus;
+  recommendable: boolean;
+  thermal: SafetyCheck;
+  islanding: SafetyCheck;
+  snsp: SafetyCheck;
+  voltage: SafetyCheck;
+  inertia: SafetyCheck;
+  rocof: SafetyCheck;
+};
+
+export type NetworkForecastRow = {
+  valid_time: string;
+  constraint_probability: number;
+  expected_constraint_mwh: number;
+  network: {
+    scenario: string;
+    worst_asset: string | null;
+    max_dc_loading_proxy_pct: number | null;
+    security_event: boolean;
+    safety: SafetyResult;
+  };
+};
+
+export type ScreenedAction = {
+  action_id: string;
+  power_mw: number;
+  safety_overall: SafetyStatus;
+  modeled_capture_upper_bound_mwh: number;
+  expected_avoided_constraint_mwh: number | null;
+};
+
+export type NetworkDecision = {
+  rows: NetworkForecastRow[];
+  network: { case_scenario_date: string | null; planned_outage: AssetRef; scope: string };
+  actions: ScreenedAction[];
+  recommendation: null;
+  health: {
+    status: string;
+    forecast_issue_time: string;
+    forecast_source: string;
+    missing_inputs: string[];
+    unsupported_safety_checks: string[];
+    recommendation_reason: string;
+  };
 };
