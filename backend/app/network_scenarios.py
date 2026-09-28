@@ -25,10 +25,21 @@ def _flow_key(flow: Mapping[str, Any]) -> tuple[str, str]:
     return str(flow["asset_type"]), str(flow["asset_id"])
 
 
+def _present_in_flows(asset: Asset, flows: Mapping[tuple[str, str], Any]) -> bool:
+    key = (asset.asset_type, asset.asset_id)
+    if key in flows:
+        return True
+    return asset.asset_type == "transformer" and any(
+        asset_type == "transformer" and asset_id.startswith(asset.asset_id + "/w")
+        for asset_type, asset_id in flows
+    )
+
+
 def _summarize(result: Mapping[str, Any]) -> dict[str, Any]:
     flows = sorted(result["flows"], key=_flow_key)
     return {
         "status": result["status"],
+        "reason": result.get("reason"),
         "balance_mw": result.get("balance_mw"),
         "islands": result.get("islands", []),
         "flows": [
@@ -95,7 +106,14 @@ def compare_network_scenarios(
         raise ValueError("contingency_reference is required")
     if planned_outage == contingency:
         raise ValueError("contingency must differ from the planned outage")
-    if monitored in {planned_outage, contingency}:
+    if any(
+        monitored == disabled
+        or (
+            monitored.asset_type == disabled.asset_type == "transformer"
+            and monitored.asset_id.startswith(disabled.asset_id + "/w")
+        )
+        for disabled in (planned_outage, contingency)
+    ):
         raise ValueError("monitored asset must remain online in all scenarios")
 
     overrides = dict(injection_overrides_mw) if injection_overrides_mw is not None else None
@@ -117,13 +135,15 @@ def compare_network_scenarios(
         ("contingency", contingency),
         ("monitored asset", monitored),
     ):
-        if (asset.asset_type, asset.asset_id) not in intact_flows:
+        if not _present_in_flows(asset, intact_flows):
             raise ValueError(f"{label} is absent or out of service in the intact case: {asset}")
+    monitor_key = (monitored.asset_type, monitored.asset_id)
+    if monitor_key not in intact_flows:
+        raise ValueError("monitor a specific transformer winding ID, not its three-winding parent")
 
     outage = solve((planned_outage,))
     n_minus_one = solve((planned_outage, contingency))
     runs = {"intact": _summarize(intact), "planned_outage": _summarize(outage), "selected_n_minus_one": _summarize(n_minus_one)}
-    monitor_key = (monitored.asset_type, monitored.asset_id)
     monitor_by_run = {
         name: next((flow for flow in run["flows"] if _flow_key(flow) == monitor_key), None)
         for name, run in runs.items()
