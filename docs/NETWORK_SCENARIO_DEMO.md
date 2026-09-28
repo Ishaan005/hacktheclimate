@@ -9,7 +9,7 @@ September 2026 switch state or predict future line loading.
 
 | Role | Source and review | TYTFS asset ID |
 | --- | --- | --- |
-| Scheduled outage | [2026 Transmission Outage Programme, 7 September file](https://cms.eirgrid.ie/sites/default/files/publications/2026-Transmission-Outage-Programme-20260907.xlsx), `GEN_ALL` row 1212, `TO-26-CSH-FLA-1-03`, `220kV FEEDER - CASHLA 220-FLAGFORD 220-1`, status `Scheduled`, window 24 September–2 October 2026. The [Week 40–41 summary](https://cms.eirgrid.ie/sites/default/files/publications/Transmission-Outage-Summary-2026-Week-40-41.xlsx) row 73 highlights the named Cashla–Flagford entry on 27 September–2 October. Normalized endpoints, 220 kV and circuit 1 uniquely identify an in-service TYTFS branch. | `1642:2522:1` |
+| Scheduled outage | [2026 Transmission Outage Programme, 7 September file](https://cms.eirgrid.ie/sites/default/files/publications/2026-Transmission-Outage-Programme-20260907.xlsx), `GEN_ALL` row 1212, `TO-26-CSH-FLA-1-03`, `220kV FEEDER - CASHLA 220-FLAGFORD 220-1`, status `Scheduled`, window 24 September–2 October 2026. The [Week 40–41 summary](https://cms.eirgrid.ie/sites/default/files/publications/Transmission-Outage-Summary-2026-Week-40-41.xlsx) row 73 highlights the named Cashla–Flagford entry on 27 September–2 October; 27 September is a padding column before that report's heading period. Normalized endpoints, 220 kV and circuit 1 uniquely identify an in-service TYTFS branch. | `1642:2522:1` |
 | Selected additional contingency | Cashla–Prospect 220 kV circuit 1 is an in-service TYTFS branch sharing the Cashla bus with the planned-outage branch. It is a chosen study contingency, not a second published outage. | `1642:4522:1` |
 | Monitored branch | Cashla–Tynagh 220 kV circuit 1 is an in-service TYTFS branch. Its **RAW rate A** is 761 MVA. | `1642:5172:1` |
 
@@ -26,10 +26,20 @@ Download the sources with `.venv/bin/python scripts/download_network_study_sourc
   --zip data/raw/network_feasibility/TYTFS2024_studyfiles.zip \
   --output-dir data/raw/network_case
 
+.venv/bin/python scripts/reconcile_network_outages.py \
+  --annual data/raw/network_feasibility/2026-Transmission-Outage-Programme-20260907.xlsx \
+  --summary data/raw/network_feasibility/Transmission-Outage-Summary-2026-Week-40-41.xlsx \
+  --buses data/raw/network_case/buses.csv \
+  --branches data/raw/network_case/branches.csv \
+  --transformers data/raw/network_case/transformers.csv \
+  --outage-id TO-26-CSH-FLA-1-03 \
+  --reviewed-asset-id 1642:2522:1 \
+  --output data/raw/network_case/outage_audit.json
+
 .venv/bin/python -m scripts.compare_network_scenarios \
   --case-dir data/raw/network_case \
   --outage-type branch --outage-id 1642:2522:1 \
-  --outage-reference 'TO-26-CSH-FLA-1-03; annual GEN_ALL row 1212; Week 40-41 row 73; scheduled only' \
+  --outage-audit data/raw/network_case/outage_audit.json \
   --contingency-type branch --contingency-id 1642:4522:1 \
   --contingency-reference 'Cashla-Prospect 220 kV circuit 1; adjacent in-service TYTFS branch' \
   --monitor-type branch --monitor-id 1642:5172:1 \
@@ -40,12 +50,18 @@ The generated JSON includes all case flows, scenario status, component/slack
 information, flow changes from both the intact and planned-outage states,
 the selected monitor's rating and loading proxy, and failure reasons if a
 case cannot be solved. The files under `data/raw/` remain local and untracked.
+`dc_headroom_mw_unity_pf_proxy` is the numeric rate A minus absolute active MW
+under a unity-power-factor assumption; it is not a measured MVA thermal margin.
 
 ## Observed screen on the downloaded case
 
 The same original case injections were used in each solve; the only changes
 were the named branch removals. The active-power flow sign follows the RAW
 branch orientation (Cashla to Tynagh).
+The [generator crosswalk](NETWORK_GENERATOR_CROSSWALK.md) currently has only a
+small reviewed station-proxy subset and an illustrative renewable input.
+It is not used to change this case's dispatch until a dated, balanced set of
+regional generation and load assumptions is available.
 
 | Run | Cashla–Tynagh flow | DC loading proxy against 761 MVA rate A | Solver status |
 | --- | ---: | ---: | --- |
