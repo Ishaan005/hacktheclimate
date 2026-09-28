@@ -101,4 +101,4 @@ Pull requests and pushes run the same dependency and test checks in [GitHub Acti
 
 For hackathon-day hosting, use the [Azure handoff](docs/AZURE_HANDOFF.md). It includes a small local container and a preview-first Container Apps command for use **after** the team receives access. No Azure resource or paid weather service is needed to develop or run the API locally.
 
-The [Microsoft weather options](docs/WEATHER_OPTIONS.md) compare Azure Maps' hourly feed with Aurora 1.5 and record the data, cost, and retention questions to resolve when access arrives.
+The [Microsoft weather options](docs/WEATHER_OPTIONS.md) compare Azure Maps' hourly feed with Aurora 1.5. A separate [audit of local May Aurora forecasts and Irish turbine coordinates](docs/AURORA_TURBINE_DATA_AUDIT.md) records their actual fields, coverage, and remaining source and timing checks.
