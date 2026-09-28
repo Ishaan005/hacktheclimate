@@ -7,7 +7,7 @@ Data and modelling starter for the Ireland renewable dispatch-down challenge. Th
 | Tool | Version | Notes |
 | --- | --- | --- |
 | **Python** | Must be **3.11** | Required for the API, scripts, and tests. CI uses 3.11. |
-| **Node.js** | Min **18+** (20 LTS recommended) | Only if you work on the React app in `frontend/`. |
+| **Node.js** | Supported **22.x** release | Only if you work on the React app in `frontend/`; the current Vite, Vitest and jsdom dependencies require a recent Node runtime. |
 | **npm** | Min **9+** (bundled with Node) | Comes with Node; used for `frontend/` install and build. |
 
 You do **not** need Node to run the API, run tests, or use `/docs`. Install Node only when developing or building the UI.
@@ -51,6 +51,7 @@ The API currently provides:
 | `GET /v1/sample/dispatch-down?limit=96` | Historical January rows with official dispatch-down labels |
 | `POST /v1/demo/absorption` | Retrospective January 1-hour model estimates passed to the flexible-load optimiser |
 | `GET /v1/network/forecast` | Input-gated 48 half-hour TYTFS planning scenarios; requires a re-imported local case, reviewed generator crosswalk and timestamped upstream forecasts |
+| `GET /v1/operator/view` | The same 48 future scenarios plus conservative safety checks, controlled action re-solves and explicit recommendation/data gaps |
 
 Sample routes return up to 336 rows. Missing source values appear as JSON `null`. To try the model-to-optimiser route while the server is running:
 
@@ -63,6 +64,10 @@ curl -sS http://127.0.0.1:8000/v1/demo/absorption \
 `start_target` is a UTC half-hour in the **24–31 January 2026** held-out window; `intervals` is 1–48 and each asset needs one availability flag per interval. The route returns model probabilities, expected and observed dispatch-down MWh, and a power schedule. It replays historical inputs from one hour before each target; it is **not a live or day-ahead forecast**. Treating all predicted dispatch-down as locally absorbable is an unvalidated upper bound, and scheduled energy is not measured avoided dispatch-down.
 
 The network route returns 503 until its local source case, reviewed crosswalk and 48 timestamped upstream rows are provided. See the [network forecast architecture](docs/NETWORK_FORECAST_ARCHITECTURE.md) for the input contract and planning-case limits. Its national probability and MWh values come from the supplied upstream rows; this route does not train or run a day-ahead national model.
+
+The operator route uses those inputs and, optionally, a reviewed action catalog. It will not recommend an action while voltage, inertia, RoCoF or other required checks remain unknown. See [safety and action screening](docs/NETWORK_SAFETY_ACTIONS.md) for the catalog format and the distinction between modeled capture and validated avoided constraint MWh.
+
+The [operator UI](frontend/README.md) calls this route by default and displays missing-input states. Set `VITE_API_MODE=fixture` only when deliberately viewing its offline planning-case fixture.
 
 ## What is ready
 
@@ -104,3 +109,4 @@ For hackathon-day hosting, use the [Azure handoff](docs/AZURE_HANDOFF.md). It in
 The [Microsoft weather options](docs/WEATHER_OPTIONS.md) compare Azure Maps' hourly feed with Aurora 1.5 and record the data, cost, and retention questions to resolve when access arrives.
 
 The [archived GFS constraint model](docs/GFS_CONSTRAINT_TRAINING.md) trains and backtests a national 0.5–24 hour forecast from source-checked NOAA weather vintages. Its August volume result does not beat the zero-MWh baseline; use the report's scope and confidence limits when showing it.
+The [Microsoft weather options](docs/WEATHER_OPTIONS.md) compare Azure Maps' hourly feed with Aurora 1.5. A separate [audit of local May Aurora forecasts and Irish turbine coordinates](docs/AURORA_TURBINE_DATA_AUDIT.md) records their actual fields, coverage, and remaining source and timing checks.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+import os
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
@@ -10,6 +11,10 @@ from fastapi.staticfiles import StaticFiles
 
 from .demo import router as demo_router
 from .network_forecast import build_network_forecast_from_files
+from .network import load_case
+from .network_actions import load_action_candidates
+from .network_forecast import DEFAULT_CASE_DIR, DEFAULT_CROSSWALK_PATH, DEFAULT_INPUT_PATH, DEFAULT_PLANNED_OUTAGE, load_forecast_inputs, load_reviewed_crosswalk
+from .operator_view import build_operator_view
 from .proxy import add_pressure_proxy
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -76,6 +81,27 @@ def network_forecast():
             "Network forecast inputs are not prepared. Import the TYTFS case and provide "
             "NETWORK_FORECAST_INPUT plus NETWORK_GENERATOR_CROSSWALK.",
         ) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/v1/operator/view")
+def operator_view():
+    """Expose future scenario and action screens with explicit data gaps."""
+    action_path = Path(os.getenv("NETWORK_ACTION_CANDIDATES", REPO_ROOT / "data/processed/network_action_candidates.json"))
+    try:
+        case = load_case(DEFAULT_CASE_DIR)
+        rows = load_forecast_inputs(DEFAULT_INPUT_PATH, as_of=datetime.now(timezone.utc))
+        crosswalk = load_reviewed_crosswalk(DEFAULT_CROSSWALK_PATH)
+        catalog_available = action_path.is_file()
+        candidates = load_action_candidates(action_path) if catalog_available else []
+        return build_operator_view(
+            case, rows, crosswalk, candidates,
+            action_catalog_available=catalog_available,
+            planned_outage=DEFAULT_PLANNED_OUTAGE,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(503, f"Required operator input is missing: {exc.filename}") from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 

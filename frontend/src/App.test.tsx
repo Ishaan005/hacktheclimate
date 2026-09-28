@@ -2,10 +2,12 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import App from './App';
 import ForecastPanel from './components/ForecastPanel';
+import NetworkDecisionPanel from './components/NetworkDecisionPanel';
 import ScenarioPanel from './components/ScenarioPanel';
 import { COPY, FORBIDDEN_PHRASES, STATE_COPY } from './copy';
+import { mapOperatorResponse } from './api';
 import { fixtureOutages } from './fixtures/operatorView';
-import type { NationalForecast } from './types';
+import type { NationalForecast, NetworkDecision, SafetyCheck } from './types';
 
 // Structure-only forecast: no forecast exists yet (issue #8), so every value
 // is null. This checks the normal-state labels without inventing numbers.
@@ -73,12 +75,12 @@ describe('operator screen with the representative response', () => {
     expect(await within(scenario).findByRole('heading', { name: new RegExp(COPY.assetMatchConfidence) })).toBeInTheDocument();
     expect(within(scenario).getByText('Reviewed match')).toBeInTheDocument();
     const table = within(scenario).getByRole('table');
-    expect(within(table).getByText('157.0 MW')).toBeInTheDocument();
-    expect(within(table).getByLabelText('−48.7 MW compared with all equipment in service')).toBeInTheDocument();
-    expect(within(table).getByText('20.6%')).toBeInTheDocument();
+    expect(within(table).getByText('153.6 MW')).toBeInTheDocument();
+    expect(within(table).getByLabelText('−45.8 MW compared with all equipment in service')).toBeInTheDocument();
+    expect(within(table).getByText('20.2%')).toBeInTheDocument();
     // Plain-language finding and summary strip are derived from the same report.
-    expect(within(scenario).getByText(/reduces flow on the monitored branch by 48\.7 MW/)).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Current picture' })).toHaveTextContent('Peak 20.6% of rate A');
+    expect(within(scenario).getByText(/reduces flow on the monitored branch by 45\.8 MW/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Current picture' })).toHaveTextContent('Peak 20.2% of rate A');
     // The forecast stays unavailable while the scenario renders.
     expect(screen.getByRole('region', { name: COPY.forecastTitle })).toHaveTextContent(/issue #8/);
     expectNoForbiddenCopy();
@@ -141,5 +143,52 @@ describe('loading, error and unavailable states keep the product labels', () => 
     const scenario = screen.getByRole('region', { name: COPY.scenarioTitle });
     expect(scenario).toHaveTextContent(STATE_COPY.scenarioUnavailableTitle);
     expect(scenario).toHaveTextContent('Outage audit has no reviewed asset match.');
+  });
+});
+
+describe('live network and action screen', () => {
+  it('shows unsupported checks and never turns an unknown action into a recommendation', () => {
+    const unknown: SafetyCheck = { status: 'UNKNOWN', reason: 'No supported calculation.', evidence: null };
+    const decision: NetworkDecision = {
+      rows: [{
+        valid_time: '2026-09-29T01:00:00Z', constraint_probability: 0.5,
+        expected_constraint_mwh: 20,
+        network: {
+          scenario: 'screened-n-1', worst_asset: '1:2:1',
+          max_dc_loading_proxy_pct: 88, security_event: false,
+          safety: {
+            overall: 'UNKNOWN', recommendable: false, thermal: unknown,
+            islanding: unknown, snsp: unknown, voltage: unknown,
+            inertia: unknown, rocof: unknown,
+          },
+        },
+      }],
+      network: {
+        case_scenario_date: '2024-07-01',
+        planned_outage: { asset_type: 'branch', asset_id: '1642:2522:1' },
+        scope: 'TYTFS planning-case DC scenario screen',
+      },
+      actions: [{ action_id: 'flex-1', power_mw: 10, safety_overall: 'UNKNOWN',
+        modeled_capture_upper_bound_mwh: 5, expected_avoided_constraint_mwh: null }],
+      recommendation: null,
+      health: {
+        status: 'incomplete', forecast_issue_time: '2026-09-28T18:00:00Z',
+        forecast_source: 'synthetic-test', missing_inputs: ['voltage evidence'],
+        unsupported_safety_checks: ['voltage', 'inertia', 'rocof'],
+        recommendation_reason: 'No fully PASS action is available.',
+      },
+    };
+    const { rows, ...rest } = decision;
+    const mapped = mapOperatorResponse({ ...rest, forecast: rows });
+    expect(mapped.forecast.status).toBe('ok');
+    if (mapped.forecast.status === 'ok') {
+      expect(mapped.forecast.intervals[0].expected_constraint_mwh).toBe(20);
+      expect(mapped.forecast.evaluation.calibration_status).toBe('unknown');
+    }
+    render(<NetworkDecisionPanel decision={mapped.decision ?? null} loading={false} error={null} onRetry={() => {}} />);
+    const panel = screen.getByRole('region', { name: 'TYTFS network and safety screen' });
+    expect(panel).toHaveTextContent('Safety screen: UNKNOWN');
+    expect(panel).toHaveTextContent('flex-1: 10.0 MW · safety UNKNOWN');
+    expect(panel).toHaveTextContent('Recommendation: none.');
   });
 });

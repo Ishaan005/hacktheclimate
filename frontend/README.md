@@ -1,32 +1,28 @@
-# React + TypeScript + Vite
+# Operator screen
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Use a supported Node 22 release, then run the FastAPI server on
+`127.0.0.1:8000` and start the UI:
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm ci
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The UI calls `GET /v1/operator/view` by default. Vite proxies `/v1` to the
+local API. That endpoint requires the TYTFS case import, reviewed generator
+crosswalk and current 48 half-hour upstream input described in the
+[network forecast guide](../docs/NETWORK_FORECAST_ARCHITECTURE.md). Missing
+inputs show an unavailable state. The network panel shows model safety checks,
+controlled action screens and the specific evidence still missing for a safe
+recommendation.
+
+For layout work without backend inputs, use the offline fixture explicitly:
+
+```bash
+VITE_API_MODE=fixture npm run dev
+```
+
+The fixture replays the documented 2024 Cashla planning case and leaves the
+national forecast unavailable. It does not provide a real forecast or action.
+
+Run `npm test`, `npm run lint`, and `npm run build` before changing the UI.
