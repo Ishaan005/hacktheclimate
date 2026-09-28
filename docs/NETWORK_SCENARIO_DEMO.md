@@ -19,7 +19,7 @@ The 2024 topology and injections are not a 2026 operational snapshot.
 
 ## Reproduce
 
-Download the sources with `python scripts/download_network_study_sources.py`, then:
+Download the sources with `.venv/bin/python scripts/download_network_study_sources.py`, then:
 
 ```bash
 .venv/bin/python -m scripts.import_tytfs_case \
