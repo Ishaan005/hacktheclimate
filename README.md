@@ -102,3 +102,5 @@ Pull requests and pushes run the same dependency and test checks in [GitHub Acti
 For hackathon-day hosting, use the [Azure handoff](docs/AZURE_HANDOFF.md). It includes a small local container and a preview-first Container Apps command for use **after** the team receives access. No Azure resource or paid weather service is needed to develop or run the API locally.
 
 The [Microsoft weather options](docs/WEATHER_OPTIONS.md) compare Azure Maps' hourly feed with Aurora 1.5 and record the data, cost, and retention questions to resolve when access arrives.
+
+The [archived GFS constraint model](docs/GFS_CONSTRAINT_TRAINING.md) trains and backtests a national 0.5–24 hour forecast from source-checked NOAA weather vintages. Its August volume result does not beat the zero-MWh baseline; use the report's scope and confidence limits when showing it.

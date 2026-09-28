@@ -10,6 +10,7 @@ The [project status](PROJECT_STATUS.md) records what was verified on 27 Septembe
 | Dispatch-down targets | [Label profile](DD_LABEL_PROFILE.md) |
 | January grid context | [Workbook inventory](EIRGRID_UPLOADED_WORKBOOKS.md), [January context profile](EIRGRID_JAN2026_PROFILE.md) |
 | Model features and evaluation | [Model plan](MODEL_PLAN.md), [real-label baseline](REAL_BASELINE.md), [project status](PROJECT_STATUS.md) |
+| Forecast-safe national constraint training | [Archived GFS model and backtest](GFS_CONSTRAINT_TRAINING.md) |
 | Team changes and event provenance | [Contribution guide](../CONTRIBUTING.md), [pre-existing work log](../PREEXISTING.md) |
 | Local container and later Azure access | [Azure handoff](AZURE_HANDOFF.md) |
 | Microsoft weather sources and limits | [Weather options](WEATHER_OPTIONS.md) |
