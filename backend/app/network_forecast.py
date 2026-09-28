@@ -587,6 +587,7 @@ def build_network_forecast(
                 "max_dc_loading_proxy_pct": features["max_dc_loading_proxy_pct"],
                 "minimum_headroom_proxy_mw": features["minimum_headroom_proxy_mw"],
                 "worst_contingency": worst_contingency.asset_id if worst_contingency else None,
+                "worst_contingency_type": worst_contingency.asset_type if worst_contingency else None,
                 "n_assets_above_80pct": features["n_assets_above_80pct"],
                 "scenarios": {
                     "intact": scenario_summary(snap["intact"], intact_features),

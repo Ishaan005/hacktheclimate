@@ -61,7 +61,7 @@ generator MEC and the supplied national expected constraint MWh.
 
 For an eligible half-hour, the screen adds renewable injection at the reviewed
 generator bus and the same demand at the flexible-load bus, then re-solves the
-planned-outage network. The response compares the base and action stress
+planned-outage and selected screened N-1 networks. The response compares the base and action stress
 features and reports a `modeled_capture_upper_bound_mwh` of applied MW times
 0.5 hours. This is an upper bound, **not expected avoided constraint MWh**.
 `expected_avoided_constraint_mwh` and `recommendation` remain null until a

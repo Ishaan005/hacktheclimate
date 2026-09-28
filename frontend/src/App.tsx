@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ForecastPanel from './components/ForecastPanel';
+import NetworkDecisionPanel from './components/NetworkDecisionPanel';
 import ScenarioPanel from './components/ScenarioPanel';
 import SummaryStrip from './components/SummaryStrip';
 import { fetchOperatorView, fetchReviewedOutages, USE_FIXTURE } from './api';
@@ -72,7 +73,7 @@ function App() {
       <div className="phase-banner">
         <p className="phase-inner">
           <span className="phase-tag">{COPY.appPhase}</span>
-          <span>{USE_FIXTURE ? COPY.fixtureBanner : 'Data from the combined forecast and scenario API.'}</span>
+          <span>{USE_FIXTURE ? COPY.fixtureBanner : 'Point-in-time input gated; no safe action recommendation without complete evidence.'}</span>
         </p>
       </div>
       <main className="app-main">
@@ -85,15 +86,19 @@ function App() {
             error={view ? null : error}
             onRetry={retry}
           />
-          <ScenarioPanel
-            outages={outages}
-            selectedOutageId={selectedOutageId}
-            onSelectOutage={selectOutage}
-            scenario={view?.scenario ?? null}
-            loading={loading}
-            error={error}
-            onRetry={retry}
-          />
+          {USE_FIXTURE ? (
+            <ScenarioPanel
+              outages={outages}
+              selectedOutageId={selectedOutageId}
+              onSelectOutage={selectOutage}
+              scenario={view?.scenario ?? null}
+              loading={loading}
+              error={error}
+              onRetry={retry}
+            />
+          ) : (
+            <NetworkDecisionPanel decision={view?.decision ?? null} loading={loading} error={error} onRetry={retry} />
+          )}
         </div>
       </main>
     </div>

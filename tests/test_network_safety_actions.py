@@ -78,10 +78,25 @@ def test_action_changes_nodal_injections_and_unknown_is_not_ranked():
     assert action["expected_avoided_constraint_mwh"] is None
     assert action["safety_overall"] == "UNKNOWN"
     assert action["intervals"][0]["applied_mw"] == pytest.approx(10.0)
-    effect = action["intervals"][0]["network_effect"]
+    effect = action["intervals"][0]["network_effect"]["planned_outage"]
     assert effect["base"]["max_dc_loading_proxy_pct"] != effect["with_action"]["max_dc_loading_proxy_pct"]
     assert screened["ranked_screening_pass_actions"] == []
     assert screened["recommendation"] is None
+
+
+def test_action_safety_includes_selected_n_minus_one():
+    rows = deepcopy(_rows())
+    for row in rows:
+        row["recoverable_renewable_mw"] = {"South-West": {"wind": 10.0}}
+    screened = screen_actions(
+        _case(), rows, _crosswalk(), [_candidate()],
+        planned_outage=Asset("branch", "1:3:1"),
+        selected_contingency=Asset("branch", "2:4:1"),
+    )
+    interval = screened["evaluated"][0]["intervals"][0]
+    assert interval["safety"]["selected_n_minus_one"] is not None
+    assert interval["network_effect"]["selected_n_minus_one"]["asset_id"] == "2:4:1"
+    assert interval["safety"]["overall"] != "PASS"
 
 
 def test_action_requires_explicit_recoverable_mw_and_pass_only_ranking():
