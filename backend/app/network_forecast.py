@@ -20,6 +20,7 @@ from typing import Any, Iterable, Mapping
 
 from backend.app.network import NetworkCase, load_case, solve_dc_case
 from backend.app.network_scenarios import Asset
+from backend.app.safety import evaluate_safety
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CASE_DIR = Path(os.getenv("NETWORK_CASE_DIR", REPO_ROOT / "data/raw/network_case"))
@@ -101,8 +102,14 @@ def validate_forecast_rows(
         probability = float(row["constraint_probability"])
         if probability > 1 or confidence > 1:
             raise ValueError("probability and forecast confidence must be in [0, 1]")
+        if row.get("snsp_pct") is not None:
+            snsp = _finite(row["snsp_pct"], "snsp_pct", nonnegative=True)
+            if snsp > 100:
+                raise ValueError("snsp_pct must be in [0, 100]")
         if not isinstance(row.get("regional_generation_mw", {}), Mapping):
             raise ValueError("regional_generation_mw must be an object")
+        if not isinstance(row.get("recoverable_renewable_mw", {}), Mapping):
+            raise ValueError("recoverable_renewable_mw must be an object")
         if not isinstance(row.get("dc_transfers_mw", {}), Mapping):
             raise ValueError("dc_transfers_mw must be an object")
         if not isinstance(row.get("drivers", []), list) or any(
@@ -552,7 +559,7 @@ def build_network_forecast(
             )
             if worst_contingency is not None else None
         )
-        scenario_name, _, features = _choose_network_scenario(snap["planned"], n1)
+        scenario_name, selected_solve, features = _choose_network_scenario(snap["planned"], n1)
         intact_features = _network_features(snap["intact"])
         n1_features = _network_features(n1) if n1 is not None else None
 
@@ -592,6 +599,9 @@ def build_network_forecast(
                 "screened_islanding_contingencies": islanding_candidates,
                 "security_event": bool(islanding_candidates or (n1 is not None and n1["status"] == "islanded")),
                 "screening_scope": "top rated assets by planned-outage loading at the peak half-hour",
+                "safety": evaluate_safety(
+                    selected_solve, snsp_pct=row.get("snsp_pct"),
+                ).to_dict(),
             },
             "drivers": drivers,
             "confidence": {
