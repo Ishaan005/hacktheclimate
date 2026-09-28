@@ -1,0 +1,2839 @@
+{
+  "title": "Forward-Looking National Constraint Forecast Backtest",
+  "description": "Multi-horizon chronological expanding backtest of hurdle event-probability and non-negative conditional volume models with calibrated uncertainty intervals.",
+  "target": "constraint_mwh",
+  "event_definition": "constraint_mwh > 5.0",
+  "dataset": "data/processed/training_table_eirgrid_2026_jan_aug.csv",
+  "data_period": {
+    "start": "2026-01-01 00:00:00",
+    "end": "2026-08-31 22:30:00",
+    "total_intervals": 11662
+  },
+  "horizons_evaluated": [
+    "1h",
+    "4h",
+    "12h",
+    "24h"
+  ],
+  "test_folds": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08"
+  ],
+  "results_by_horizon": {
+    "1h": {
+      "summary": {
+        "horizon_hours": 1.0,
+        "step_intervals_30m": 2,
+        "folds_evaluated": 5,
+        "mean_event_prevalence": 0.4998,
+        "mean_pr_auc": 0.9727,
+        "median_pr_auc": 0.9781,
+        "min_pr_auc": 0.9528,
+        "max_pr_auc": 0.9849,
+        "mean_baseline_calendar_lag_pr_auc": 0.9658,
+        "mean_model_mae_mwh": 17.0,
+        "mean_cal_lag_mae_mwh": 17.69,
+        "mean_zero_mae_mwh": 63.32,
+        "overall_mae_reduction_vs_cal_lag_pct": 3.87,
+        "overall_mae_reduction_vs_zero_pct": 73.15,
+        "mean_empirical_80_coverage": 0.9048,
+        "mean_empirical_90_coverage": 0.9426,
+        "honest_assessment": "Clear improvement over baselines with high skill"
+      },
+      "folds": [
+        {
+          "test_month": "2026-04",
+          "train_start": "2026-01-01 01:00:00",
+          "train_end": "2026-03-31 23:30:00",
+          "test_start": "2026-04-01 00:00:00",
+          "test_end": "2026-04-30 23:30:00",
+          "train_intervals": 4318,
+          "test_intervals": 1440,
+          "event_prevalence": 0.4847,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.9781,
+            "occurrence_roc_auc": 0.9788,
+            "brier_score": 0.0567,
+            "expected_calibration_error": 0.0189,
+            "precision_at_0_5": 0.9127,
+            "recall_at_0_5": 0.914,
+            "baseline_calendar_lag_pr_auc": 0.9745,
+            "baseline_calendar_lag_brier": 0.055,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 601,
+                "mean_predicted_prob": 0.0176,
+                "empirical_event_rate": 0.0183,
+                "calibration_gap": 0.0007
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 49,
+                "mean_predicted_prob": 0.1486,
+                "empirical_event_rate": 0.1837,
+                "calibration_gap": 0.0351
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 33,
+                "mean_predicted_prob": 0.2458,
+                "empirical_event_rate": 0.3333,
+                "calibration_gap": 0.0876
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 31,
+                "mean_predicted_prob": 0.3472,
+                "empirical_event_rate": 0.5161,
+                "calibration_gap": 0.1689
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 27,
+                "mean_predicted_prob": 0.4394,
+                "empirical_event_rate": 0.4815,
+                "calibration_gap": 0.0421
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 34,
+                "mean_predicted_prob": 0.5542,
+                "empirical_event_rate": 0.5,
+                "calibration_gap": 0.0542
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 25,
+                "mean_predicted_prob": 0.6373,
+                "empirical_event_rate": 0.44,
+                "calibration_gap": 0.1973
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 21,
+                "mean_predicted_prob": 0.7577,
+                "empirical_event_rate": 0.7619,
+                "calibration_gap": 0.0042
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 58,
+                "mean_predicted_prob": 0.85,
+                "empirical_event_rate": 0.7241,
+                "calibration_gap": 0.1258
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 561,
+                "mean_predicted_prob": 0.9868,
+                "empirical_event_rate": 0.984,
+                "calibration_gap": 0.0029
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 17.23,
+            "model_expected_rmse_mwh": 37.08,
+            "zero_baseline_mae_mwh": 79.69,
+            "zero_baseline_rmse_mwh": 158.08,
+            "train_mean_baseline_mae_mwh": 93.39,
+            "train_mean_baseline_rmse_mwh": 138.36,
+            "calendar_lag_baseline_mae_mwh": 19.5,
+            "calendar_lag_baseline_rmse_mwh": 41.08,
+            "mae_reduction_vs_zero_pct": 78.37,
+            "mae_reduction_vs_train_mean_pct": 81.55,
+            "mae_reduction_vs_calendar_lag_pct": 11.61,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8924,
+            "mean_80_interval_width_mwh": 97.33,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9125,
+            "mean_90_interval_width_mwh": 113.09
+          }
+        },
+        {
+          "test_month": "2026-05",
+          "train_start": "2026-01-01 01:00:00",
+          "train_end": "2026-04-30 23:30:00",
+          "test_start": "2026-05-01 00:00:00",
+          "test_end": "2026-05-31 23:30:00",
+          "train_intervals": 5758,
+          "test_intervals": 1488,
+          "event_prevalence": 0.5356,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.9691,
+            "occurrence_roc_auc": 0.961,
+            "brier_score": 0.104,
+            "expected_calibration_error": 0.1113,
+            "precision_at_0_5": 0.9604,
+            "recall_at_0_5": 0.7905,
+            "baseline_calendar_lag_pr_auc": 0.9655,
+            "baseline_calendar_lag_brier": 0.0795,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 677,
+                "mean_predicted_prob": 0.0142,
+                "empirical_event_rate": 0.1123,
+                "calibration_gap": 0.0981
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 74,
+                "mean_predicted_prob": 0.1477,
+                "empirical_event_rate": 0.473,
+                "calibration_gap": 0.3253
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 38,
+                "mean_predicted_prob": 0.2443,
+                "empirical_event_rate": 0.6316,
+                "calibration_gap": 0.3873
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 21,
+                "mean_predicted_prob": 0.3494,
+                "empirical_event_rate": 0.7619,
+                "calibration_gap": 0.4125
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 22,
+                "mean_predicted_prob": 0.4443,
+                "empirical_event_rate": 0.7273,
+                "calibration_gap": 0.283
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 42,
+                "mean_predicted_prob": 0.5441,
+                "empirical_event_rate": 0.7857,
+                "calibration_gap": 0.2416
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 41,
+                "mean_predicted_prob": 0.6517,
+                "empirical_event_rate": 0.878,
+                "calibration_gap": 0.2263
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 56,
+                "mean_predicted_prob": 0.749,
+                "empirical_event_rate": 0.8929,
+                "calibration_gap": 0.1438
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 75,
+                "mean_predicted_prob": 0.8569,
+                "empirical_event_rate": 0.96,
+                "calibration_gap": 0.1031
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 442,
+                "mean_predicted_prob": 0.9697,
+                "empirical_event_rate": 0.9932,
+                "calibration_gap": 0.0235
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 28.11,
+            "model_expected_rmse_mwh": 73.68,
+            "zero_baseline_mae_mwh": 82.3,
+            "zero_baseline_rmse_mwh": 187.79,
+            "train_mean_baseline_mae_mwh": 96.71,
+            "train_mean_baseline_rmse_mwh": 169.9,
+            "calendar_lag_baseline_mae_mwh": 27.48,
+            "calendar_lag_baseline_rmse_mwh": 72.08,
+            "mae_reduction_vs_zero_pct": 65.85,
+            "mae_reduction_vs_train_mean_pct": 70.94,
+            "mae_reduction_vs_calendar_lag_pct": -2.28,
+            "beats_all_baselines": false,
+            "no_improvement_flag": true
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8629,
+            "mean_80_interval_width_mwh": 92.96,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9167,
+            "mean_90_interval_width_mwh": 109.6
+          }
+        },
+        {
+          "test_month": "2026-06",
+          "train_start": "2026-01-01 01:00:00",
+          "train_end": "2026-05-31 23:30:00",
+          "test_start": "2026-06-01 00:00:00",
+          "test_end": "2026-06-30 23:30:00",
+          "train_intervals": 7246,
+          "test_intervals": 1440,
+          "event_prevalence": 0.6188,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.9784,
+            "occurrence_roc_auc": 0.9641,
+            "brier_score": 0.0745,
+            "expected_calibration_error": 0.0317,
+            "precision_at_0_5": 0.9343,
+            "recall_at_0_5": 0.8945,
+            "baseline_calendar_lag_pr_auc": 0.9725,
+            "baseline_calendar_lag_brier": 0.0764,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 400,
+                "mean_predicted_prob": 0.0309,
+                "empirical_event_rate": 0.05,
+                "calibration_gap": 0.0191
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 78,
+                "mean_predicted_prob": 0.145,
+                "empirical_event_rate": 0.2564,
+                "calibration_gap": 0.1114
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 48,
+                "mean_predicted_prob": 0.2465,
+                "empirical_event_rate": 0.3542,
+                "calibration_gap": 0.1077
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 32,
+                "mean_predicted_prob": 0.3388,
+                "empirical_event_rate": 0.5312,
+                "calibration_gap": 0.1925
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 29,
+                "mean_predicted_prob": 0.4444,
+                "empirical_event_rate": 0.6897,
+                "calibration_gap": 0.2453
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 30,
+                "mean_predicted_prob": 0.5473,
+                "empirical_event_rate": 0.6667,
+                "calibration_gap": 0.1194
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 33,
+                "mean_predicted_prob": 0.6527,
+                "empirical_event_rate": 0.6364,
+                "calibration_gap": 0.0164
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 46,
+                "mean_predicted_prob": 0.7553,
+                "empirical_event_rate": 0.7826,
+                "calibration_gap": 0.0273
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 87,
+                "mean_predicted_prob": 0.857,
+                "empirical_event_rate": 0.8966,
+                "calibration_gap": 0.0396
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 657,
+                "mean_predicted_prob": 0.9803,
+                "empirical_event_rate": 0.9772,
+                "calibration_gap": 0.0031
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 19.94,
+            "model_expected_rmse_mwh": 37.65,
+            "zero_baseline_mae_mwh": 84.23,
+            "zero_baseline_rmse_mwh": 168.49,
+            "train_mean_baseline_mae_mwh": 91.25,
+            "train_mean_baseline_rmse_mwh": 146.96,
+            "calendar_lag_baseline_mae_mwh": 20.41,
+            "calendar_lag_baseline_rmse_mwh": 38.07,
+            "mae_reduction_vs_zero_pct": 76.32,
+            "mae_reduction_vs_train_mean_pct": 78.14,
+            "mae_reduction_vs_calendar_lag_pct": 2.3,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8812,
+            "mean_80_interval_width_mwh": 107.64,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9243,
+            "mean_90_interval_width_mwh": 122.66
+          }
+        },
+        {
+          "test_month": "2026-07",
+          "train_start": "2026-01-01 01:00:00",
+          "train_end": "2026-06-30 23:30:00",
+          "test_start": "2026-07-01 00:00:00",
+          "test_end": "2026-07-31 23:30:00",
+          "train_intervals": 8686,
+          "test_intervals": 1488,
+          "event_prevalence": 0.5679,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.9849,
+            "occurrence_roc_auc": 0.9801,
+            "brier_score": 0.0532,
+            "expected_calibration_error": 0.0233,
+            "precision_at_0_5": 0.9469,
+            "recall_at_0_5": 0.929,
+            "baseline_calendar_lag_pr_auc": 0.9836,
+            "baseline_calendar_lag_brier": 0.0555,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 504,
+                "mean_predicted_prob": 0.0284,
+                "empirical_event_rate": 0.0258,
+                "calibration_gap": 0.0026
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 61,
+                "mean_predicted_prob": 0.1471,
+                "empirical_event_rate": 0.1475,
+                "calibration_gap": 0.0004
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 36,
+                "mean_predicted_prob": 0.2393,
+                "empirical_event_rate": 0.3333,
+                "calibration_gap": 0.094
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 33,
+                "mean_predicted_prob": 0.3433,
+                "empirical_event_rate": 0.303,
+                "calibration_gap": 0.0403
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 25,
+                "mean_predicted_prob": 0.441,
+                "empirical_event_rate": 0.64,
+                "calibration_gap": 0.199
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 34,
+                "mean_predicted_prob": 0.5474,
+                "empirical_event_rate": 0.6176,
+                "calibration_gap": 0.0703
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 46,
+                "mean_predicted_prob": 0.653,
+                "empirical_event_rate": 0.8478,
+                "calibration_gap": 0.1948
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 49,
+                "mean_predicted_prob": 0.7562,
+                "empirical_event_rate": 0.8367,
+                "calibration_gap": 0.0806
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 80,
+                "mean_predicted_prob": 0.855,
+                "empirical_event_rate": 0.875,
+                "calibration_gap": 0.02
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 620,
+                "mean_predicted_prob": 0.9794,
+                "empirical_event_rate": 0.9903,
+                "calibration_gap": 0.0109
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 13.62,
+            "model_expected_rmse_mwh": 27.63,
+            "zero_baseline_mae_mwh": 55.38,
+            "zero_baseline_rmse_mwh": 114.08,
+            "train_mean_baseline_mae_mwh": 68.07,
+            "train_mean_baseline_rmse_mwh": 100.77,
+            "calendar_lag_baseline_mae_mwh": 14.21,
+            "calendar_lag_baseline_rmse_mwh": 28.04,
+            "mae_reduction_vs_zero_pct": 75.4,
+            "mae_reduction_vs_train_mean_pct": 79.99,
+            "mae_reduction_vs_calendar_lag_pct": 4.15,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.922,
+            "mean_80_interval_width_mwh": 77.23,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9698,
+            "mean_90_interval_width_mwh": 95.45
+          }
+        },
+        {
+          "test_month": "2026-08",
+          "train_start": "2026-01-01 01:00:00",
+          "train_end": "2026-07-31 23:30:00",
+          "test_start": "2026-08-01 00:00:00",
+          "test_end": "2026-08-31 22:30:00",
+          "train_intervals": 10174,
+          "test_intervals": 1486,
+          "event_prevalence": 0.2921,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.9528,
+            "occurrence_roc_auc": 0.9743,
+            "brier_score": 0.0549,
+            "expected_calibration_error": 0.0286,
+            "precision_at_0_5": 0.8508,
+            "recall_at_0_5": 0.8802,
+            "baseline_calendar_lag_pr_auc": 0.9327,
+            "baseline_calendar_lag_brier": 0.0614,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 822,
+                "mean_predicted_prob": 0.0206,
+                "empirical_event_rate": 0.0122,
+                "calibration_gap": 0.0084
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 83,
+                "mean_predicted_prob": 0.1494,
+                "empirical_event_rate": 0.1205,
+                "calibration_gap": 0.0289
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 62,
+                "mean_predicted_prob": 0.252,
+                "empirical_event_rate": 0.129,
+                "calibration_gap": 0.123
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 37,
+                "mean_predicted_prob": 0.3443,
+                "empirical_event_rate": 0.2432,
+                "calibration_gap": 0.101
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 33,
+                "mean_predicted_prob": 0.4454,
+                "empirical_event_rate": 0.4545,
+                "calibration_gap": 0.0092
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 35,
+                "mean_predicted_prob": 0.5496,
+                "empirical_event_rate": 0.3714,
+                "calibration_gap": 0.1781
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 39,
+                "mean_predicted_prob": 0.6433,
+                "empirical_event_rate": 0.5128,
+                "calibration_gap": 0.1305
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 27,
+                "mean_predicted_prob": 0.7545,
+                "empirical_event_rate": 0.4815,
+                "calibration_gap": 0.273
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 36,
+                "mean_predicted_prob": 0.8598,
+                "empirical_event_rate": 0.9167,
+                "calibration_gap": 0.0569
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 312,
+                "mean_predicted_prob": 0.9736,
+                "empirical_event_rate": 0.9712,
+                "calibration_gap": 0.0025
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 6.11,
+            "model_expected_rmse_mwh": 14.15,
+            "zero_baseline_mae_mwh": 15.01,
+            "zero_baseline_rmse_mwh": 38.26,
+            "train_mean_baseline_mae_mwh": 60.37,
+            "train_mean_baseline_rmse_mwh": 63.3,
+            "calendar_lag_baseline_mae_mwh": 6.83,
+            "calendar_lag_baseline_rmse_mwh": 14.09,
+            "mae_reduction_vs_zero_pct": 59.28,
+            "mae_reduction_vs_train_mean_pct": 89.88,
+            "mae_reduction_vs_calendar_lag_pct": 10.5,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.9657,
+            "mean_80_interval_width_mwh": 30.3,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9899,
+            "mean_90_interval_width_mwh": 46.21
+          }
+        }
+      ]
+    },
+    "4h": {
+      "summary": {
+        "horizon_hours": 4.0,
+        "step_intervals_30m": 8,
+        "folds_evaluated": 5,
+        "mean_event_prevalence": 0.4998,
+        "mean_pr_auc": 0.9123,
+        "median_pr_auc": 0.9272,
+        "min_pr_auc": 0.8496,
+        "max_pr_auc": 0.9331,
+        "mean_baseline_calendar_lag_pr_auc": 0.8744,
+        "mean_model_mae_mwh": 39.72,
+        "mean_cal_lag_mae_mwh": 44.62,
+        "mean_zero_mae_mwh": 63.32,
+        "overall_mae_reduction_vs_cal_lag_pct": 10.99,
+        "overall_mae_reduction_vs_zero_pct": 37.28,
+        "mean_empirical_80_coverage": 0.841,
+        "mean_empirical_90_coverage": 0.8974,
+        "honest_assessment": "Clear improvement over baselines with high skill"
+      },
+      "folds": [
+        {
+          "test_month": "2026-04",
+          "train_start": "2026-01-01 04:00:00",
+          "train_end": "2026-03-31 23:30:00",
+          "test_start": "2026-04-01 00:00:00",
+          "test_end": "2026-04-30 23:30:00",
+          "train_intervals": 4312,
+          "test_intervals": 1440,
+          "event_prevalence": 0.4847,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.9187,
+            "occurrence_roc_auc": 0.928,
+            "brier_score": 0.1105,
+            "expected_calibration_error": 0.0538,
+            "precision_at_0_5": 0.8816,
+            "recall_at_0_5": 0.7894,
+            "baseline_calendar_lag_pr_auc": 0.8814,
+            "baseline_calendar_lag_brier": 0.1337,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 481,
+                "mean_predicted_prob": 0.0361,
+                "empirical_event_rate": 0.0437,
+                "calibration_gap": 0.0076
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 132,
+                "mean_predicted_prob": 0.1443,
+                "empirical_event_rate": 0.2121,
+                "calibration_gap": 0.0678
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 70,
+                "mean_predicted_prob": 0.2474,
+                "empirical_event_rate": 0.3714,
+                "calibration_gap": 0.1241
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 57,
+                "mean_predicted_prob": 0.3516,
+                "empirical_event_rate": 0.5088,
+                "calibration_gap": 0.1572
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 75,
+                "mean_predicted_prob": 0.4472,
+                "empirical_event_rate": 0.5733,
+                "calibration_gap": 0.1261
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 53,
+                "mean_predicted_prob": 0.5509,
+                "empirical_event_rate": 0.7925,
+                "calibration_gap": 0.2415
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 53,
+                "mean_predicted_prob": 0.6552,
+                "empirical_event_rate": 0.6792,
+                "calibration_gap": 0.0241
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 46,
+                "mean_predicted_prob": 0.7473,
+                "empirical_event_rate": 0.7826,
+                "calibration_gap": 0.0354
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 51,
+                "mean_predicted_prob": 0.8541,
+                "empirical_event_rate": 0.7647,
+                "calibration_gap": 0.0894
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 422,
+                "mean_predicted_prob": 0.9848,
+                "empirical_event_rate": 0.9431,
+                "calibration_gap": 0.0417
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 53.7,
+            "model_expected_rmse_mwh": 100.96,
+            "zero_baseline_mae_mwh": 79.69,
+            "zero_baseline_rmse_mwh": 158.08,
+            "train_mean_baseline_mae_mwh": 93.42,
+            "train_mean_baseline_rmse_mwh": 138.34,
+            "calendar_lag_baseline_mae_mwh": 54.76,
+            "calendar_lag_baseline_rmse_mwh": 94.37,
+            "mae_reduction_vs_zero_pct": 32.6,
+            "mae_reduction_vs_train_mean_pct": 42.51,
+            "mae_reduction_vs_calendar_lag_pct": 1.93,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8028,
+            "mean_80_interval_width_mwh": 103.87,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.8556,
+            "mean_90_interval_width_mwh": 125.47
+          }
+        },
+        {
+          "test_month": "2026-05",
+          "train_start": "2026-01-01 04:00:00",
+          "train_end": "2026-04-30 23:30:00",
+          "test_start": "2026-05-01 00:00:00",
+          "test_end": "2026-05-31 23:30:00",
+          "train_intervals": 5752,
+          "test_intervals": 1488,
+          "event_prevalence": 0.5356,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.9272,
+            "occurrence_roc_auc": 0.9091,
+            "brier_score": 0.2111,
+            "expected_calibration_error": 0.2495,
+            "precision_at_0_5": 0.9779,
+            "recall_at_0_5": 0.4994,
+            "baseline_calendar_lag_pr_auc": 0.8809,
+            "baseline_calendar_lag_brier": 0.1653,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 766,
+                "mean_predicted_prob": 0.0276,
+                "empirical_event_rate": 0.235,
+                "calibration_gap": 0.2074
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 134,
+                "mean_predicted_prob": 0.1486,
+                "empirical_event_rate": 0.5746,
+                "calibration_gap": 0.426
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 71,
+                "mean_predicted_prob": 0.2526,
+                "empirical_event_rate": 0.662,
+                "calibration_gap": 0.4093
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 55,
+                "mean_predicted_prob": 0.3484,
+                "empirical_event_rate": 0.7818,
+                "calibration_gap": 0.4334
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 55,
+                "mean_predicted_prob": 0.4539,
+                "empirical_event_rate": 0.9455,
+                "calibration_gap": 0.4915
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 59,
+                "mean_predicted_prob": 0.5508,
+                "empirical_event_rate": 0.9831,
+                "calibration_gap": 0.4323
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 67,
+                "mean_predicted_prob": 0.6518,
+                "empirical_event_rate": 0.9403,
+                "calibration_gap": 0.2885
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 75,
+                "mean_predicted_prob": 0.7484,
+                "empirical_event_rate": 0.9467,
+                "calibration_gap": 0.1983
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 66,
+                "mean_predicted_prob": 0.8509,
+                "empirical_event_rate": 1.0,
+                "calibration_gap": 0.1491
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 140,
+                "mean_predicted_prob": 0.9583,
+                "empirical_event_rate": 1.0,
+                "calibration_gap": 0.0417
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 50.31,
+            "model_expected_rmse_mwh": 118.48,
+            "zero_baseline_mae_mwh": 82.3,
+            "zero_baseline_rmse_mwh": 187.79,
+            "train_mean_baseline_mae_mwh": 96.74,
+            "train_mean_baseline_rmse_mwh": 169.9,
+            "calendar_lag_baseline_mae_mwh": 58.33,
+            "calendar_lag_baseline_rmse_mwh": 122.48,
+            "mae_reduction_vs_zero_pct": 38.87,
+            "mae_reduction_vs_train_mean_pct": 48.0,
+            "mae_reduction_vs_calendar_lag_pct": 13.74,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.7453,
+            "mean_80_interval_width_mwh": 89.38,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.8448,
+            "mean_90_interval_width_mwh": 115.04
+          }
+        },
+        {
+          "test_month": "2026-06",
+          "train_start": "2026-01-01 04:00:00",
+          "train_end": "2026-05-31 23:30:00",
+          "test_start": "2026-06-01 00:00:00",
+          "test_end": "2026-06-30 23:30:00",
+          "train_intervals": 7240,
+          "test_intervals": 1440,
+          "event_prevalence": 0.6188,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.933,
+            "occurrence_roc_auc": 0.9003,
+            "brier_score": 0.1264,
+            "expected_calibration_error": 0.0529,
+            "precision_at_0_5": 0.8697,
+            "recall_at_0_5": 0.8316,
+            "baseline_calendar_lag_pr_auc": 0.9014,
+            "baseline_calendar_lag_brier": 0.1488,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 284,
+                "mean_predicted_prob": 0.0532,
+                "empirical_event_rate": 0.0634,
+                "calibration_gap": 0.0102
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 88,
+                "mean_predicted_prob": 0.1442,
+                "empirical_event_rate": 0.2386,
+                "calibration_gap": 0.0944
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 70,
+                "mean_predicted_prob": 0.2473,
+                "empirical_event_rate": 0.4286,
+                "calibration_gap": 0.1812
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 67,
+                "mean_predicted_prob": 0.3475,
+                "empirical_event_rate": 0.5522,
+                "calibration_gap": 0.2047
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 79,
+                "mean_predicted_prob": 0.4549,
+                "empirical_event_rate": 0.557,
+                "calibration_gap": 0.102
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 86,
+                "mean_predicted_prob": 0.5462,
+                "empirical_event_rate": 0.686,
+                "calibration_gap": 0.1398
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 90,
+                "mean_predicted_prob": 0.6524,
+                "empirical_event_rate": 0.7222,
+                "calibration_gap": 0.0698
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 123,
+                "mean_predicted_prob": 0.7498,
+                "empirical_event_rate": 0.8374,
+                "calibration_gap": 0.0876
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 171,
+                "mean_predicted_prob": 0.8559,
+                "empirical_event_rate": 0.848,
+                "calibration_gap": 0.0079
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 382,
+                "mean_predicted_prob": 0.9661,
+                "empirical_event_rate": 0.966,
+                "calibration_gap": 0.0001
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 48.99,
+            "model_expected_rmse_mwh": 87.56,
+            "zero_baseline_mae_mwh": 84.23,
+            "zero_baseline_rmse_mwh": 168.49,
+            "train_mean_baseline_mae_mwh": 91.27,
+            "train_mean_baseline_rmse_mwh": 146.96,
+            "calendar_lag_baseline_mae_mwh": 53.18,
+            "calendar_lag_baseline_rmse_mwh": 89.2,
+            "mae_reduction_vs_zero_pct": 41.83,
+            "mae_reduction_vs_train_mean_pct": 46.32,
+            "mae_reduction_vs_calendar_lag_pct": 7.86,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8236,
+            "mean_80_interval_width_mwh": 131.58,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.8889,
+            "mean_90_interval_width_mwh": 170.74
+          }
+        },
+        {
+          "test_month": "2026-07",
+          "train_start": "2026-01-01 04:00:00",
+          "train_end": "2026-06-30 23:30:00",
+          "test_start": "2026-07-01 00:00:00",
+          "test_end": "2026-07-31 23:30:00",
+          "train_intervals": 8680,
+          "test_intervals": 1488,
+          "event_prevalence": 0.5679,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.9331,
+            "occurrence_roc_auc": 0.9102,
+            "brier_score": 0.1207,
+            "expected_calibration_error": 0.0313,
+            "precision_at_0_5": 0.8507,
+            "recall_at_0_5": 0.8426,
+            "baseline_calendar_lag_pr_auc": 0.9349,
+            "baseline_calendar_lag_brier": 0.1251,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 258,
+                "mean_predicted_prob": 0.0604,
+                "empirical_event_rate": 0.062,
+                "calibration_gap": 0.0016
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 164,
+                "mean_predicted_prob": 0.1426,
+                "empirical_event_rate": 0.1951,
+                "calibration_gap": 0.0525
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 106,
+                "mean_predicted_prob": 0.2452,
+                "empirical_event_rate": 0.2736,
+                "calibration_gap": 0.0284
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 63,
+                "mean_predicted_prob": 0.3479,
+                "empirical_event_rate": 0.381,
+                "calibration_gap": 0.0331
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 60,
+                "mean_predicted_prob": 0.4479,
+                "empirical_event_rate": 0.5333,
+                "calibration_gap": 0.0854
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 69,
+                "mean_predicted_prob": 0.557,
+                "empirical_event_rate": 0.5942,
+                "calibration_gap": 0.0372
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 78,
+                "mean_predicted_prob": 0.6516,
+                "empirical_event_rate": 0.5385,
+                "calibration_gap": 0.1131
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 118,
+                "mean_predicted_prob": 0.7566,
+                "empirical_event_rate": 0.7373,
+                "calibration_gap": 0.0193
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 180,
+                "mean_predicted_prob": 0.8514,
+                "empirical_event_rate": 0.8944,
+                "calibration_gap": 0.0431
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 392,
+                "mean_predicted_prob": 0.9569,
+                "empirical_event_rate": 0.9719,
+                "calibration_gap": 0.0151
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 31.3,
+            "model_expected_rmse_mwh": 59.17,
+            "zero_baseline_mae_mwh": 55.38,
+            "zero_baseline_rmse_mwh": 114.08,
+            "train_mean_baseline_mae_mwh": 68.09,
+            "train_mean_baseline_rmse_mwh": 100.77,
+            "calendar_lag_baseline_mae_mwh": 38.44,
+            "calendar_lag_baseline_rmse_mwh": 65.41,
+            "mae_reduction_vs_zero_pct": 43.47,
+            "mae_reduction_vs_train_mean_pct": 54.03,
+            "mae_reduction_vs_calendar_lag_pct": 18.56,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8602,
+            "mean_80_interval_width_mwh": 105.46,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9147,
+            "mean_90_interval_width_mwh": 142.34
+          }
+        },
+        {
+          "test_month": "2026-08",
+          "train_start": "2026-01-01 04:00:00",
+          "train_end": "2026-07-31 23:30:00",
+          "test_start": "2026-08-01 00:00:00",
+          "test_end": "2026-08-31 22:30:00",
+          "train_intervals": 10168,
+          "test_intervals": 1486,
+          "event_prevalence": 0.2921,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.8496,
+            "occurrence_roc_auc": 0.9219,
+            "brier_score": 0.0989,
+            "expected_calibration_error": 0.0371,
+            "precision_at_0_5": 0.7601,
+            "recall_at_0_5": 0.7811,
+            "baseline_calendar_lag_pr_auc": 0.7736,
+            "baseline_calendar_lag_brier": 0.1341,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 633,
+                "mean_predicted_prob": 0.0411,
+                "empirical_event_rate": 0.0284,
+                "calibration_gap": 0.0127
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 165,
+                "mean_predicted_prob": 0.1443,
+                "empirical_event_rate": 0.0909,
+                "calibration_gap": 0.0534
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 102,
+                "mean_predicted_prob": 0.2444,
+                "empirical_event_rate": 0.1667,
+                "calibration_gap": 0.0777
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 78,
+                "mean_predicted_prob": 0.3433,
+                "empirical_event_rate": 0.2564,
+                "calibration_gap": 0.0869
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 62,
+                "mean_predicted_prob": 0.4542,
+                "empirical_event_rate": 0.4032,
+                "calibration_gap": 0.0509
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 65,
+                "mean_predicted_prob": 0.5527,
+                "empirical_event_rate": 0.5077,
+                "calibration_gap": 0.045
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 51,
+                "mean_predicted_prob": 0.6588,
+                "empirical_event_rate": 0.5294,
+                "calibration_gap": 0.1294
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 64,
+                "mean_predicted_prob": 0.7575,
+                "empirical_event_rate": 0.6406,
+                "calibration_gap": 0.1169
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 110,
+                "mean_predicted_prob": 0.8531,
+                "empirical_event_rate": 0.8364,
+                "calibration_gap": 0.0168
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 156,
+                "mean_predicted_prob": 0.9464,
+                "empirical_event_rate": 0.9359,
+                "calibration_gap": 0.0105
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 14.28,
+            "model_expected_rmse_mwh": 27.15,
+            "zero_baseline_mae_mwh": 15.01,
+            "zero_baseline_rmse_mwh": 38.26,
+            "train_mean_baseline_mae_mwh": 60.4,
+            "train_mean_baseline_rmse_mwh": 63.33,
+            "calendar_lag_baseline_mae_mwh": 18.4,
+            "calendar_lag_baseline_rmse_mwh": 27.46,
+            "mae_reduction_vs_zero_pct": 4.86,
+            "mae_reduction_vs_train_mean_pct": 76.35,
+            "mae_reduction_vs_calendar_lag_pct": 22.38,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.9731,
+            "mean_80_interval_width_mwh": 56.47,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9832,
+            "mean_90_interval_width_mwh": 86.83
+          }
+        }
+      ]
+    },
+    "12h": {
+      "summary": {
+        "horizon_hours": 12.0,
+        "step_intervals_30m": 24,
+        "folds_evaluated": 5,
+        "mean_event_prevalence": 0.4998,
+        "mean_pr_auc": 0.7372,
+        "median_pr_auc": 0.8087,
+        "min_pr_auc": 0.5382,
+        "max_pr_auc": 0.8359,
+        "mean_baseline_calendar_lag_pr_auc": 0.7194,
+        "mean_model_mae_mwh": 67.83,
+        "mean_cal_lag_mae_mwh": 70.38,
+        "mean_zero_mae_mwh": 63.32,
+        "overall_mae_reduction_vs_cal_lag_pct": 3.62,
+        "overall_mae_reduction_vs_zero_pct": -7.12,
+        "mean_empirical_80_coverage": 0.8642,
+        "mean_empirical_90_coverage": 0.9049,
+        "honest_assessment": "No improvement over simple calendar/lag baseline: grid lag features lose predictive power without future NWP weather forecasts"
+      },
+      "folds": [
+        {
+          "test_month": "2026-04",
+          "train_start": "2026-01-01 12:00:00",
+          "train_end": "2026-03-31 23:30:00",
+          "test_start": "2026-04-01 00:00:00",
+          "test_end": "2026-04-30 23:30:00",
+          "train_intervals": 4296,
+          "test_intervals": 1440,
+          "event_prevalence": 0.4847,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.6811,
+            "occurrence_roc_auc": 0.7314,
+            "brier_score": 0.2445,
+            "expected_calibration_error": 0.1727,
+            "precision_at_0_5": 0.711,
+            "recall_at_0_5": 0.437,
+            "baseline_calendar_lag_pr_auc": 0.6466,
+            "baseline_calendar_lag_brier": 0.2325,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 398,
+                "mean_predicted_prob": 0.053,
+                "empirical_event_rate": 0.2161,
+                "calibration_gap": 0.1631
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 215,
+                "mean_predicted_prob": 0.1459,
+                "empirical_event_rate": 0.414,
+                "calibration_gap": 0.2681
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 174,
+                "mean_predicted_prob": 0.2464,
+                "empirical_event_rate": 0.5057,
+                "calibration_gap": 0.2593
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 118,
+                "mean_predicted_prob": 0.3514,
+                "empirical_event_rate": 0.5593,
+                "calibration_gap": 0.2079
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 106,
+                "mean_predicted_prob": 0.4462,
+                "empirical_event_rate": 0.6038,
+                "calibration_gap": 0.1576
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 98,
+                "mean_predicted_prob": 0.549,
+                "empirical_event_rate": 0.6531,
+                "calibration_gap": 0.1041
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 109,
+                "mean_predicted_prob": 0.6511,
+                "empirical_event_rate": 0.7248,
+                "calibration_gap": 0.0737
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 87,
+                "mean_predicted_prob": 0.744,
+                "empirical_event_rate": 0.6897,
+                "calibration_gap": 0.0544
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 82,
+                "mean_predicted_prob": 0.8467,
+                "empirical_event_rate": 0.7439,
+                "calibration_gap": 0.1028
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 53,
+                "mean_predicted_prob": 0.9321,
+                "empirical_event_rate": 0.7736,
+                "calibration_gap": 0.1585
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 69.62,
+            "model_expected_rmse_mwh": 116.53,
+            "zero_baseline_mae_mwh": 79.69,
+            "zero_baseline_rmse_mwh": 158.08,
+            "train_mean_baseline_mae_mwh": 93.49,
+            "train_mean_baseline_rmse_mwh": 138.31,
+            "calendar_lag_baseline_mae_mwh": 85.98,
+            "calendar_lag_baseline_rmse_mwh": 133.33,
+            "mae_reduction_vs_zero_pct": 12.64,
+            "mae_reduction_vs_train_mean_pct": 25.54,
+            "mae_reduction_vs_calendar_lag_pct": 19.03,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.75,
+            "mean_80_interval_width_mwh": 112.26,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.8236,
+            "mean_90_interval_width_mwh": 166.32
+          }
+        },
+        {
+          "test_month": "2026-05",
+          "train_start": "2026-01-01 12:00:00",
+          "train_end": "2026-04-30 23:30:00",
+          "test_start": "2026-05-01 00:00:00",
+          "test_end": "2026-05-31 23:30:00",
+          "train_intervals": 5736,
+          "test_intervals": 1488,
+          "event_prevalence": 0.5356,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.8087,
+            "occurrence_roc_auc": 0.7689,
+            "brier_score": 0.3239,
+            "expected_calibration_error": 0.3471,
+            "precision_at_0_5": 0.9157,
+            "recall_at_0_5": 0.2045,
+            "baseline_calendar_lag_pr_auc": 0.7138,
+            "baseline_calendar_lag_brier": 0.2624,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 738,
+                "mean_predicted_prob": 0.0393,
+                "empirical_event_rate": 0.3266,
+                "calibration_gap": 0.2873
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 312,
+                "mean_predicted_prob": 0.1429,
+                "empirical_event_rate": 0.6346,
+                "calibration_gap": 0.4918
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 114,
+                "mean_predicted_prob": 0.2431,
+                "empirical_event_rate": 0.6404,
+                "calibration_gap": 0.3972
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 84,
+                "mean_predicted_prob": 0.345,
+                "empirical_event_rate": 0.7738,
+                "calibration_gap": 0.4288
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 62,
+                "mean_predicted_prob": 0.4467,
+                "empirical_event_rate": 0.9194,
+                "calibration_gap": 0.4727
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 45,
+                "mean_predicted_prob": 0.5379,
+                "empirical_event_rate": 0.7556,
+                "calibration_gap": 0.2177
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 49,
+                "mean_predicted_prob": 0.6448,
+                "empirical_event_rate": 0.9184,
+                "calibration_gap": 0.2736
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 45,
+                "mean_predicted_prob": 0.7488,
+                "empirical_event_rate": 1.0,
+                "calibration_gap": 0.2512
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 36,
+                "mean_predicted_prob": 0.8414,
+                "empirical_event_rate": 1.0,
+                "calibration_gap": 0.1586
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 3,
+                "mean_predicted_prob": 0.9164,
+                "empirical_event_rate": 1.0,
+                "calibration_gap": 0.0836
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 72.52,
+            "model_expected_rmse_mwh": 163.13,
+            "zero_baseline_mae_mwh": 82.3,
+            "zero_baseline_rmse_mwh": 187.79,
+            "train_mean_baseline_mae_mwh": 96.81,
+            "train_mean_baseline_rmse_mwh": 169.88,
+            "calendar_lag_baseline_mae_mwh": 83.05,
+            "calendar_lag_baseline_rmse_mwh": 152.16,
+            "mae_reduction_vs_zero_pct": 11.89,
+            "mae_reduction_vs_train_mean_pct": 25.1,
+            "mae_reduction_vs_calendar_lag_pct": 12.68,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8387,
+            "mean_80_interval_width_mwh": 135.65,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.8481,
+            "mean_90_interval_width_mwh": 165.78
+          }
+        },
+        {
+          "test_month": "2026-06",
+          "train_start": "2026-01-01 12:00:00",
+          "train_end": "2026-05-31 23:30:00",
+          "test_start": "2026-06-01 00:00:00",
+          "test_end": "2026-06-30 23:30:00",
+          "train_intervals": 7224,
+          "test_intervals": 1440,
+          "event_prevalence": 0.6188,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.8359,
+            "occurrence_roc_auc": 0.7807,
+            "brier_score": 0.2024,
+            "expected_calibration_error": 0.1414,
+            "precision_at_0_5": 0.8003,
+            "recall_at_0_5": 0.6162,
+            "baseline_calendar_lag_pr_auc": 0.817,
+            "baseline_calendar_lag_brier": 0.1959,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 174,
+                "mean_predicted_prob": 0.053,
+                "empirical_event_rate": 0.0747,
+                "calibration_gap": 0.0217
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 102,
+                "mean_predicted_prob": 0.1553,
+                "empirical_event_rate": 0.3922,
+                "calibration_gap": 0.2368
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 143,
+                "mean_predicted_prob": 0.2516,
+                "empirical_event_rate": 0.4895,
+                "calibration_gap": 0.2379
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 144,
+                "mean_predicted_prob": 0.3507,
+                "empirical_event_rate": 0.5486,
+                "calibration_gap": 0.1979
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 191,
+                "mean_predicted_prob": 0.455,
+                "empirical_event_rate": 0.733,
+                "calibration_gap": 0.278
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 187,
+                "mean_predicted_prob": 0.5511,
+                "empirical_event_rate": 0.7326,
+                "calibration_gap": 0.1815
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 127,
+                "mean_predicted_prob": 0.6503,
+                "empirical_event_rate": 0.7402,
+                "calibration_gap": 0.0899
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 165,
+                "mean_predicted_prob": 0.7533,
+                "empirical_event_rate": 0.8,
+                "calibration_gap": 0.0467
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 122,
+                "mean_predicted_prob": 0.8547,
+                "empirical_event_rate": 0.8361,
+                "calibration_gap": 0.0186
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 85,
+                "mean_predicted_prob": 0.9326,
+                "empirical_event_rate": 0.9882,
+                "calibration_gap": 0.0556
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 86.39,
+            "model_expected_rmse_mwh": 152.76,
+            "zero_baseline_mae_mwh": 84.23,
+            "zero_baseline_rmse_mwh": 168.49,
+            "train_mean_baseline_mae_mwh": 91.32,
+            "train_mean_baseline_rmse_mwh": 146.94,
+            "calendar_lag_baseline_mae_mwh": 82.34,
+            "calendar_lag_baseline_rmse_mwh": 141.58,
+            "mae_reduction_vs_zero_pct": -2.57,
+            "mae_reduction_vs_train_mean_pct": 5.4,
+            "mae_reduction_vs_calendar_lag_pct": -4.91,
+            "beats_all_baselines": false,
+            "no_improvement_flag": true
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8674,
+            "mean_80_interval_width_mwh": 166.18,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9,
+            "mean_90_interval_width_mwh": 223.18
+          }
+        },
+        {
+          "test_month": "2026-07",
+          "train_start": "2026-01-01 12:00:00",
+          "train_end": "2026-06-30 23:30:00",
+          "test_start": "2026-07-01 00:00:00",
+          "test_end": "2026-07-31 23:30:00",
+          "train_intervals": 8664,
+          "test_intervals": 1488,
+          "event_prevalence": 0.5679,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.8219,
+            "occurrence_roc_auc": 0.7651,
+            "brier_score": 0.2077,
+            "expected_calibration_error": 0.1129,
+            "precision_at_0_5": 0.6565,
+            "recall_at_0_5": 0.9136,
+            "baseline_calendar_lag_pr_auc": 0.8589,
+            "baseline_calendar_lag_brier": 0.1815,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 6,
+                "mean_predicted_prob": 0.0884,
+                "empirical_event_rate": 0.0,
+                "calibration_gap": 0.0884
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 42,
+                "mean_predicted_prob": 0.1562,
+                "empirical_event_rate": 0.0238,
+                "calibration_gap": 0.1324
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 48,
+                "mean_predicted_prob": 0.248,
+                "empirical_event_rate": 0.2083,
+                "calibration_gap": 0.0397
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 105,
+                "mean_predicted_prob": 0.3594,
+                "empirical_event_rate": 0.2667,
+                "calibration_gap": 0.0927
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 111,
+                "mean_predicted_prob": 0.4508,
+                "empirical_event_rate": 0.3063,
+                "calibration_gap": 0.1445
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 148,
+                "mean_predicted_prob": 0.5535,
+                "empirical_event_rate": 0.4932,
+                "calibration_gap": 0.0603
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 234,
+                "mean_predicted_prob": 0.6503,
+                "empirical_event_rate": 0.4957,
+                "calibration_gap": 0.1545
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 277,
+                "mean_predicted_prob": 0.7528,
+                "empirical_event_rate": 0.574,
+                "calibration_gap": 0.1788
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 301,
+                "mean_predicted_prob": 0.8511,
+                "empirical_event_rate": 0.7276,
+                "calibration_gap": 0.1235
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 216,
+                "mean_predicted_prob": 0.9376,
+                "empirical_event_rate": 0.9491,
+                "calibration_gap": 0.0115
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 69.7,
+            "model_expected_rmse_mwh": 107.1,
+            "zero_baseline_mae_mwh": 55.38,
+            "zero_baseline_rmse_mwh": 114.08,
+            "train_mean_baseline_mae_mwh": 68.15,
+            "train_mean_baseline_rmse_mwh": 100.79,
+            "calendar_lag_baseline_mae_mwh": 63.57,
+            "calendar_lag_baseline_rmse_mwh": 97.27,
+            "mae_reduction_vs_zero_pct": -25.85,
+            "mae_reduction_vs_train_mean_pct": -2.26,
+            "mae_reduction_vs_calendar_lag_pct": -9.64,
+            "beats_all_baselines": false,
+            "no_improvement_flag": true
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8844,
+            "mean_80_interval_width_mwh": 169.89,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9603,
+            "mean_90_interval_width_mwh": 247.84
+          }
+        },
+        {
+          "test_month": "2026-08",
+          "train_start": "2026-01-01 12:00:00",
+          "train_end": "2026-07-31 23:30:00",
+          "test_start": "2026-08-01 00:00:00",
+          "test_end": "2026-08-31 22:30:00",
+          "train_intervals": 10152,
+          "test_intervals": 1486,
+          "event_prevalence": 0.2921,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.5382,
+            "occurrence_roc_auc": 0.7896,
+            "brier_score": 0.2444,
+            "expected_calibration_error": 0.2759,
+            "precision_at_0_5": 0.457,
+            "recall_at_0_5": 0.8456,
+            "baseline_calendar_lag_pr_auc": 0.5609,
+            "baseline_calendar_lag_brier": 0.2097,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 37,
+                "mean_predicted_prob": 0.0763,
+                "empirical_event_rate": 0.0,
+                "calibration_gap": 0.0763
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 179,
+                "mean_predicted_prob": 0.1515,
+                "empirical_event_rate": 0.0391,
+                "calibration_gap": 0.1124
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 160,
+                "mean_predicted_prob": 0.2506,
+                "empirical_event_rate": 0.1313,
+                "calibration_gap": 0.1194
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 146,
+                "mean_predicted_prob": 0.3474,
+                "empirical_event_rate": 0.1301,
+                "calibration_gap": 0.2173
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 161,
+                "mean_predicted_prob": 0.4491,
+                "empirical_event_rate": 0.1242,
+                "calibration_gap": 0.3248
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 121,
+                "mean_predicted_prob": 0.5506,
+                "empirical_event_rate": 0.1488,
+                "calibration_gap": 0.4018
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 97,
+                "mean_predicted_prob": 0.6494,
+                "empirical_event_rate": 0.2474,
+                "calibration_gap": 0.402
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 99,
+                "mean_predicted_prob": 0.7516,
+                "empirical_event_rate": 0.3333,
+                "calibration_gap": 0.4183
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 135,
+                "mean_predicted_prob": 0.8643,
+                "empirical_event_rate": 0.6296,
+                "calibration_gap": 0.2347
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 351,
+                "mean_predicted_prob": 0.9407,
+                "empirical_event_rate": 0.5897,
+                "calibration_gap": 0.3509
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 40.92,
+            "model_expected_rmse_mwh": 56.01,
+            "zero_baseline_mae_mwh": 15.01,
+            "zero_baseline_rmse_mwh": 38.26,
+            "train_mean_baseline_mae_mwh": 60.49,
+            "train_mean_baseline_rmse_mwh": 63.41,
+            "calendar_lag_baseline_mae_mwh": 36.95,
+            "calendar_lag_baseline_rmse_mwh": 43.68,
+            "mae_reduction_vs_zero_pct": -172.6,
+            "mae_reduction_vs_train_mean_pct": 32.34,
+            "mae_reduction_vs_calendar_lag_pct": -10.77,
+            "beats_all_baselines": false,
+            "no_improvement_flag": true
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.9805,
+            "mean_80_interval_width_mwh": 110.9,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9926,
+            "mean_90_interval_width_mwh": 147.38
+          }
+        }
+      ]
+    },
+    "24h": {
+      "summary": {
+        "horizon_hours": 24.0,
+        "step_intervals_30m": 48,
+        "folds_evaluated": 5,
+        "mean_event_prevalence": 0.4998,
+        "mean_pr_auc": 0.7021,
+        "median_pr_auc": 0.71,
+        "min_pr_auc": 0.4905,
+        "max_pr_auc": 0.8227,
+        "mean_baseline_calendar_lag_pr_auc": 0.6928,
+        "mean_model_mae_mwh": 69.67,
+        "mean_cal_lag_mae_mwh": 76.75,
+        "mean_zero_mae_mwh": 63.32,
+        "overall_mae_reduction_vs_cal_lag_pct": 9.23,
+        "overall_mae_reduction_vs_zero_pct": -10.02,
+        "mean_empirical_80_coverage": 0.8607,
+        "mean_empirical_90_coverage": 0.8954,
+        "honest_assessment": "No improvement over simple calendar/lag baseline: grid lag features lose predictive power without future NWP weather forecasts"
+      },
+      "folds": [
+        {
+          "test_month": "2026-04",
+          "train_start": "2026-01-02 00:00:00",
+          "train_end": "2026-03-31 23:30:00",
+          "test_start": "2026-04-01 00:00:00",
+          "test_end": "2026-04-30 23:30:00",
+          "train_intervals": 4272,
+          "test_intervals": 1440,
+          "event_prevalence": 0.4847,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.4905,
+            "occurrence_roc_auc": 0.5008,
+            "brier_score": 0.323,
+            "expected_calibration_error": 0.2193,
+            "precision_at_0_5": 0.5365,
+            "recall_at_0_5": 0.3052,
+            "baseline_calendar_lag_pr_auc": 0.4986,
+            "baseline_calendar_lag_brier": 0.262,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 269,
+                "mean_predicted_prob": 0.0591,
+                "empirical_event_rate": 0.5465,
+                "calibration_gap": 0.4874
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 260,
+                "mean_predicted_prob": 0.1457,
+                "empirical_event_rate": 0.4577,
+                "calibration_gap": 0.312
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 185,
+                "mean_predicted_prob": 0.2464,
+                "empirical_event_rate": 0.4054,
+                "calibration_gap": 0.159
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 160,
+                "mean_predicted_prob": 0.353,
+                "empirical_event_rate": 0.4688,
+                "calibration_gap": 0.1158
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 169,
+                "mean_predicted_prob": 0.4427,
+                "empirical_event_rate": 0.4083,
+                "calibration_gap": 0.0344
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 159,
+                "mean_predicted_prob": 0.5507,
+                "empirical_event_rate": 0.566,
+                "calibration_gap": 0.0153
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 107,
+                "mean_predicted_prob": 0.6428,
+                "empirical_event_rate": 0.5981,
+                "calibration_gap": 0.0447
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 98,
+                "mean_predicted_prob": 0.753,
+                "empirical_event_rate": 0.4592,
+                "calibration_gap": 0.2938
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 32,
+                "mean_predicted_prob": 0.8381,
+                "empirical_event_rate": 0.4375,
+                "calibration_gap": 0.4006
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 1,
+                "mean_predicted_prob": 0.9334,
+                "empirical_event_rate": 0.0,
+                "calibration_gap": 0.9334
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 81.79,
+            "model_expected_rmse_mwh": 139.17,
+            "zero_baseline_mae_mwh": 79.69,
+            "zero_baseline_rmse_mwh": 158.08,
+            "train_mean_baseline_mae_mwh": 93.61,
+            "train_mean_baseline_rmse_mwh": 138.27,
+            "calendar_lag_baseline_mae_mwh": 93.09,
+            "calendar_lag_baseline_rmse_mwh": 141.81,
+            "mae_reduction_vs_zero_pct": -2.64,
+            "mae_reduction_vs_train_mean_pct": 12.62,
+            "mae_reduction_vs_calendar_lag_pct": 12.14,
+            "beats_all_baselines": false,
+            "no_improvement_flag": true
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8097,
+            "mean_80_interval_width_mwh": 168.36,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.8424,
+            "mean_90_interval_width_mwh": 200.5
+          }
+        },
+        {
+          "test_month": "2026-05",
+          "train_start": "2026-01-02 00:00:00",
+          "train_end": "2026-04-30 23:30:00",
+          "test_start": "2026-05-01 00:00:00",
+          "test_end": "2026-05-31 23:30:00",
+          "train_intervals": 5712,
+          "test_intervals": 1488,
+          "event_prevalence": 0.5356,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.6762,
+            "occurrence_roc_auc": 0.6141,
+            "brier_score": 0.3973,
+            "expected_calibration_error": 0.3934,
+            "precision_at_0_5": 0.8692,
+            "recall_at_0_5": 0.1418,
+            "baseline_calendar_lag_pr_auc": 0.6591,
+            "baseline_calendar_lag_brier": 0.2493,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 983,
+                "mean_predicted_prob": 0.038,
+                "empirical_event_rate": 0.4995,
+                "calibration_gap": 0.4615
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 202,
+                "mean_predicted_prob": 0.1554,
+                "empirical_event_rate": 0.4158,
+                "calibration_gap": 0.2605
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 108,
+                "mean_predicted_prob": 0.2454,
+                "empirical_event_rate": 0.6019,
+                "calibration_gap": 0.3565
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 36,
+                "mean_predicted_prob": 0.3481,
+                "empirical_event_rate": 0.5556,
+                "calibration_gap": 0.2074
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 29,
+                "mean_predicted_prob": 0.4489,
+                "empirical_event_rate": 0.8276,
+                "calibration_gap": 0.3787
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 38,
+                "mean_predicted_prob": 0.5541,
+                "empirical_event_rate": 0.7368,
+                "calibration_gap": 0.1827
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 22,
+                "mean_predicted_prob": 0.6627,
+                "empirical_event_rate": 0.8182,
+                "calibration_gap": 0.1555
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 38,
+                "mean_predicted_prob": 0.738,
+                "empirical_event_rate": 0.9211,
+                "calibration_gap": 0.1831
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 32,
+                "mean_predicted_prob": 0.8503,
+                "empirical_event_rate": 1.0,
+                "calibration_gap": 0.1497
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 0,
+                "mean_predicted_prob": null,
+                "empirical_event_rate": null,
+                "calibration_gap": null
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 77.99,
+            "model_expected_rmse_mwh": 172.0,
+            "zero_baseline_mae_mwh": 82.3,
+            "zero_baseline_rmse_mwh": 187.79,
+            "train_mean_baseline_mae_mwh": 96.93,
+            "train_mean_baseline_rmse_mwh": 169.85,
+            "calendar_lag_baseline_mae_mwh": 90.1,
+            "calendar_lag_baseline_rmse_mwh": 175.03,
+            "mae_reduction_vs_zero_pct": 5.24,
+            "mae_reduction_vs_train_mean_pct": 19.54,
+            "mae_reduction_vs_calendar_lag_pct": 13.44,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.7823,
+            "mean_80_interval_width_mwh": 103.11,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.8394,
+            "mean_90_interval_width_mwh": 163.58
+          }
+        },
+        {
+          "test_month": "2026-06",
+          "train_start": "2026-01-02 00:00:00",
+          "train_end": "2026-05-31 23:30:00",
+          "test_start": "2026-06-01 00:00:00",
+          "test_end": "2026-06-30 23:30:00",
+          "train_intervals": 7200,
+          "test_intervals": 1440,
+          "event_prevalence": 0.6188,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.8227,
+            "occurrence_roc_auc": 0.7359,
+            "brier_score": 0.2055,
+            "expected_calibration_error": 0.0848,
+            "precision_at_0_5": 0.7488,
+            "recall_at_0_5": 0.7093,
+            "baseline_calendar_lag_pr_auc": 0.803,
+            "baseline_calendar_lag_brier": 0.2074,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 55,
+                "mean_predicted_prob": 0.0581,
+                "empirical_event_rate": 0.0182,
+                "calibration_gap": 0.0399
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 103,
+                "mean_predicted_prob": 0.1597,
+                "empirical_event_rate": 0.3786,
+                "calibration_gap": 0.219
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 132,
+                "mean_predicted_prob": 0.2479,
+                "empirical_event_rate": 0.3485,
+                "calibration_gap": 0.1006
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 161,
+                "mean_predicted_prob": 0.3519,
+                "empirical_event_rate": 0.5901,
+                "calibration_gap": 0.2381
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 145,
+                "mean_predicted_prob": 0.4503,
+                "empirical_event_rate": 0.5379,
+                "calibration_gap": 0.0876
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 125,
+                "mean_predicted_prob": 0.5469,
+                "empirical_event_rate": 0.6,
+                "calibration_gap": 0.0531
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 157,
+                "mean_predicted_prob": 0.6545,
+                "empirical_event_rate": 0.6815,
+                "calibration_gap": 0.0271
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 224,
+                "mean_predicted_prob": 0.7474,
+                "empirical_event_rate": 0.7009,
+                "calibration_gap": 0.0465
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 231,
+                "mean_predicted_prob": 0.8495,
+                "empirical_event_rate": 0.8182,
+                "calibration_gap": 0.0313
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 107,
+                "mean_predicted_prob": 0.9292,
+                "empirical_event_rate": 0.972,
+                "calibration_gap": 0.0427
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 77.75,
+            "model_expected_rmse_mwh": 128.36,
+            "zero_baseline_mae_mwh": 84.23,
+            "zero_baseline_rmse_mwh": 168.49,
+            "train_mean_baseline_mae_mwh": 91.4,
+            "train_mean_baseline_rmse_mwh": 146.92,
+            "calendar_lag_baseline_mae_mwh": 88.56,
+            "calendar_lag_baseline_rmse_mwh": 138.25,
+            "mae_reduction_vs_zero_pct": 7.69,
+            "mae_reduction_vs_train_mean_pct": 14.93,
+            "mae_reduction_vs_calendar_lag_pct": 12.2,
+            "beats_all_baselines": true,
+            "no_improvement_flag": false
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8632,
+            "mean_80_interval_width_mwh": 181.47,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.8799,
+            "mean_90_interval_width_mwh": 217.43
+          }
+        },
+        {
+          "test_month": "2026-07",
+          "train_start": "2026-01-02 00:00:00",
+          "train_end": "2026-06-30 23:30:00",
+          "test_start": "2026-07-01 00:00:00",
+          "test_end": "2026-07-31 23:30:00",
+          "train_intervals": 8640,
+          "test_intervals": 1488,
+          "event_prevalence": 0.5679,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.8112,
+            "occurrence_roc_auc": 0.7485,
+            "brier_score": 0.2122,
+            "expected_calibration_error": 0.0982,
+            "precision_at_0_5": 0.6548,
+            "recall_at_0_5": 0.826,
+            "baseline_calendar_lag_pr_auc": 0.8688,
+            "baseline_calendar_lag_brier": 0.1759,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 5,
+                "mean_predicted_prob": 0.0931,
+                "empirical_event_rate": 0.4,
+                "calibration_gap": 0.3069
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 55,
+                "mean_predicted_prob": 0.1711,
+                "empirical_event_rate": 0.1455,
+                "calibration_gap": 0.0257
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 129,
+                "mean_predicted_prob": 0.257,
+                "empirical_event_rate": 0.2868,
+                "calibration_gap": 0.0298
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 118,
+                "mean_predicted_prob": 0.3477,
+                "empirical_event_rate": 0.3305,
+                "calibration_gap": 0.0172
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 115,
+                "mean_predicted_prob": 0.4548,
+                "empirical_event_rate": 0.5304,
+                "calibration_gap": 0.0757
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 154,
+                "mean_predicted_prob": 0.5514,
+                "empirical_event_rate": 0.5584,
+                "calibration_gap": 0.007
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 160,
+                "mean_predicted_prob": 0.6512,
+                "empirical_event_rate": 0.3438,
+                "calibration_gap": 0.3074
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 234,
+                "mean_predicted_prob": 0.7483,
+                "empirical_event_rate": 0.4701,
+                "calibration_gap": 0.2782
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 281,
+                "mean_predicted_prob": 0.8552,
+                "empirical_event_rate": 0.8221,
+                "calibration_gap": 0.0331
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 237,
+                "mean_predicted_prob": 0.9281,
+                "empirical_event_rate": 0.9114,
+                "calibration_gap": 0.0167
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 77.05,
+            "model_expected_rmse_mwh": 118.99,
+            "zero_baseline_mae_mwh": 55.38,
+            "zero_baseline_rmse_mwh": 114.08,
+            "train_mean_baseline_mae_mwh": 68.25,
+            "train_mean_baseline_rmse_mwh": 100.82,
+            "calendar_lag_baseline_mae_mwh": 73.32,
+            "calendar_lag_baseline_rmse_mwh": 105.65,
+            "mae_reduction_vs_zero_pct": -39.13,
+            "mae_reduction_vs_train_mean_pct": -12.9,
+            "mae_reduction_vs_calendar_lag_pct": -5.09,
+            "beats_all_baselines": false,
+            "no_improvement_flag": true
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.8743,
+            "mean_80_interval_width_mwh": 190.13,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9167,
+            "mean_90_interval_width_mwh": 251.87
+          }
+        },
+        {
+          "test_month": "2026-08",
+          "train_start": "2026-01-02 00:00:00",
+          "train_end": "2026-07-31 23:30:00",
+          "test_start": "2026-08-01 00:00:00",
+          "test_end": "2026-08-31 22:30:00",
+          "train_intervals": 10128,
+          "test_intervals": 1486,
+          "event_prevalence": 0.2921,
+          "event_definition": "constraint_mwh > 5.0",
+          "classification": {
+            "occurrence_pr_auc": 0.71,
+            "occurrence_roc_auc": 0.801,
+            "brier_score": 0.1742,
+            "expected_calibration_error": 0.1587,
+            "precision_at_0_5": 0.5554,
+            "recall_at_0_5": 0.7051,
+            "baseline_calendar_lag_pr_auc": 0.6344,
+            "baseline_calendar_lag_brier": 0.2114,
+            "reliability_bins": [
+              {
+                "bin": 0,
+                "bin_lower": 0.0,
+                "bin_upper": 0.1,
+                "count": 105,
+                "mean_predicted_prob": 0.0795,
+                "empirical_event_rate": 0.019,
+                "calibration_gap": 0.0604
+              },
+              {
+                "bin": 1,
+                "bin_lower": 0.1,
+                "bin_upper": 0.2,
+                "count": 317,
+                "mean_predicted_prob": 0.1465,
+                "empirical_event_rate": 0.1767,
+                "calibration_gap": 0.0301
+              },
+              {
+                "bin": 2,
+                "bin_lower": 0.2,
+                "bin_upper": 0.3,
+                "count": 256,
+                "mean_predicted_prob": 0.2487,
+                "empirical_event_rate": 0.082,
+                "calibration_gap": 0.1667
+              },
+              {
+                "bin": 3,
+                "bin_lower": 0.3,
+                "bin_upper": 0.4,
+                "count": 140,
+                "mean_predicted_prob": 0.3482,
+                "empirical_event_rate": 0.1786,
+                "calibration_gap": 0.1696
+              },
+              {
+                "bin": 4,
+                "bin_lower": 0.4,
+                "bin_upper": 0.5,
+                "count": 117,
+                "mean_predicted_prob": 0.4512,
+                "empirical_event_rate": 0.2051,
+                "calibration_gap": 0.2461
+              },
+              {
+                "bin": 5,
+                "bin_lower": 0.5,
+                "bin_upper": 0.6,
+                "count": 110,
+                "mean_predicted_prob": 0.5556,
+                "empirical_event_rate": 0.1909,
+                "calibration_gap": 0.3646
+              },
+              {
+                "bin": 6,
+                "bin_lower": 0.6,
+                "bin_upper": 0.7,
+                "count": 65,
+                "mean_predicted_prob": 0.6505,
+                "empirical_event_rate": 0.2462,
+                "calibration_gap": 0.4044
+              },
+              {
+                "bin": 7,
+                "bin_lower": 0.7,
+                "bin_upper": 0.8,
+                "count": 71,
+                "mean_predicted_prob": 0.7525,
+                "empirical_event_rate": 0.3662,
+                "calibration_gap": 0.3863
+              },
+              {
+                "bin": 8,
+                "bin_lower": 0.8,
+                "bin_upper": 0.9,
+                "count": 125,
+                "mean_predicted_prob": 0.8598,
+                "empirical_event_rate": 0.76,
+                "calibration_gap": 0.0998
+              },
+              {
+                "bin": 9,
+                "bin_lower": 0.9,
+                "bin_upper": 1.0,
+                "count": 180,
+                "mean_predicted_prob": 0.9249,
+                "empirical_event_rate": 0.8222,
+                "calibration_gap": 0.1027
+              }
+            ]
+          },
+          "volume_mwh": {
+            "model_expected_mae_mwh": 33.76,
+            "model_expected_rmse_mwh": 46.73,
+            "zero_baseline_mae_mwh": 15.01,
+            "zero_baseline_rmse_mwh": 38.26,
+            "train_mean_baseline_mae_mwh": 60.61,
+            "train_mean_baseline_rmse_mwh": 63.53,
+            "calendar_lag_baseline_mae_mwh": 38.7,
+            "calendar_lag_baseline_rmse_mwh": 45.98,
+            "mae_reduction_vs_zero_pct": -124.91,
+            "mae_reduction_vs_train_mean_pct": 44.3,
+            "mae_reduction_vs_calendar_lag_pct": 12.75,
+            "beats_all_baselines": false,
+            "no_improvement_flag": true
+          },
+          "uncertainty_intervals": {
+            "nominal_80_coverage": 0.8,
+            "empirical_80_coverage": 0.9738,
+            "mean_80_interval_width_mwh": 118.69,
+            "nominal_90_coverage": 0.9,
+            "empirical_90_coverage": 0.9987,
+            "mean_90_interval_width_mwh": 173.65
+          }
+        }
+      ]
+    }
+  }
+}
