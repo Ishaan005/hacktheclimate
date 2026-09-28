@@ -8,12 +8,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Package only what the current API reads. Training datasets and source workbooks
-# remain outside the serving image.
+# Package the API and only the scripts, data and model files it imports.
 COPY backend ./backend
-COPY scripts/__init__.py scripts/train_real_baseline.py ./scripts/
-COPY data/processed/canonical_ie.csv data/processed/training_table_labeled_jan2026.csv ./data/processed/
+COPY scripts/__init__.py scripts/train_real_baseline.py scripts/fetch_gfs_daily_panel.py scripts/train_gfs_constraint.py scripts/verify_gfs_source_availability.py scripts/run_gfs_constraint_inference.py ./scripts/
+COPY data/processed/canonical_ie.csv data/processed/training_table_labeled_jan2026.csv data/processed/gfs_daily_2026_jan_aug_manifest.json ./data/processed/
 COPY artifacts/real_baseline/forecast_1h_occurrence.joblib artifacts/real_baseline/forecast_1h_volume.joblib ./artifacts/real_baseline/
+COPY artifacts/gfs_constraint/final_model.joblib artifacts/gfs_constraint/metrics.json ./artifacts/gfs_constraint/
 
 RUN useradd --uid 10001 --create-home appuser && chown -R appuser:appuser /app
 USER appuser

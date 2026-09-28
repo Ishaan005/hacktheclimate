@@ -52,6 +52,7 @@ The API currently provides:
 | `POST /v1/demo/absorption` | Retrospective January 1-hour model estimates passed to the flexible-load optimiser |
 | `GET /v1/network/forecast` | Input-gated 48 half-hour TYTFS planning scenarios; requires a re-imported local case, reviewed generator crosswalk and timestamped upstream forecasts |
 | `GET /v1/operator/view` | The same 48 future scenarios plus conservative safety checks, controlled action re-solves and explicit recommendation/data gaps |
+| `GET /v1/forecast/constraint` | Future intervals from the latest checked experimental GFS constraint forecast; 503 when unavailable or expired |
 
 Sample routes return up to 336 rows. Missing source values appear as JSON `null`. To try the model-to-optimiser route while the server is running:
 
@@ -108,7 +109,7 @@ Pull requests and pushes run the same dependency and test checks in [GitHub Acti
 
 For hackathon-day hosting, use the [Azure handoff](docs/AZURE_HANDOFF.md). It includes a small local container and a preview-first Container Apps command for use **after** the team receives access. No Azure resource or paid weather service is needed to develop or run the API locally.
 
-The [Microsoft weather options](docs/WEATHER_OPTIONS.md) compare Azure Maps' hourly feed with Aurora 1.5 and record the data, cost, and retention questions to resolve when access arrives.
-
 The [archived GFS constraint model](docs/GFS_CONSTRAINT_TRAINING.md) trains and backtests a national 0.5–24 hour forecast from source-checked NOAA weather vintages. Its August volume result does not beat the zero-MWh baseline; use the report's scope and confidence limits when showing it.
 The [Microsoft weather options](docs/WEATHER_OPTIONS.md) compare Azure Maps' hourly feed with Aurora 1.5. A separate [audit of local May Aurora forecasts and Irish turbine coordinates](docs/AURORA_TURBINE_DATA_AUDIT.md) records their actual fields, coverage, and remaining source and timing checks.
+
+The [GFS inference pipeline](docs/GFS_INFERENCE.md) fetches and checks one current daily issue, atomically publishes a versioned forecast, and serves its remaining future intervals through the API. It requires a daily run after 06:00 UTC; no result is served when the source check fails or the snapshot expires.

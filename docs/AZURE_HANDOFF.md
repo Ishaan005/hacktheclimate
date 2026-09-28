@@ -17,7 +17,7 @@ In another terminal:
 python scripts/smoke_api.py http://127.0.0.1:8000
 ```
 
-The image includes only the API code, two January CSVs, and the saved 1-hour model needed by those routes. It serves a retrospective demonstration; it does not call Azure Maps, Aurora, or any other weather service. If the team receives a VM or another container host instead of Container Apps, the same image listens on port 8000.
+The image includes the API, its required scripts, two January CSVs, the saved 1-hour model, and the GFS candidate model with its point schema and metrics. It does not include historical training tables or raw downloads. The historical demo runs without weather access; the GFS route returns 503 until a separate daily inference job publishes a checked result to shared storage. The [inference runbook](GFS_INFERENCE.md) describes that job. If the team receives a VM or another container host instead of Container Apps, the same image listens on port 8000.
 
 ## If the team receives Azure Container Apps access
 
@@ -49,7 +49,7 @@ The preview makes **no Azure request**. `--execute` requires the active Azure CL
 
 - Container Apps Consumption can scale to zero and has monthly free grants, but active compute and requests can be billed after those grants. A cold start is expected after idle time. [Microsoft billing](https://learn.microsoft.com/en-us/azure/container-apps/billing), [scaling](https://learn.microsoft.com/en-us/azure/container-apps/scale-app).
 - A private registry, logging workspace, networking, and other Azure resources can have separate charges. Reusing team resources avoids creating them for this demo. Azure CLI's environment command defaults to a Log Analytics destination unless configured otherwise. [Microsoft environment CLI](https://learn.microsoft.com/en-us/cli/azure/containerapp/env?view=azure-cli-latest).
-- No scheduled weather requests, GPU jobs, Foundry jobs, or training run are configured. Add a forecast provider only when its access, sample payload, usage limits, and issue-time semantics are confirmed.
+- No scheduled weather job, GPU job, Foundry job, or training run is configured by this handoff. The GFS inference command is packaged but needs a scheduler and persistent shared output before the container serves current forecasts.
 - After the event, remove the app if it is no longer needed. Keep the resource group and shared environment if teammates use them. Check the actual subscription's cost dashboard and set a budget alert before publishing a public demo.
 
-The current model uses measured grid state at time `t` for a target one hour later. The deployment does not turn it into a day-ahead forecast or prove avoided dispatch-down.
+The January demo uses measured grid state at time `t` for a target one hour later. The separate GFS model is experimental and did not beat a zero forecast on August volume error. Neither route proves avoided dispatch-down.
