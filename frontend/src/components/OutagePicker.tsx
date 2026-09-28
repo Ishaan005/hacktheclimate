@@ -1,4 +1,5 @@
 import type { ReviewedOutageOption } from '../types';
+import './OutagePicker.css';
 
 type OutagePickerProps = {
   outages: ReviewedOutageOption[];

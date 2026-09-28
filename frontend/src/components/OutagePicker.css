@@ -1,0 +1,26 @@
+/* Reviewed-outage select. */
+
+.outage-picker {
+  display: grid;
+  gap: 4px;
+}
+
+.outage-picker label {
+  font-weight: 700;
+}
+
+.outage-picker select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 2px solid var(--text);
+  border-radius: 0;
+  background: var(--surface);
+  font: inherit;
+  text-overflow: ellipsis;
+}
+
+.outage-picker select:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 0;
+}

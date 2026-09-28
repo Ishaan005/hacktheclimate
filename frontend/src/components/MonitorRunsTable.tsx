@@ -4,6 +4,7 @@ import { formatNumber, formatPercent } from '../format';
 import { runViews, SEVERITY_TEXT, signed } from '../insights';
 import type { RunView } from '../insights';
 import Term from './Term';
+import './MonitorRunsTable.css';
 
 const SOLVER_TEXT: Record<RunView['status'], string> = {
   ok: 'Solved',

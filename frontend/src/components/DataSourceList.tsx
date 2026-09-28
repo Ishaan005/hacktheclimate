@@ -1,5 +1,6 @@
 import type { DataSource, SourceStatus } from '../types';
 import { formatDateTime } from '../format';
+import './DataSourceList.css';
 
 // Staleness depends on each source's publication cycle, so only a status
 // sent by the API is shown; the UI does not guess from dates.

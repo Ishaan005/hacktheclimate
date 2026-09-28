@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import './SummaryList.css';
 
 export type SummaryRow = {
   key: string;

@@ -1,5 +1,4 @@
 import type { PlanningScenario, ReviewedOutageOption, ScenarioReport, Unavailable } from '../types';
-import './ScenarioPanel.css';
 import { COPY, GLOSSARY, STATE_COPY } from '../copy';
 import { formatDateTime, formatNumber } from '../format';
 import { runViews, SEVERITY_TEXT, worstRun } from '../insights';
@@ -11,6 +10,7 @@ import MonitorRunsTable from './MonitorRunsTable';
 import DataSourceList from './DataSourceList';
 import Term from './Term';
 import { AssetMatchBadge } from './ConfidenceBadge';
+import './ScenarioPanel.css';
 
 type ScenarioPanelProps = {
   outages: ReviewedOutageOption[];
