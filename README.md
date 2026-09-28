@@ -18,11 +18,18 @@ Use Python 3.11. From the repository root:
 
 ## To run the backend + frontend
 ```bash
+# From the repository root
 python3.11 -m venv .venv
 source .venv/bin/activate
 python --version  # should report Python 3.11
 python -m pip install -r requirements.txt
 python -m pytest -q
+
+cd frontend
+npm install --include=dev
+npm run build
+cd ..
+
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
