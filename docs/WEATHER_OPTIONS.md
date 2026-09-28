@@ -1,6 +1,6 @@
 # Weather options for the dispatch-down demo
 
-Checked against Microsoft documentation on 27 September 2026. No Azure Maps request, Aurora job, account, or paid resource was created for this review. The team has no weather sample yet.
+Checked against Microsoft documentation on 27 September 2026. No Azure Maps request, Aurora job, account, or paid resource was created for this review. A local May 2026 `mai-aurora` NetCDF archive was supplied on 28 September; its separate [data audit](AURORA_TURBINE_DATA_AUDIT.md) records what is actually in those files. This document's provider comparison remains a planning note, not evidence that the local files came from a Foundry deployment.
 
 ## Recommendation
 
