@@ -68,6 +68,10 @@ are suppressed as non-operable; `security_event` is a screening flag, not an
 EirGrid N-1 verdict. A contingency outside the bounded candidate set may be
 more severe.
 
+Each chosen scenario also includes the [conservative safety result and action
+screen](NETWORK_SAFETY_ACTIONS.md). Missing ratings and unsupported checks
+remain `UNKNOWN`; they never become safe recommendations.
+
 The rating comparison is `abs(DC active MW) / RAW rate A MVA`, a unity-power
 factor screening proxy. The model omits AC voltage, reactive power, losses,
 dynamic security, actual switch state and measured line flows. The scheduled
