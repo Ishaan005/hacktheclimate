@@ -1,0 +1,17 @@
+{
+  "start_target": "2026-01-24T00:00:00Z",
+  "intervals": 4,
+  "assets": [
+    {
+      "name": "flexible_load",
+      "max_power_mw": 10,
+      "energy_required_mwh": 8,
+      "available": [
+        true,
+        false,
+        true,
+        true
+      ]
+    }
+  ]
+}

@@ -55,6 +55,8 @@ The API currently provides:
 
 Sample routes return up to 336 rows. Missing source values appear as JSON `null`. To try the model-to-optimiser route while the server is running:
 
+Frontend teammates can use the [UI data handoff](docs/ui-handoff/README.md) for response fixtures, TypeScript types, units and available evaluation outputs.
+
 ```bash
 curl -sS http://127.0.0.1:8000/v1/demo/absorption \
   -H 'Content-Type: application/json' \

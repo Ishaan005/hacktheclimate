@@ -1,0 +1,962 @@
+[
+  {
+    "timestamp": "2026-01-30T00:00:00",
+    "load_mw": 4140.878,
+    "wind_onshore_mw": 2092.089,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.5052283597826355,
+    "residual_load_mw": 2048.789,
+    "sem_price_currency_per_mwh": 102.875,
+    "pressure_proxy": 0.7441434347557477
+  },
+  {
+    "timestamp": "2026-01-30T00:30:00",
+    "load_mw": 4056.873,
+    "wind_onshore_mw": 2057.283,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.5071105257670131,
+    "residual_load_mw": 1999.59,
+    "sem_price_currency_per_mwh": 102.875,
+    "pressure_proxy": 0.7478370052071842
+  },
+  {
+    "timestamp": "2026-01-30T01:00:00",
+    "load_mw": 3947.876,
+    "wind_onshore_mw": 2110.477,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.5345854327744842,
+    "residual_load_mw": 1837.3990000000003,
+    "sem_price_currency_per_mwh": 97.63,
+    "pressure_proxy": 0.7969930442169366
+  },
+  {
+    "timestamp": "2026-01-30T01:30:00",
+    "load_mw": 3893.653,
+    "wind_onshore_mw": 2199.134,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.5647996881078001,
+    "residual_load_mw": 1694.5189999999998,
+    "sem_price_currency_per_mwh": 97.63,
+    "pressure_proxy": 0.8161448910021623
+  },
+  {
+    "timestamp": "2026-01-30T02:00:00",
+    "load_mw": 3825.111,
+    "wind_onshore_mw": 2174.032,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.5683578855620138,
+    "residual_load_mw": 1651.0789999999995,
+    "sem_price_currency_per_mwh": 93.32,
+    "pressure_proxy": 0.8408674319315124
+  },
+  {
+    "timestamp": "2026-01-30T02:30:00",
+    "load_mw": 3908.796,
+    "wind_onshore_mw": 2376.366,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.6079534465344316,
+    "residual_load_mw": 1532.4299999999998,
+    "sem_price_currency_per_mwh": 93.32,
+    "pressure_proxy": 0.8643284442434138
+  },
+  {
+    "timestamp": "2026-01-30T03:00:00",
+    "load_mw": 3843.051,
+    "wind_onshore_mw": 2483.657,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.6462721936294887,
+    "residual_load_mw": 1359.3939999999998,
+    "sem_price_currency_per_mwh": 91.43,
+    "pressure_proxy": 0.8971535622876308
+  },
+  {
+    "timestamp": "2026-01-30T03:30:00",
+    "load_mw": 3797.364,
+    "wind_onshore_mw": 2424.639,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.6385058161398276,
+    "residual_load_mw": 1372.725,
+    "sem_price_currency_per_mwh": 91.43,
+    "pressure_proxy": 0.8898348208375624
+  },
+  {
+    "timestamp": "2026-01-30T04:00:00",
+    "load_mw": 3746.129,
+    "wind_onshore_mw": 2432.017,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.6492080224679929,
+    "residual_load_mw": 1314.112,
+    "sem_price_currency_per_mwh": 92.715,
+    "pressure_proxy": 0.8941688087463042
+  },
+  {
+    "timestamp": "2026-01-30T04:30:00",
+    "load_mw": 3725.991,
+    "wind_onshore_mw": 2486.481,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.6673341400985672,
+    "residual_load_mw": 1239.5099999999998,
+    "sem_price_currency_per_mwh": 92.715,
+    "pressure_proxy": 0.9045655255725695
+  },
+  {
+    "timestamp": "2026-01-30T05:00:00",
+    "load_mw": 3726.134,
+    "wind_onshore_mw": 2586.832,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.6942401964073218,
+    "residual_load_mw": 1139.302,
+    "sem_price_currency_per_mwh": 97.78,
+    "pressure_proxy": 0.8907110509244958
+  },
+  {
+    "timestamp": "2026-01-30T05:30:00",
+    "load_mw": 3767.412,
+    "wind_onshore_mw": 2503.725,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.6645742488477502,
+    "residual_load_mw": 1263.687,
+    "sem_price_currency_per_mwh": 97.78,
+    "pressure_proxy": 0.8769627609108159
+  },
+  {
+    "timestamp": "2026-01-30T06:00:00",
+    "load_mw": 3905.258,
+    "wind_onshore_mw": 2514.249,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.6438112411523131,
+    "residual_load_mw": 1391.009,
+    "sem_price_currency_per_mwh": 110.305,
+    "pressure_proxy": 0.8017081935925159
+  },
+  {
+    "timestamp": "2026-01-30T06:30:00",
+    "load_mw": 4114.873,
+    "wind_onshore_mw": 2447.494,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.5947921114454809,
+    "residual_load_mw": 1667.3789999999997,
+    "sem_price_currency_per_mwh": 110.305,
+    "pressure_proxy": 0.7715440349057852
+  },
+  {
+    "timestamp": "2026-01-30T07:00:00",
+    "load_mw": 4402.33,
+    "wind_onshore_mw": 2578.258,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.5856575949553986,
+    "residual_load_mw": 1824.072,
+    "sem_price_currency_per_mwh": 125.97,
+    "pressure_proxy": 0.7086413607078241
+  },
+  {
+    "timestamp": "2026-01-30T07:30:00",
+    "load_mw": 4770.498,
+    "wind_onshore_mw": 2636.0,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.552562856121101,
+    "residual_load_mw": 2134.4979999999996,
+    "sem_price_currency_per_mwh": 125.97,
+    "pressure_proxy": 0.6727316479855259
+  },
+  {
+    "timestamp": "2026-01-30T08:00:00",
+    "load_mw": 4852.738,
+    "wind_onshore_mw": 2500.0,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.5151730837312873,
+    "residual_load_mw": 2352.7380000000003,
+    "sem_price_currency_per_mwh": 135.05,
+    "pressure_proxy": 0.6196591886942324
+  },
+  {
+    "timestamp": "2026-01-30T08:30:00",
+    "load_mw": 4899.807,
+    "wind_onshore_mw": 2327.84,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.4750881004088529,
+    "residual_load_mw": 2571.9669999999996,
+    "sem_price_currency_per_mwh": 135.05,
+    "pressure_proxy": 0.5901790245355456
+  },
+  {
+    "timestamp": "2026-01-30T09:00:00",
+    "load_mw": 4958.994,
+    "wind_onshore_mw": 2030.886,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.4095358857058508,
+    "residual_load_mw": 2928.1079999999997,
+    "sem_price_currency_per_mwh": 128.79,
+    "pressure_proxy": 0.5430313920391863
+  },
+  {
+    "timestamp": "2026-01-30T09:30:00",
+    "load_mw": 4999.471,
+    "wind_onshore_mw": 1895.097,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.3790595044955757,
+    "residual_load_mw": 3104.374,
+    "sem_price_currency_per_mwh": 128.79,
+    "pressure_proxy": 0.5183391895768059
+  },
+  {
+    "timestamp": "2026-01-30T10:00:00",
+    "load_mw": 4950.033,
+    "wind_onshore_mw": 1822.853,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.3682506763086225,
+    "residual_load_mw": 3127.1800000000003,
+    "sem_price_currency_per_mwh": 120.36,
+    "pressure_proxy": 0.5336154351087772
+  },
+  {
+    "timestamp": "2026-01-30T10:30:00",
+    "load_mw": 4939.579,
+    "wind_onshore_mw": 1735.869,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.3514204348184329,
+    "residual_load_mw": 3203.71,
+    "sem_price_currency_per_mwh": 120.36,
+    "pressure_proxy": 0.5188411533030316
+  },
+  {
+    "timestamp": "2026-01-30T11:00:00",
+    "load_mw": 4885.344,
+    "wind_onshore_mw": 1615.984,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.330782028860199,
+    "residual_load_mw": 3269.36,
+    "sem_price_currency_per_mwh": 118.34,
+    "pressure_proxy": 0.5076313655619787
+  },
+  {
+    "timestamp": "2026-01-30T11:30:00",
+    "load_mw": 4851.039,
+    "wind_onshore_mw": 1595.99,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.3289996225550856,
+    "residual_load_mw": 3255.049,
+    "sem_price_currency_per_mwh": 118.34,
+    "pressure_proxy": 0.5070157704867394
+  },
+  {
+    "timestamp": "2026-01-30T12:00:00",
+    "load_mw": 4844.764,
+    "wind_onshore_mw": 1578.394,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.3257937847952965,
+    "residual_load_mw": 3266.37,
+    "sem_price_currency_per_mwh": 118.07,
+    "pressure_proxy": 0.5036426845682009
+  },
+  {
+    "timestamp": "2026-01-30T12:30:00",
+    "load_mw": 4862.402,
+    "wind_onshore_mw": 1441.165,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.2963895210638692,
+    "residual_load_mw": 3421.237,
+    "sem_price_currency_per_mwh": 118.07,
+    "pressure_proxy": 0.47409412095670983
+  },
+  {
+    "timestamp": "2026-01-30T13:00:00",
+    "load_mw": 4831.847,
+    "wind_onshore_mw": 1386.883,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.2870295768885066,
+    "residual_load_mw": 3444.964,
+    "sem_price_currency_per_mwh": 121.505,
+    "pressure_proxy": 0.4510677761352103
+  },
+  {
+    "timestamp": "2026-01-30T13:30:00",
+    "load_mw": 4822.921,
+    "wind_onshore_mw": 1191.708,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.2470925814459743,
+    "residual_load_mw": 3631.213,
+    "sem_price_currency_per_mwh": 121.505,
+    "pressure_proxy": 0.4071553274347999
+  },
+  {
+    "timestamp": "2026-01-30T14:00:00",
+    "load_mw": 4844.617,
+    "wind_onshore_mw": 1100.74,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.2272088794635365,
+    "residual_load_mw": 3743.877,
+    "sem_price_currency_per_mwh": 121.84,
+    "pressure_proxy": 0.38132184700586913
+  },
+  {
+    "timestamp": "2026-01-30T14:30:00",
+    "load_mw": 4869.886,
+    "wind_onshore_mw": 948.18,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1947027096732859,
+    "residual_load_mw": 3921.7060000000006,
+    "sem_price_currency_per_mwh": 121.84,
+    "pressure_proxy": 0.34507013701954903
+  },
+  {
+    "timestamp": "2026-01-30T15:00:00",
+    "load_mw": 4889.095,
+    "wind_onshore_mw": 871.697,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1782941423719522,
+    "residual_load_mw": 4017.398,
+    "sem_price_currency_per_mwh": 140.695,
+    "pressure_proxy": 0.28551627796655044
+  },
+  {
+    "timestamp": "2026-01-30T15:30:00",
+    "load_mw": 4958.93,
+    "wind_onshore_mw": 906.651,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.182831981899321,
+    "residual_load_mw": 4052.279000000001,
+    "sem_price_currency_per_mwh": 140.695,
+    "pressure_proxy": 0.2873630631922687
+  },
+  {
+    "timestamp": "2026-01-30T16:00:00",
+    "load_mw": 5010.737,
+    "wind_onshore_mw": 915.364,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1826805118688129,
+    "residual_load_mw": 4095.373,
+    "sem_price_currency_per_mwh": 155.01,
+    "pressure_proxy": 0.25929942963682096
+  },
+  {
+    "timestamp": "2026-01-30T16:30:00",
+    "load_mw": 5067.115,
+    "wind_onshore_mw": 887.501,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1751491726554459,
+    "residual_load_mw": 4179.614,
+    "sem_price_currency_per_mwh": 155.01,
+    "pressure_proxy": 0.24828711773531617
+  },
+  {
+    "timestamp": "2026-01-30T17:00:00",
+    "load_mw": 5159.559,
+    "wind_onshore_mw": 837.221,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1622659998654923,
+    "residual_load_mw": 4322.338,
+    "sem_price_currency_per_mwh": 176.755,
+    "pressure_proxy": 0.2041821576717709
+  },
+  {
+    "timestamp": "2026-01-30T17:30:00",
+    "load_mw": 5363.061,
+    "wind_onshore_mw": 827.59,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1543129940159174,
+    "residual_load_mw": 4535.471,
+    "sem_price_currency_per_mwh": 176.755,
+    "pressure_proxy": 0.18174713715193508
+  },
+  {
+    "timestamp": "2026-01-30T18:00:00",
+    "load_mw": 5417.314,
+    "wind_onshore_mw": 806.053,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1487920028264929,
+    "residual_load_mw": 4611.261,
+    "sem_price_currency_per_mwh": 183.505,
+    "pressure_proxy": 0.1653235459600194
+  },
+  {
+    "timestamp": "2026-01-30T18:30:00",
+    "load_mw": 5367.131,
+    "wind_onshore_mw": 783.599,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1459996038852042,
+    "residual_load_mw": 4583.532,
+    "sem_price_currency_per_mwh": 183.505,
+    "pressure_proxy": 0.16306636401747499
+  },
+  {
+    "timestamp": "2026-01-30T19:00:00",
+    "load_mw": 5272.082,
+    "wind_onshore_mw": 709.635,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1346024208272936,
+    "residual_load_mw": 4562.447,
+    "sem_price_currency_per_mwh": 181.62,
+    "pressure_proxy": 0.15228462446493976
+  },
+  {
+    "timestamp": "2026-01-30T19:30:00",
+    "load_mw": 5218.168,
+    "wind_onshore_mw": 747.77,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1433012505538342,
+    "residual_load_mw": 4470.397999999999,
+    "sem_price_currency_per_mwh": 181.62,
+    "pressure_proxy": 0.16808489806275098
+  },
+  {
+    "timestamp": "2026-01-30T20:00:00",
+    "load_mw": 5093.775,
+    "wind_onshore_mw": 661.138,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1297933261677243,
+    "residual_load_mw": 4432.637,
+    "sem_price_currency_per_mwh": 183.55,
+    "pressure_proxy": 0.1509668317814748
+  },
+  {
+    "timestamp": "2026-01-30T20:30:00",
+    "load_mw": 4980.896,
+    "wind_onshore_mw": 709.237,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1423914492492917,
+    "residual_load_mw": 4271.659,
+    "sem_price_currency_per_mwh": 183.55,
+    "pressure_proxy": 0.17189706433961435
+  },
+  {
+    "timestamp": "2026-01-30T21:00:00",
+    "load_mw": 4884.49,
+    "wind_onshore_mw": 703.849,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1440987697794447,
+    "residual_load_mw": 4180.641,
+    "sem_price_currency_per_mwh": 151.365,
+    "pressure_proxy": 0.21774896849212302
+  },
+  {
+    "timestamp": "2026-01-30T21:30:00",
+    "load_mw": 4741.829,
+    "wind_onshore_mw": 585.123,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1233960566692725,
+    "residual_load_mw": 4156.706,
+    "sem_price_currency_per_mwh": 151.365,
+    "pressure_proxy": 0.19353556219937337
+  },
+  {
+    "timestamp": "2026-01-30T22:00:00",
+    "load_mw": 4583.741,
+    "wind_onshore_mw": 484.536,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1057075432490622,
+    "residual_load_mw": 4099.205,
+    "sem_price_currency_per_mwh": 136.345,
+    "pressure_proxy": 0.20397751092184813
+  },
+  {
+    "timestamp": "2026-01-30T22:30:00",
+    "load_mw": 4412.347,
+    "wind_onshore_mw": 459.6,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1041622519715698,
+    "residual_load_mw": 3952.747,
+    "sem_price_currency_per_mwh": 136.345,
+    "pressure_proxy": 0.20890227152376328
+  },
+  {
+    "timestamp": "2026-01-30T23:00:00",
+    "load_mw": 4282.396,
+    "wind_onshore_mw": 421.266,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0983715658243656,
+    "residual_load_mw": 3861.13,
+    "sem_price_currency_per_mwh": 116.535,
+    "pressure_proxy": 0.26352861193239485
+  },
+  {
+    "timestamp": "2026-01-30T23:30:00",
+    "load_mw": 4343.034,
+    "wind_onshore_mw": 439.403,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1011742021821611,
+    "residual_load_mw": 3903.6309999999994,
+    "sem_price_currency_per_mwh": 116.535,
+    "pressure_proxy": 0.26263941904593796
+  },
+  {
+    "timestamp": "2026-01-31T00:00:00",
+    "load_mw": null,
+    "wind_onshore_mw": 453.865,
+    "solar_mw": 0.0,
+    "renewable_vre_share": null,
+    "residual_load_mw": null,
+    "sem_price_currency_per_mwh": 113.285,
+    "pressure_proxy": null
+  },
+  {
+    "timestamp": "2026-01-31T00:30:00",
+    "load_mw": null,
+    "wind_onshore_mw": 481.065,
+    "solar_mw": 0.0,
+    "renewable_vre_share": null,
+    "residual_load_mw": null,
+    "sem_price_currency_per_mwh": 113.285,
+    "pressure_proxy": null
+  },
+  {
+    "timestamp": "2026-01-31T01:00:00",
+    "load_mw": 3993.737,
+    "wind_onshore_mw": 548.144,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1372509005976107,
+    "residual_load_mw": 3445.593,
+    "sem_price_currency_per_mwh": 110.64,
+    "pressure_proxy": 0.35514967896385863
+  },
+  {
+    "timestamp": "2026-01-31T01:30:00",
+    "load_mw": 3894.38,
+    "wind_onshore_mw": 545.925,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1401827762057118,
+    "residual_load_mw": 3348.455,
+    "sem_price_currency_per_mwh": 110.64,
+    "pressure_proxy": 0.36472560235647145
+  },
+  {
+    "timestamp": "2026-01-31T02:00:00",
+    "load_mw": 3836.029,
+    "wind_onshore_mw": 548.195,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1429068966892586,
+    "residual_load_mw": 3287.834,
+    "sem_price_currency_per_mwh": 106.975,
+    "pressure_proxy": 0.3886052855125546
+  },
+  {
+    "timestamp": "2026-01-31T02:30:00",
+    "load_mw": 3908.554,
+    "wind_onshore_mw": 565.325,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1446378891016984,
+    "residual_load_mw": 3343.2290000000003,
+    "sem_price_currency_per_mwh": 106.975,
+    "pressure_proxy": 0.38703209809805394
+  },
+  {
+    "timestamp": "2026-01-31T03:00:00",
+    "load_mw": 3839.37,
+    "wind_onshore_mw": 572.027,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.148989808223745,
+    "residual_load_mw": 3267.343,
+    "sem_price_currency_per_mwh": 105.66,
+    "pressure_proxy": 0.402281866422488
+  },
+  {
+    "timestamp": "2026-01-31T03:30:00",
+    "load_mw": 3795.923,
+    "wind_onshore_mw": 568.473,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1497588333588431,
+    "residual_load_mw": 3227.45,
+    "sem_price_currency_per_mwh": 105.66,
+    "pressure_proxy": 0.40583863796831565
+  },
+  {
+    "timestamp": "2026-01-31T04:00:00",
+    "load_mw": 3733.195,
+    "wind_onshore_mw": 589.568,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.157925851716827,
+    "residual_load_mw": 3143.6270000000004,
+    "sem_price_currency_per_mwh": 105.255,
+    "pressure_proxy": 0.4236550405983849
+  },
+  {
+    "timestamp": "2026-01-31T04:30:00",
+    "load_mw": 3684.302,
+    "wind_onshore_mw": 573.716,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1557190480042081,
+    "residual_load_mw": 3110.586,
+    "sem_price_currency_per_mwh": 105.255,
+    "pressure_proxy": 0.4218082553726667
+  },
+  {
+    "timestamp": "2026-01-31T05:00:00",
+    "load_mw": 3644.079,
+    "wind_onshore_mw": 603.528,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1656188024463794,
+    "residual_load_mw": 3040.5510000000004,
+    "sem_price_currency_per_mwh": 102.89,
+    "pressure_proxy": 0.45235854000264775
+  },
+  {
+    "timestamp": "2026-01-31T05:30:00",
+    "load_mw": 3629.118,
+    "wind_onshore_mw": 603.41,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1662690493943707,
+    "residual_load_mw": 3025.708,
+    "sem_price_currency_per_mwh": 102.89,
+    "pressure_proxy": 0.45468412139799663
+  },
+  {
+    "timestamp": "2026-01-31T06:00:00",
+    "load_mw": 3696.779,
+    "wind_onshore_mw": 636.639,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1722145143109718,
+    "residual_load_mw": 3060.14,
+    "sem_price_currency_per_mwh": 109.06,
+    "pressure_proxy": 0.4277722463704161
+  },
+  {
+    "timestamp": "2026-01-31T06:30:00",
+    "load_mw": 3788.968,
+    "wind_onshore_mw": 630.664,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1664474337075425,
+    "residual_load_mw": 3158.304,
+    "sem_price_currency_per_mwh": 109.06,
+    "pressure_proxy": 0.4174439289969551
+  },
+  {
+    "timestamp": "2026-01-31T07:00:00",
+    "load_mw": 3863.616,
+    "wind_onshore_mw": 605.431,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1567006141397074,
+    "residual_load_mw": 3258.185,
+    "sem_price_currency_per_mwh": 114.69,
+    "pressure_proxy": 0.3763739188473589
+  },
+  {
+    "timestamp": "2026-01-31T07:30:00",
+    "load_mw": 4005.329,
+    "wind_onshore_mw": 542.704,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1354954861385918,
+    "residual_load_mw": 3462.625,
+    "sem_price_currency_per_mwh": 114.69,
+    "pressure_proxy": 0.33615504059838486
+  },
+  {
+    "timestamp": "2026-01-31T08:00:00",
+    "load_mw": 4081.539,
+    "wind_onshore_mw": 463.833,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1136416925086346,
+    "residual_load_mw": 3617.706,
+    "sem_price_currency_per_mwh": 126.92,
+    "pressure_proxy": 0.26522204999779353
+  },
+  {
+    "timestamp": "2026-01-31T08:30:00",
+    "load_mw": 4228.575,
+    "wind_onshore_mw": 471.496,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1115023382581602,
+    "residual_load_mw": 3757.079,
+    "sem_price_currency_per_mwh": 126.92,
+    "pressure_proxy": 0.2532521457570275
+  },
+  {
+    "timestamp": "2026-01-31T09:00:00",
+    "load_mw": 4397.802,
+    "wind_onshore_mw": 443.909,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1009388326259345,
+    "residual_load_mw": 3953.893,
+    "sem_price_currency_per_mwh": 157.5,
+    "pressure_proxy": 0.1662794834738096
+  },
+  {
+    "timestamp": "2026-01-31T09:30:00",
+    "load_mw": 4550.546,
+    "wind_onshore_mw": 355.739,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0781750146026432,
+    "residual_load_mw": 4194.807000000001,
+    "sem_price_currency_per_mwh": 157.5,
+    "pressure_proxy": 0.13933009906888486
+  },
+  {
+    "timestamp": "2026-01-31T10:00:00",
+    "load_mw": 4610.87,
+    "wind_onshore_mw": 321.353,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0696946563229932,
+    "residual_load_mw": 4289.517,
+    "sem_price_currency_per_mwh": 166.15,
+    "pressure_proxy": 0.11848205617580865
+  },
+  {
+    "timestamp": "2026-01-31T10:30:00",
+    "load_mw": 4656.365,
+    "wind_onshore_mw": 331.563,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0712064024190543,
+    "residual_load_mw": 4324.802,
+    "sem_price_currency_per_mwh": 166.15,
+    "pressure_proxy": 0.11841365672300427
+  },
+  {
+    "timestamp": "2026-01-31T11:00:00",
+    "load_mw": 4654.394,
+    "wind_onshore_mw": 294.106,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0631888920448075,
+    "residual_load_mw": 4360.2880000000005,
+    "sem_price_currency_per_mwh": 171.46,
+    "pressure_proxy": 0.10424724747363312
+  },
+  {
+    "timestamp": "2026-01-31T11:30:00",
+    "load_mw": 4649.95,
+    "wind_onshore_mw": 301.619,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0648649985483715,
+    "residual_load_mw": 4348.331,
+    "sem_price_currency_per_mwh": 171.46,
+    "pressure_proxy": 0.10664122832178632
+  },
+  {
+    "timestamp": "2026-01-31T12:00:00",
+    "load_mw": 4613.575,
+    "wind_onshore_mw": 293.353,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0635847471862926,
+    "residual_load_mw": 4320.222,
+    "sem_price_currency_per_mwh": 172.32,
+    "pressure_proxy": 0.10597157561449186
+  },
+  {
+    "timestamp": "2026-01-31T12:30:00",
+    "load_mw": 4633.961,
+    "wind_onshore_mw": 366.233,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0790323871953173,
+    "residual_load_mw": 4267.728,
+    "sem_price_currency_per_mwh": 172.32,
+    "pressure_proxy": 0.11999346343938927
+  },
+  {
+    "timestamp": "2026-01-31T13:00:00",
+    "load_mw": 4626.701,
+    "wind_onshore_mw": 397.044,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0858157896955087,
+    "residual_load_mw": 4229.657,
+    "sem_price_currency_per_mwh": 161.25,
+    "pressure_proxy": 0.13590240390980096
+  },
+  {
+    "timestamp": "2026-01-31T13:30:00",
+    "load_mw": 4573.64,
+    "wind_onshore_mw": 472.537,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1033174889147374,
+    "residual_load_mw": 4101.103,
+    "sem_price_currency_per_mwh": 161.25,
+    "pressure_proxy": 0.1559434435814836
+  },
+  {
+    "timestamp": "2026-01-31T14:00:00",
+    "load_mw": 4534.805,
+    "wind_onshore_mw": 571.894,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.126112148151905,
+    "residual_load_mw": 3962.911,
+    "sem_price_currency_per_mwh": 157.96,
+    "pressure_proxy": 0.19606192908521247
+  },
+  {
+    "timestamp": "2026-01-31T14:30:00",
+    "load_mw": 4518.039,
+    "wind_onshore_mw": 566.744,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1254402629105238,
+    "residual_load_mw": 3951.295,
+    "sem_price_currency_per_mwh": 157.96,
+    "pressure_proxy": 0.19565153236838623
+  },
+  {
+    "timestamp": "2026-01-31T15:00:00",
+    "load_mw": 4517.188,
+    "wind_onshore_mw": 553.562,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1225457076393543,
+    "residual_load_mw": 3963.626,
+    "sem_price_currency_per_mwh": 182.215,
+    "pressure_proxy": 0.16551440249768326
+  },
+  {
+    "timestamp": "2026-01-31T15:30:00",
+    "load_mw": 4562.81,
+    "wind_onshore_mw": 532.305,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1166616624404697,
+    "residual_load_mw": 4030.505000000001,
+    "sem_price_currency_per_mwh": 182.215,
+    "pressure_proxy": 0.15723806870835355
+  },
+  {
+    "timestamp": "2026-01-31T16:00:00",
+    "load_mw": 4614.872,
+    "wind_onshore_mw": 461.018,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0998983287077084,
+    "residual_load_mw": 4153.854,
+    "sem_price_currency_per_mwh": 195.71,
+    "pressure_proxy": 0.11838993755791889
+  },
+  {
+    "timestamp": "2026-01-31T16:30:00",
+    "load_mw": 4730.208,
+    "wind_onshore_mw": 375.018,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0792815030544111,
+    "residual_load_mw": 4355.19,
+    "sem_price_currency_per_mwh": 195.71,
+    "pressure_proxy": 0.0958181181324743
+  },
+  {
+    "timestamp": "2026-01-31T17:00:00",
+    "load_mw": 4876.358,
+    "wind_onshore_mw": 297.28,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0609635305693306,
+    "residual_load_mw": 4579.078,
+    "sem_price_currency_per_mwh": 230.955,
+    "pressure_proxy": 0.057510011694100006
+  },
+  {
+    "timestamp": "2026-01-31T17:30:00",
+    "load_mw": 5060.978,
+    "wind_onshore_mw": 299.858,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0592490226197387,
+    "residual_load_mw": 4761.12,
+    "sem_price_currency_per_mwh": 230.955,
+    "pressure_proxy": 0.0489600800935528
+  },
+  {
+    "timestamp": "2026-01-31T18:00:00",
+    "load_mw": 5139.295,
+    "wind_onshore_mw": 285.793,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0556093783291288,
+    "residual_load_mw": 4853.502,
+    "sem_price_currency_per_mwh": 227.3,
+    "pressure_proxy": 0.045655393627818716
+  },
+  {
+    "timestamp": "2026-01-31T18:30:00",
+    "load_mw": 5077.956,
+    "wind_onshore_mw": 352.323,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0693828382916275,
+    "residual_load_mw": 4725.633,
+    "sem_price_currency_per_mwh": 227.3,
+    "pressure_proxy": 0.05878808856625922
+  },
+  {
+    "timestamp": "2026-01-31T19:00:00",
+    "load_mw": 4983.919,
+    "wind_onshore_mw": 348.746,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0699742511866665,
+    "residual_load_mw": 4635.173,
+    "sem_price_currency_per_mwh": 191.455,
+    "pressure_proxy": 0.07665579078593177
+  },
+  {
+    "timestamp": "2026-01-31T19:30:00",
+    "load_mw": 4878.313,
+    "wind_onshore_mw": 382.214,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0783496261924972,
+    "residual_load_mw": 4496.099,
+    "sem_price_currency_per_mwh": 191.455,
+    "pressure_proxy": 0.09115647478045981
+  },
+  {
+    "timestamp": "2026-01-31T20:00:00",
+    "load_mw": 4783.58,
+    "wind_onshore_mw": 412.502,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0862329050627354,
+    "residual_load_mw": 4371.0779999999995,
+    "sem_price_currency_per_mwh": 180.59,
+    "pressure_proxy": 0.11355619235691278
+  },
+  {
+    "timestamp": "2026-01-31T20:30:00",
+    "load_mw": 4681.139,
+    "wind_onshore_mw": 427.198,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0912594135743459,
+    "residual_load_mw": 4253.941,
+    "sem_price_currency_per_mwh": 180.59,
+    "pressure_proxy": 0.12087493380698117
+  },
+  {
+    "timestamp": "2026-01-31T21:00:00",
+    "load_mw": 4578.222,
+    "wind_onshore_mw": 377.409,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0824357141265757,
+    "residual_load_mw": 4200.813,
+    "sem_price_currency_per_mwh": 137.165,
+    "pressure_proxy": 0.1789791657473192
+  },
+  {
+    "timestamp": "2026-01-31T21:30:00",
+    "load_mw": 4469.852,
+    "wind_onshore_mw": 360.967,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0807559176455954,
+    "residual_load_mw": 4108.885,
+    "sem_price_currency_per_mwh": 137.165,
+    "pressure_proxy": 0.18267273619875557
+  },
+  {
+    "timestamp": "2026-01-31T22:00:00",
+    "load_mw": 4331.766,
+    "wind_onshore_mw": 338.164,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0780660820552172,
+    "residual_load_mw": 3993.602,
+    "sem_price_currency_per_mwh": 121.475,
+    "pressure_proxy": 0.22356402519747584
+  },
+  {
+    "timestamp": "2026-01-31T22:30:00",
+    "load_mw": 4194.74,
+    "wind_onshore_mw": 393.379,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.0937791138425742,
+    "residual_load_mw": 3801.361,
+    "sem_price_currency_per_mwh": 121.475,
+    "pressure_proxy": 0.24497305392524601
+  },
+  {
+    "timestamp": "2026-01-31T23:00:00",
+    "load_mw": 4081.001,
+    "wind_onshore_mw": 439.655,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1077321470884226,
+    "residual_load_mw": 3641.346000000001,
+    "sem_price_currency_per_mwh": 117.945,
+    "pressure_proxy": 0.27927813754909314
+  },
+  {
+    "timestamp": "2026-01-31T23:30:00",
+    "load_mw": 4136.897,
+    "wind_onshore_mw": 458.265,
+    "solar_mw": 0.0,
+    "renewable_vre_share": 0.1107750567635597,
+    "residual_load_mw": 3678.632,
+    "sem_price_currency_per_mwh": 117.945,
+    "pressure_proxy": 0.2811933222276157
+  }
+]
