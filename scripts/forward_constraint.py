@@ -8,6 +8,21 @@ Forecast-safe principle:
 For a prediction target at timestamp T at lead time H hours, the forecast issue
 time is t_0 = T - H. All grid and market measurements are strictly sampled at
 or before t_0. Only deterministic calendar features are evaluated at target time T.
+
+.. WARNING — Unresolved publication-latency assumption:
+   Features ``constraint_mwh_t0`` and ``curtailment_mwh_t0`` are the official
+   EirGrid / SONI dispatch-down values observed at decision time t_0. These are
+   timestamp-correct in the sense that t_0 is strictly historical relative to the
+   forecast target T. However, EirGrid's official DD half-hourly figures may only
+   become available retrospectively (e.g. published hours or days after the
+   metering period closes). If so, a model issuing a 1h-ahead forecast at 10:00
+   cannot legitimately use the official constraint_mwh figure for the 10:00 period.
+   Ground Truth #5 requires storing "time when information became available" not
+   just observation time. Until the actual publication SLA from EirGrid is
+   confirmed, treat the 1h PR-AUC of 0.9727 as an **optimistic upper bound** on
+   achievable performance, not a validated operational figure. Once the publication
+   delay is known, replace t_0 constraint/curtailment features with the latest
+   *published* value at issue time.
 """
 
 from __future__ import annotations
@@ -163,11 +178,24 @@ def prepare_forecast_frame(
     # Minimal feature set for calendar/lag baseline: target calendar + t_0 constraint lag
     cal_lag_cols = list(cal_cols) + ["constraint_mwh_t0"]
 
+    # 5. Deterministic evaluation baselines (not added to feature_cols — used only in evaluation)
+    # Persistence: constraint_mwh_t0 is already computed above.
+    # Seasonal-naive (same-hour-yesterday): constraint_mwh exactly 24 h before t_0.
+    # Both are strictly prior to t_0 and require no ML training.
+    #
+    # CAUTION — publication-latency assumption: constraint_mwh_t0 is the official EirGrid
+    # DD figure timestamped at t_0. Whether this figure is available at t_0 in real time
+    # (vs published retrospectively) has not been confirmed. See module docstring.
+    if "constraint_mwh" in df.columns:
+        is_24h_prior_base = df["timestamp"].sub(df["timestamp"].shift(48)).eq(pd.Timedelta(hours=24))
+        df["constraint_mwh_24h_ago_t0"] = df["constraint_mwh"].shift(48).where(is_24h_prior_base)
+
     # Target event indicator
     df["target_constraint_event"] = (df["target_constraint_mwh"] > threshold_mwh).astype(float)
     df.loc[df["target_constraint_mwh"].isna(), "target_constraint_event"] = np.nan
 
     return df, feature_cols, cal_lag_cols
+
 
 
 def expected_calibration_error(
@@ -234,7 +262,13 @@ class HurdleForecastBundle:
     train_mean_mwh: float
 
     def predict(self, X: pd.DataFrame) -> dict[str, np.ndarray]:
-        """Generate point forecasts, expected MWh, and calibrated uncertainty bounds."""
+        """Generate point forecasts, expected MWh, and quantile prediction interval bounds.
+
+        Note: The 80% and 90% intervals are produced by quantile regressors (q=0.10/0.90
+        and q=0.05/0.95). Empirical coverage is measured on held-out folds. These are
+        NOT conformally calibrated intervals; a conformal or isotonic calibration step on a
+        separate calibration split would be required for coverage guarantees.
+        """
         X_feat = X[self.feature_names]
         prob = self.clf.predict_proba(X_feat)[:, 1]
         cond_vol = np.maximum(self.reg.predict(X_feat), 0.0)
@@ -364,8 +398,9 @@ def evaluate_forecast_bundle(
 
     - Event prevalence
     - PR-AUC, ROC-AUC, Brier score, ECE
-    - MWh error (MAE, RMSE) vs simple baselines (Zero, Train-mean, Calendar/Lag)
-    - Uncertainty coverage and interval widths for 80% and 90% intervals
+    - MWh error (MAE, RMSE) vs five baselines:
+        Zero, Train-mean, Persistence, Seasonal-naive, Calendar/Lag (HGB)
+    - Quantile prediction interval empirical coverage for 80% and 90% intervals
     - Honest assessment of improvement vs calendar/lag baseline.
     """
     y_test = test_df["target_constraint_mwh"].to_numpy()
@@ -387,6 +422,21 @@ def evaluate_forecast_bundle(
     expected_mwh_bl = bl_preds["baseline_expected_mwh"]
     zero_preds = np.zeros_like(y_test)
     mean_preds = np.full_like(y_test, bundle.train_mean_mwh)
+
+    # Deterministic baselines (no ML training — see prepare_forecast_frame §5)
+    # Persistence: forecast = constraint_mwh at decision time t_0
+    persistence_preds: np.ndarray | None = None
+    if "constraint_mwh_t0" in test_df.columns:
+        raw_persist = test_df["constraint_mwh_t0"].to_numpy()
+        valid_persist = ~np.isnan(raw_persist)
+        persistence_preds = np.where(valid_persist, np.nan_to_num(raw_persist, nan=0.0), np.nan)
+
+    # Seasonal-naive: forecast = constraint_mwh same-hour-yesterday (24 h before t_0)
+    seasonal_naive_preds: np.ndarray | None = None
+    if "constraint_mwh_24h_ago_t0" in test_df.columns:
+        raw_sn = test_df["constraint_mwh_24h_ago_t0"].to_numpy()
+        valid_sn = ~np.isnan(raw_sn)
+        seasonal_naive_preds = np.where(valid_sn, np.nan_to_num(raw_sn, nan=0.0), np.nan)
 
     # Classification metrics
     event_prevalence = float(np.mean(e_test))
@@ -417,12 +467,28 @@ def evaluate_forecast_bundle(
     cal_lag_mae = float(mean_absolute_error(y_test, expected_mwh_bl))
     cal_lag_rmse = float(root_mean_squared_error(y_test, expected_mwh_bl))
 
+    # Persistence baseline (NaN rows treated as 0 for MAE, counted in n_test)
+    if persistence_preds is not None and not np.all(np.isnan(persistence_preds)):
+        mask_p = ~np.isnan(persistence_preds)
+        persistence_mae: float | None = float(mean_absolute_error(y_test[mask_p], persistence_preds[mask_p]))
+        persistence_rmse: float | None = float(root_mean_squared_error(y_test[mask_p], persistence_preds[mask_p]))
+    else:
+        persistence_mae = persistence_rmse = None
+
+    # Seasonal-naive baseline
+    if seasonal_naive_preds is not None and not np.all(np.isnan(seasonal_naive_preds)):
+        mask_sn = ~np.isnan(seasonal_naive_preds)
+        seasonal_naive_mae: float | None = float(mean_absolute_error(y_test[mask_sn], seasonal_naive_preds[mask_sn]))
+        seasonal_naive_rmse: float | None = float(root_mean_squared_error(y_test[mask_sn], seasonal_naive_preds[mask_sn]))
+    else:
+        seasonal_naive_mae = seasonal_naive_rmse = None
+
     # Relative improvement: positive means model reduced error compared to baseline
     improvement_vs_zero_pct = float((zero_mae - model_mae) / zero_mae * 100.0)
     improvement_vs_train_mean_pct = float((train_mean_mae - model_mae) / train_mean_mae * 100.0)
     improvement_vs_cal_lag_pct = float((cal_lag_mae - model_mae) / cal_lag_mae * 100.0)
 
-    # Uncertainty interval coverage
+    # Quantile prediction interval empirical coverage
     covered_80 = (y_test >= low_80) & (y_test <= high_80)
     cov_80_rate = float(np.mean(covered_80))
     width_80_mean = float(np.mean(high_80 - low_80))
@@ -457,6 +523,10 @@ def evaluate_forecast_bundle(
             "zero_baseline_rmse_mwh": round(zero_rmse, 2),
             "train_mean_baseline_mae_mwh": round(train_mean_mae, 2),
             "train_mean_baseline_rmse_mwh": round(train_mean_rmse, 2),
+            "persistence_baseline_mae_mwh": round(persistence_mae, 2) if persistence_mae is not None else None,
+            "persistence_baseline_rmse_mwh": round(persistence_rmse, 2) if persistence_rmse is not None else None,
+            "seasonal_naive_baseline_mae_mwh": round(seasonal_naive_mae, 2) if seasonal_naive_mae is not None else None,
+            "seasonal_naive_baseline_rmse_mwh": round(seasonal_naive_rmse, 2) if seasonal_naive_rmse is not None else None,
             "calendar_lag_baseline_mae_mwh": round(cal_lag_mae, 2),
             "calendar_lag_baseline_rmse_mwh": round(cal_lag_rmse, 2),
             "mae_reduction_vs_zero_pct": round(improvement_vs_zero_pct, 2),
@@ -466,6 +536,8 @@ def evaluate_forecast_bundle(
             "no_improvement_flag": no_improvement,
         },
         "uncertainty_intervals": {
+            "interval_type": "quantile_prediction_interval",
+            "note": "Empirical coverage measured on held-out folds. Not conformally calibrated.",
             "nominal_80_coverage": 0.80,
             "empirical_80_coverage": round(cov_80_rate, 4),
             "mean_80_interval_width_mwh": round(width_80_mean, 2),
@@ -474,3 +546,4 @@ def evaluate_forecast_bundle(
             "mean_90_interval_width_mwh": round(width_90_mean, 2),
         },
     }
+

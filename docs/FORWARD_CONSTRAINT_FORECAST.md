@@ -39,7 +39,7 @@ A two-part hurdle model combined with quantile regression intervals:
 2. **Non-negative Conditional Volume Regressor**: `HistGradientBoostingRegressor` trained strictly on positive constraint events ($\text{constraint\_mwh} > 5.0$), with predictions bounded at zero: $\hat{y}_{\text{vol}} = \max(0, \hat{f}(X_{t_0}))$.
 3. **Expected Constraint Volume**:
    $$\hat{y}_{\text{expected}} = \hat{p} \times \hat{y}_{\text{vol}}$$
-4. **Calibrated Uncertainty Intervals**: `HistGradientBoostingRegressor(loss='quantile')` fitted at $q \in \{0.05, 0.10, 0.90, 0.95\}$ to produce nominal 80% ($[P_{10}, P_{90}]$) and 90% ($[P_{05}, P_{95}]$) non-negative prediction intervals.
+4. **Quantile Prediction Intervals**: `HistGradientBoostingRegressor(loss='quantile')` fitted at $q \in \{0.05, 0.10, 0.90, 0.95\}$ to produce nominal 80% ($[P_{10}, P_{90}]$) and 90% ($[P_{05}, P_{95}]$) non-negative prediction intervals. Empirical coverage is measured on held-out folds. These are **not** conformally or isotonically calibrated; a separate calibration/conformal procedure on a held-out calibration set would be required for guaranteed coverage guarantees.
 
 ---
 
@@ -92,14 +92,16 @@ The model was evaluated across 5 monthly chronological holdouts (April, May, Jun
 
 ---
 
-## 6. Probability Calibration and Uncertainty Coverage
+## 6. Quantile Prediction Intervals and Uncertainty Coverage
 
 - **Probability Calibration**:
   - For $H = 1\text{h}$, Expected Calibration Error (ECE) is low (mean $0.043$), with Brier scores around $0.069$.
   - For $H = 24\text{h}$, ECE rises to $0.191$ and Brier score to $0.262$, reflecting heightened predictive uncertainty.
-- **Uncertainty Interval Coverage**:
-  - The non-negative quantile intervals $[P_{10}, P_{90}]$ achieve **84.1%–90.5%** empirical coverage across horizons, meeting or exceeding the nominal 80% target.
+- **Quantile Prediction Interval Coverage** (not conformally calibrated):
+  - The quantile regressors ($[P_{10}, P_{90}]$ and $[P_{05}, P_{95}]$) are trained directly — no separate calibration/conformal step is applied.
+  - The $[P_{10}, P_{90}]$ non-negative intervals achieve **84.1%–90.5%** empirical coverage across horizons, meeting or exceeding the nominal 80% target.
   - The nominal 90% intervals $[P_{05}, P_{95}]$ achieve **89.5%–94.3%** empirical coverage across all tested horizons.
+  - To obtain coverage guarantees, a conformal calibration step (split-conformal or isotonic regression on a held-out calibration set) would be required.
 
 ---
 
@@ -111,23 +113,42 @@ The model was evaluated across 5 monthly chronological holdouts (April, May, Jun
 > [!WARNING]
 > **No Avoided-Energy Claim**: Demonstrating that national constraint MWh was predicted does NOT mean that an arbitrary battery or EV fleet elsewhere on the island could absorb it. Siting flexible load on the wrong side of a transmission constraint can exacerbate, rather than relieve, network congestion. A valid avoided-curtailment or avoided-constraint claim requires power-flow nodal feasibility.
 
+> [!WARNING]
+> **Unresolved Publication-Latency Assumption**: Features `constraint_mwh_t0` and `curtailment_mwh_t0` are timestamp-correct at decision time $t_0$ but EirGrid's official dispatch-down half-hourly figures may only become available retrospectively (hours or days after the metering period closes). If so, the 1h PR-AUC of **0.9727** should be treated as an **optimistic upper bound** on achievable real-time performance. Ground Truth #5 requires confirming "time when the information became available" before treating these numbers as validated operational figures.
+
+> [!IMPORTANT]
+> **Event Definition — Phase 1 Lock Required**: The event threshold of `constraint_mwh > 5.0 MWh` (≥10 MW average over a 30-minute interval) is a **working definition only**. This threshold yields ~50% event prevalence across the Apr–Aug 2026 evaluation folds, which may indicate it captures operationally marginal events alongside genuinely significant ones. The event definition is explicitly part of the Ground Truth #5 Phase 1 lock and should be confirmed with TSO/operational input before treating derived PR-AUC figures as final benchmark numbers.
+
 ---
 
 ## 8. Saved Artifacts and Verification
 
-Artifacts are saved in `artifacts/forward_constraint/` without overwriting retrospective demo files:
-- `artifacts/forward_constraint/model_1h.joblib`
-- `artifacts/forward_constraint/model_4h.joblib`
-- `artifacts/forward_constraint/model_12h.joblib`
-- `artifacts/forward_constraint/model_24h.joblib`
+Artifacts are saved in `artifacts/forward_constraint/` without overwriting retrospective demo files.
+
+**Fold models** (trained up to each fold's training cutoff — evaluation/inspection only, **not for deployment**):
+- `artifacts/forward_constraint/model_1h_fold.joblib`
+- `artifacts/forward_constraint/model_4h_fold.joblib`
+- `artifacts/forward_constraint/model_6h_fold.joblib`
+- `artifacts/forward_constraint/model_12h_fold.joblib`
+- `artifacts/forward_constraint/model_24h_fold.joblib`
+
+**Final-fit models** (trained on all Jan–Aug data after evaluation — the deployable artifacts):
+- `artifacts/forward_constraint/model_1h_final_fit.joblib`
+- `artifacts/forward_constraint/model_4h_final_fit.joblib`
+- `artifacts/forward_constraint/model_6h_final_fit.joblib`
+- `artifacts/forward_constraint/model_12h_final_fit.joblib`
+- `artifacts/forward_constraint/model_24h_final_fit.joblib`
+
+**Metrics and metadata**:
 - `artifacts/forward_constraint/metrics.json`
 - `artifacts/forward_constraint/metadata.json`
 
-To reproduce the multi-horizon backtest:
+To reproduce the multi-horizon backtest (required 1h/6h/24h plus extras 4h/12h):
 ```bash
-python scripts/backtest_forward_constraint.py --horizons 1,4,12,24
+python scripts/backtest_forward_constraint.py --horizons 1,4,6,12,24
 ```
 To run automated tests:
 ```bash
 pytest tests/test_forward_constraint.py -v
 ```
+

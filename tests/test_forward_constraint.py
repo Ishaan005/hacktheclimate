@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from scripts.forward_constraint import (
-    calendar_encodings,
+    evaluate_forecast_bundle,
     expected_calibration_error,
     prepare_forecast_frame,
     train_hurdle_bundle,
@@ -152,3 +152,55 @@ def test_expected_calibration_error_computation():
     ece, bins = expected_calibration_error(y_true, y_prob, n_bins=5)
     assert 0.0 <= ece <= 1.0
     assert len(bins) == 5
+
+
+def test_prepare_forecast_frame_contains_baseline_columns():
+    """Persistence and seasonal-naive baseline columns are present and not in feature_cols."""
+    df = _synthetic_eirgrid_frame(n_rows=200)
+    frame, feature_cols, _ = prepare_forecast_frame(df, horizon_hours=1.0)
+
+    # constraint_mwh_t0 (persistence) must be present
+    assert "constraint_mwh_t0" in frame.columns
+
+    # constraint_mwh_24h_ago_t0 (seasonal-naive) must be present
+    assert "constraint_mwh_24h_ago_t0" in frame.columns
+
+    # seasonal-naive column must NOT be added to the ML feature set
+    assert "constraint_mwh_24h_ago_t0" not in feature_cols
+
+    # With 200 rows, rows 48+ should have valid 24h_ago values
+    valid_24h = frame["constraint_mwh_24h_ago_t0"].notna()
+    assert valid_24h.sum() > 0
+
+
+def test_evaluate_forecast_bundle_reports_persistence_and_seasonal_naive():
+    """evaluate_forecast_bundle must include persistence and seasonal-naive MAE keys."""
+    df = _synthetic_eirgrid_frame(n_rows=400)
+    horizon_hours = 1.0
+    frame, features, cal_lag = prepare_forecast_frame(df, horizon_hours=horizon_hours)
+    valid = frame["target_constraint_mwh"].notna()
+
+    split_idx = 280
+    train_df = frame[valid].iloc[:split_idx]
+    test_df = frame[valid].iloc[split_idx:]
+
+    bundle = train_hurdle_bundle(
+        train_df=train_df,
+        features=features,
+        cal_lag_features=cal_lag,
+        horizon_hours=horizon_hours,
+        threshold_mwh=5.0,
+    )
+
+    metrics = evaluate_forecast_bundle(bundle, test_df)
+
+    # Persistence and seasonal-naive keys must appear in volume_mwh
+    assert "persistence_baseline_mae_mwh" in metrics["volume_mwh"]
+    assert "seasonal_naive_baseline_mae_mwh" in metrics["volume_mwh"]
+
+    # With sufficient history, persistence MAE should be a non-negative float
+    p_mae = metrics["volume_mwh"]["persistence_baseline_mae_mwh"]
+    assert p_mae is None or (isinstance(p_mae, float) and p_mae >= 0.0)
+
+    # uncertainty_intervals must carry the interval_type key (not "calibrated")
+    assert metrics["uncertainty_intervals"]["interval_type"] == "quantile_prediction_interval"
