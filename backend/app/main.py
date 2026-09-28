@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
+
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from .proxy import add_pressure_proxy
-from .demo import router as demo_router
-
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+
+from .demo import router as demo_router
+from .network_forecast import build_network_forecast_from_files
+from .proxy import add_pressure_proxy
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
@@ -20,7 +23,6 @@ LABELED_DATA = Path("data/processed/training_table_labeled_jan2026.csv")
 
 def _json_records(df: pd.DataFrame, cols: list[str], limit: int) -> list[dict]:
     sample = df[cols].tail(max(1, min(limit, 336)))
-    # The source data deliberately retains gaps; JSON must represent them as null.
     return sample.astype(object).where(pd.notna(sample), None).to_dict(orient="records")
 
 
@@ -62,10 +64,27 @@ def sample_dispatch_down(limit: int = 96):
     cols = [c for c in cols if c in df.columns]
     return _json_records(df, cols, limit)
 
+
+@app.get("/v1/network/forecast")
+def network_forecast():
+    """Return 48 half-hour national + network constraint forecast records."""
+    try:
+        return build_network_forecast_from_files(as_of=datetime.now(timezone.utc))
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            503,
+            "Network forecast inputs are not prepared. Import the TYTFS case and provide "
+            "NETWORK_FORECAST_INPUT plus NETWORK_GENERATOR_CROSSWALK.",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
 if FRONTEND_DIST.is_dir():
     @app.get("/")
     def root():
         return FileResponse(FRONTEND_DIST / "index.html")
+
     app.mount(
         "/",
         StaticFiles(directory=FRONTEND_DIST, html=True),

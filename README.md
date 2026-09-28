@@ -35,6 +35,7 @@ The API currently provides:
 | `GET /v1/sample/pressure?limit=48` | Historical rows with a **UI-only pressure proxy** |
 | `GET /v1/sample/dispatch-down?limit=96` | Historical January rows with official dispatch-down labels |
 | `POST /v1/demo/absorption` | Retrospective January 1-hour model estimates passed to the flexible-load optimiser |
+| `GET /v1/network/forecast` | Input-gated 48 half-hour TYTFS planning scenarios; requires a re-imported local case, reviewed generator crosswalk and timestamped upstream forecasts |
 
 Sample routes return up to 336 rows. Missing source values appear as JSON `null`. To try the model-to-optimiser route while the server is running:
 
@@ -45,6 +46,8 @@ curl -sS http://127.0.0.1:8000/v1/demo/absorption \
 ```
 
 `start_target` is a UTC half-hour in the **24–31 January 2026** held-out window; `intervals` is 1–48 and each asset needs one availability flag per interval. The route returns model probabilities, expected and observed dispatch-down MWh, and a power schedule. It replays historical inputs from one hour before each target; it is **not a live or day-ahead forecast**. Treating all predicted dispatch-down as locally absorbable is an unvalidated upper bound, and scheduled energy is not measured avoided dispatch-down.
+
+The network route returns 503 until its local source case, reviewed crosswalk and 48 timestamped upstream rows are provided. See the [network forecast architecture](docs/NETWORK_FORECAST_ARCHITECTURE.md) for the input contract and planning-case limits. Its national probability and MWh values come from the supplied upstream rows; this route does not train or run a day-ahead national model.
 
 ## What is ready
 
