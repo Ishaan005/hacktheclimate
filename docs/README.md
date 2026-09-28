@@ -2,7 +2,7 @@
 
 Start with the [repository README](../README.md) to run the API. Then use the pages below for the part you are changing.
 
-The [project status](PROJECT_STATUS.md) records what was verified on 27 September and what remains before a judged demo.
+The [project status](PROJECT_STATUS.md) is a 27 September verification snapshot. For newer GFS training and inference work, use the dedicated guides below.
 
 | If you are working on… | Read |
 | --- | --- |
@@ -24,4 +24,4 @@ The [project status](PROJECT_STATUS.md) records what was verified on 27 Septembe
 | 48 half-hour network forecast adapter and API | [Network forecast architecture](NETWORK_FORECAST_ARCHITECTURE.md) |
 | Safety checks, controlled action scenarios and operator API | [Network safety and actions](NETWORK_SAFETY_ACTIONS.md) |
 
-The [data contract](../config/data_contract.yaml) lists field names and distinguishes forecast-safe inputs from same-period measurements. The API exposes historical samples, one retrospective model-to-optimiser scenario, an input-gated network planning forecast adapter, and an operator safety/action screen; see the [README](../README.md) for request examples.
+The [data contract](../config/data_contract.yaml) distinguishes forecast-safe inputs from same-period measurements. The [README](../README.md) lists current API paths.
