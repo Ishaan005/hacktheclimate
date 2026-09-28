@@ -9,3 +9,4 @@ data/raw/*
 !data/raw/.gitkeep
 data/inference/
 /data/generation-load-prices/*
+docs/chat_graph.html
