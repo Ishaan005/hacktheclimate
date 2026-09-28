@@ -24,6 +24,7 @@ type Tile = {
 function SummaryStrip({ view, loading, selectedOutage }: SummaryStripProps) {
   const forecast = view?.forecast;
   const scenario = view?.scenario;
+  const decision = view?.decision;
 
   let riskTile: Tile;
   if (loading && !view) {
@@ -49,7 +50,14 @@ function SummaryStrip({ view, loading, selectedOutage }: SummaryStripProps) {
       : { label: 'National constraint risk', value: 'No values', detail: 'Every interval is missing.', tone: 'caution' };
   }
 
-  const outageTile: Tile = selectedOutage
+  const outageTile: Tile = decision
+    ? {
+        label: <Term definition={GLOSSARY.plannedOutage}>Outage being studied</Term>,
+        value: decision.network.planned_outage.asset_id,
+        detail: `TYTFS planning case ${decision.network.case_scenario_date ?? 'date unknown'}`,
+        tone: 'unknown',
+      }
+    : selectedOutage
     ? {
         label: <Term definition={GLOSSARY.plannedOutage}>Outage being studied</Term>,
         value: selectedOutage.equipment_description,
@@ -75,9 +83,21 @@ function SummaryStrip({ view, loading, selectedOutage }: SummaryStripProps) {
       };
     }
   }
+  if (decision) {
+    const peak = decision.rows.reduce((best, row) =>
+      (row.network.max_dc_loading_proxy_pct ?? -1) > (best.network.max_dc_loading_proxy_pct ?? -1) ? row : best,
+    );
+    branchTile = {
+      label: <Term definition={GLOSSARY.loading}>Highest modelled loading (planning case)</Term>,
+      value: peak.network.max_dc_loading_proxy_pct === null
+        ? 'Unknown' : `${peak.network.max_dc_loading_proxy_pct.toFixed(1)}% of rate A`,
+      detail: `Safety ${peak.network.safety.overall} · ${peak.network.worst_asset ?? 'asset unavailable'}`,
+      tone: peak.network.safety.overall === 'FAIL' ? 'critical' : 'unknown',
+    };
+  }
 
   return (
-    <section className="summary-strip" aria-label="Current picture">
+    <section className="summary-strip" aria-label={decision ? 'Forecast and planning screen' : 'Current picture'}>
       <div className="summary-tiles">
         {[riskTile, outageTile, branchTile].map((tile, index) => (
           <div key={index} className={`summary-tile tone-${tile.tone}`}>
@@ -87,7 +107,7 @@ function SummaryStrip({ view, loading, selectedOutage }: SummaryStripProps) {
           </div>
         ))}
       </div>
-      <p className="summary-note">{STATE_COPY.independence}</p>
+      <p className="summary-note">{decision ? 'The national forecast supplies timing; the network figures screen a 2024 planning case. No safe action is recommended while required checks are unknown.' : STATE_COPY.independence}</p>
     </section>
   );
 }

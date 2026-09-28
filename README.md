@@ -7,7 +7,7 @@ Data and modelling starter for the Ireland renewable dispatch-down challenge. Th
 | Tool | Version | Notes |
 | --- | --- | --- |
 | **Python** | Must be **3.11** | Required for the API, scripts, and tests. CI uses 3.11. |
-| **Node.js** | Min **18+** (20 LTS recommended) | Only if you work on the React app in `frontend/`. |
+| **Node.js** | Supported **22.x** release | Only if you work on the React app in `frontend/`; the current Vite, Vitest and jsdom dependencies require a recent Node runtime. |
 | **npm** | Min **9+** (bundled with Node) | Comes with Node; used for `frontend/` install and build. |
 
 You do **not** need Node to run the API, run tests, or use `/docs`. Install Node only when developing or building the UI.
@@ -66,6 +66,8 @@ curl -sS http://127.0.0.1:8000/v1/demo/absorption \
 The network route returns 503 until its local source case, reviewed crosswalk and 48 timestamped upstream rows are provided. See the [network forecast architecture](docs/NETWORK_FORECAST_ARCHITECTURE.md) for the input contract and planning-case limits. Its national probability and MWh values come from the supplied upstream rows; this route does not train or run a day-ahead national model.
 
 The operator route uses those inputs and, optionally, a reviewed action catalog. It will not recommend an action while voltage, inertia, RoCoF or other required checks remain unknown. See [safety and action screening](docs/NETWORK_SAFETY_ACTIONS.md) for the catalog format and the distinction between modeled capture and validated avoided constraint MWh.
+
+The [operator UI](frontend/README.md) calls this route by default and displays missing-input states. Set `VITE_API_MODE=fixture` only when deliberately viewing its offline planning-case fixture.
 
 ## What is ready
 

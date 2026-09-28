@@ -1,5 +1,5 @@
 // Representative response for layout work and the smoke test. Nothing here is
-// invented: every value is copied from branch codex/network-issues-9-12.
+// invented: every value is copied from the current reviewed scenario notes.
 //
 // - Scenario values: docs/NETWORK_SCENARIO_DEMO.md ("Observed screen on the
 //   downloaded case") and docs/NETWORK_OUTAGE_RECONCILIATION_2026-09-28.md.
@@ -8,8 +8,7 @@
 //
 // This is an EXCERPT: `flows` holds only the monitored branch. The full report
 // (all 2,552 flow records) is written to data/raw/network_case/ by the
-// scenario script and is untracked. Replace this file with a saved report
-// once the combined API (issue #14) serves one.
+// scenario script and is untracked. Live mode uses /v1/operator/view instead.
 //
 // There is no national forecast yet (issue #8), so the forecast is the
 // explicit unavailable state rather than sample numbers.
@@ -33,9 +32,9 @@ function monitorFlow(flowMw: number, loadingPct: number): ScenarioFlow {
   };
 }
 
-const intact = monitorFlow(-157.01, 20.632);
-const plannedOutage = monitorFlow(-108.265, 14.227);
-const nMinusOne = monitorFlow(-138.597, 18.212);
+const intact = monitorFlow(-153.557, 20.178);
+const plannedOutage = monitorFlow(-107.750, 14.159);
+const nMinusOne = monitorFlow(-136.898, 17.989);
 
 function monitorDelta(before: ScenarioFlow, after: ScenarioFlow, documentedDelta: number): FlowDelta {
   return {
@@ -88,11 +87,11 @@ export const fixtureScenario: PlanningScenario = {
       selected_n_minus_one: { status: 'ok', reason: null, flows: [nMinusOne] },
     },
     flow_deltas_from_intact: {
-      planned_outage: [monitorDelta(intact, plannedOutage, 48.744)],
+      planned_outage: [monitorDelta(intact, plannedOutage, 45.807)],
       // Not stated in the doc: difference of the two documented flows.
-      selected_n_minus_one: [monitorDelta(intact, nMinusOne, 18.413)],
+      selected_n_minus_one: [monitorDelta(intact, nMinusOne, 16.659)],
     },
-    flow_deltas_from_planned_outage: [monitorDelta(plannedOutage, nMinusOne, -30.331)],
+    flow_deltas_from_planned_outage: [monitorDelta(plannedOutage, nMinusOne, -29.148)],
     limitations: [
       'Scheduled outage dates do not establish actual equipment state.',
       'DC flow omits voltage, reactive power, losses and dynamic behavior.',

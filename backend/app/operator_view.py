@@ -22,9 +22,15 @@ def build_operator_view(
     forecast = build_network_forecast(
         case, forecast_rows, reviewed_crosswalk, planned_outage=planned_outage,
     )
+    first_network = forecast[0]["network"]
+    selected_contingency = (
+        Asset(first_network["worst_contingency_type"], first_network["worst_contingency"])
+        if first_network["worst_contingency"] is not None else None
+    )
     actions = screen_actions(
         case, forecast_rows, reviewed_crosswalk, action_candidates,
         planned_outage=planned_outage,
+        selected_contingency=selected_contingency,
     )
     missing = []
     if not action_catalog_available:

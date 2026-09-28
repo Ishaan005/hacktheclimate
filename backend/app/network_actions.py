@@ -77,6 +77,7 @@ def screen_actions(
     candidates: list[dict[str, Any]],
     *,
     planned_outage: Asset = DEFAULT_PLANNED_OUTAGE,
+    selected_contingency: Asset | None = None,
 ) -> dict[str, Any]:
     """Re-solve paired renewable and flexible-load injections per active interval.
 
@@ -113,6 +114,20 @@ def screen_actions(
         if planned_outage.asset_type == "branch"
         else {"disabled_transformers": [planned_outage.asset_id]}
     )
+    n1_disabled = dict(disabled)
+    if selected_contingency is not None:
+        if selected_contingency == planned_outage:
+            raise ValueError("selected contingency must differ from the planned outage")
+        if selected_contingency.asset_type == "branch":
+            n1_disabled["disabled_branches"] = [
+                *n1_disabled.get("disabled_branches", []), selected_contingency.asset_id,
+            ]
+        elif selected_contingency.asset_type == "transformer":
+            n1_disabled["disabled_transformers"] = [
+                *n1_disabled.get("disabled_transformers", []), selected_contingency.asset_id,
+            ]
+        else:
+            raise ValueError("selected contingency asset type is unsupported")
     shares = normalized_load_shares(case)
     groups, mapping_confidence = reviewed_generation_groups(case, reviewed_crosswalk)
     evaluations = []
@@ -124,8 +139,8 @@ def screen_actions(
         region = str(candidate["allocation_region"]).strip()
         kind = str(candidate["generation_type"])
         sites = groups.get((region, kind), [])
-        site = next((site for site in sites if site["bus_id"] == renewable_bus), None)
-        if site is None:
+        bus_mec = sum(site["mec_mw"] for site in sites if site["bus_id"] == renewable_bus)
+        if bus_mec <= 0:
             raise ValueError("action renewable bus lacks a reviewed region/technology match")
         start = _parse_time(str(candidate["available_from"]))
         end = _parse_time(str(candidate["available_until"]))
@@ -142,7 +157,7 @@ def screen_actions(
             base_renewable, _ = allocate_regional_generation(
                 row.get("regional_generation_mw", {}), groups,
             )
-            bus_headroom = max(0.0, site["mec_mw"] - base_renewable.get(renewable_bus, 0.0))
+            bus_headroom = max(0.0, bus_mec - base_renewable.get(renewable_bus, 0.0))
             cap_from_national_mwh = float(row["expected_constraint_mwh"]) / 0.5
             applied = min(power, recoverable, bus_headroom, cap_from_national_mwh)
             if applied <= 1e-8:
@@ -163,17 +178,42 @@ def screen_actions(
                 case, injection_overrides_mw=changed,
                 dc_transfer_overrides_mw=dc_overrides, **disabled,
             )
+            n1_base = n1_action = None
+            if selected_contingency is not None:
+                n1_base = solve_dc_case(
+                    case, injection_overrides_mw=injections,
+                    dc_transfer_overrides_mw=dc_overrides, **n1_disabled,
+                )
+                n1_action = solve_dc_case(
+                    case, injection_overrides_mw=changed,
+                    dc_transfer_overrides_mw=dc_overrides, **n1_disabled,
+                )
             # SNSP changes when renewable production and demand change. The
             # current national forecast supplies no validated action formula.
-            safety = evaluate_safety(solve).to_dict()
+            planned_safety = evaluate_safety(solve).to_dict()
+            n1_safety = evaluate_safety(n1_action).to_dict() if n1_action is not None else None
+            overall = combine_checks({
+                "planned_outage": CheckResult(planned_safety["overall"], "scenario result"),
+                **({"selected_n_minus_one": CheckResult(n1_safety["overall"], "scenario result")}
+                   if n1_safety is not None else {}),
+            })
             intervals.append({
                 "valid_time": row["valid_time"], "applied_mw": applied,
                 "modeled_capture_upper_bound_mwh": applied * 0.5,
-                "safety": safety,
+                "safety": {"overall": overall, "planned_outage": planned_safety,
+                           "selected_n_minus_one": n1_safety},
                 "network_effect": {
-                    "planned_outage": planned_outage.asset_id,
-                    "base": _network_features(base_solve),
-                    "with_action": _network_features(solve),
+                    "planned_outage": {
+                        "asset_id": planned_outage.asset_id,
+                        "base": _network_features(base_solve),
+                        "with_action": _network_features(solve),
+                    },
+                    "selected_n_minus_one": (
+                        {"asset_id": selected_contingency.asset_id,
+                         "base": _network_features(n1_base),
+                         "with_action": _network_features(n1_action)}
+                        if n1_base is not None and n1_action is not None else None
+                    ),
                 },
             })
         checked = [item for item in intervals if item["safety"] is not None]
