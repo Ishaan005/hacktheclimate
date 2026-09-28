@@ -1,0 +1,53 @@
+/* Runs table; becomes labelled rows when the panel is narrow. */
+
+.row-warning th {
+  color: var(--critical);
+}
+
+.cell-note {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+@container (max-width: 639px) {
+  .runs-table thead {
+    display: none;
+  }
+
+  .runs-table tr {
+    display: block;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .runs-table th,
+  .runs-table td {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 12px;
+    padding: 4px 0;
+    border: none;
+    text-align: right;
+  }
+
+  .runs-table td > * {
+    grid-column: 2;
+  }
+
+  .runs-table th {
+    font-size: 1rem;
+    text-align: left;
+  }
+
+  .runs-table td::before {
+    content: attr(data-label);
+    grid-row: 1 / span 3;
+    color: var(--text-secondary);
+    text-align: left;
+  }
+
+  .runs-table th {
+    display: block;
+  }
+}

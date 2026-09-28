@@ -1,4 +1,5 @@
 import { STATE_COPY } from '../copy';
+import './StatusMessage.css';
 
 type StatusMessageProps = {
   tone: 'loading' | 'error' | 'unavailable' | 'empty' | 'stale';

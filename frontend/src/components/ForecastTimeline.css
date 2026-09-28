@@ -1,0 +1,75 @@
+/* 24-hour SVG timeline and legend. */
+
+.timeline {
+  margin: 0;
+}
+
+.timeline svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.timeline-axis {
+  stroke: var(--border);
+}
+
+.timeline-bar {
+  fill: var(--chart);
+}
+
+.timeline-range {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.timeline-probability {
+  fill: var(--chart);
+}
+
+.timeline-missing {
+  fill: var(--missing);
+  opacity: 0.25;
+}
+
+.timeline-label {
+  font-size: 20px;
+  fill: var(--text-secondary);
+}
+
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.timeline-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.legend-bar::before,
+.legend-probability::before {
+  background: var(--chart);
+}
+
+.legend-range::before {
+  width: 2px !important;
+  background: var(--text);
+}
+
+.legend-missing::before {
+  background: var(--missing);
+  opacity: 0.5;
+}
+
+.timeline-legend span:last-child::before {
+  display: none;
+}

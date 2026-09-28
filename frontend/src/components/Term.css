@@ -1,0 +1,55 @@
+/* Dotted-underline terms with plain-language tooltips. */
+
+.term {
+  position: relative;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+
+.term:focus-visible {
+  outline: 3px solid var(--focus);
+}
+
+.term-tip {
+  display: none;
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  max-width: min(18rem, 75vw);
+  padding: 8px 10px;
+  background: var(--text);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+}
+
+.num .term-tip {
+  left: auto;
+  right: 0;
+}
+
+.term:hover .term-tip,
+.term:focus .term-tip {
+  display: block;
+}
+
+@media (max-width: 599px) {
+  .term-tip,
+  .num .term-tip {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    padding: 12px 14px;
+    font-size: 0.9375rem;
+  }
+}

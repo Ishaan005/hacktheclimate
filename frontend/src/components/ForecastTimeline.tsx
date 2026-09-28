@@ -1,5 +1,6 @@
 import type { ForecastInterval } from '../types';
 import { formatNumber, formatTime } from '../format';
+import './ForecastTimeline.css';
 
 // Plain SVG so the skeleton has no chart dependency. The viewBox scales to
 // the container width; labels thin out to every 3 hours.
