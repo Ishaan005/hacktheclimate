@@ -14,6 +14,7 @@ The [project status](PROJECT_STATUS.md) records what was verified on 27 Septembe
 | Local container and later Azure access | [Azure handoff](AZURE_HANDOFF.md) |
 | Microsoft weather sources and limits | [Weather options](WEATHER_OPTIONS.md) |
 | Network-aware forecast inputs and downloaded public datasets | [Network data feasibility study](NETWORK_DATA_FEASIBILITY_2026-09-28.md) |
+| TYTFS case import and base DC validation | [TYTFS base case](TYTFS_BASE_CASE.md) |
 | Static grid import and selected outage scenario | [Cashla–Flagford planning scenario](NETWORK_SCENARIO_DEMO.md) |
 | Planned-outage reconciliation and one TYTFS scenario switch | [2026 outage audit](NETWORK_OUTAGE_RECONCILIATION_2026-09-28.md) |
 | ECP project-to-bus review and scenario allocations | [Network generator crosswalk](NETWORK_GENERATOR_CROSSWALK.md) |
