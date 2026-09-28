@@ -1,4 +1,5 @@
 import type { PlanningScenario, ReviewedOutageOption, ScenarioReport, Unavailable } from '../types';
+import './ScenarioPanel.css';
 import { COPY, GLOSSARY, STATE_COPY } from '../copy';
 import { formatDateTime, formatNumber } from '../format';
 import { runViews, SEVERITY_TEXT, worstRun } from '../insights';
