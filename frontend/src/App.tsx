@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ForecastPanel from './components/ForecastPanel';
 import ScenarioPanel from './components/ScenarioPanel';
+import SummaryStrip from './components/SummaryStrip';
 import { fetchOperatorView, fetchReviewedOutages, USE_FIXTURE } from './api';
 import { COPY } from './copy';
 import type { OperatorView, ReviewedOutageOption } from './types';
@@ -16,6 +17,7 @@ function App() {
   const [view, setView] = useState<OperatorView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -40,13 +42,21 @@ function App() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [selectedOutageId]);
+  }, [selectedOutageId, reloadKey]);
 
   function selectOutage(outageId: string | null) {
     setSelectedOutageId(outageId);
     setLoading(true);
     setError(null);
   }
+
+  function retry() {
+    setLoading(true);
+    setError(null);
+    setReloadKey((key) => key + 1);
+  }
+
+  const selectedOutage = outages.find((item) => item.outage_id === selectedOutageId) ?? null;
 
   // Keep the last forecast on screen while only the scenario reloads.
   const forecastLoading = loading && !view;
@@ -66,15 +76,14 @@ function App() {
         </p>
       </div>
       <main className="app-main">
-        <div className="intro">
-          <h1>{COPY.appTitle}</h1>
-          <p>{COPY.appSubtitle}</p>
-        </div>
+        <h1 className="page-title">{COPY.appTitle}</h1>
+        <SummaryStrip view={view} loading={loading} selectedOutage={selectedOutage} />
         <div className="app-grid">
           <ForecastPanel
             forecast={view?.forecast ?? null}
             loading={forecastLoading}
             error={view ? null : error}
+            onRetry={retry}
           />
           <ScenarioPanel
             outages={outages}
@@ -83,6 +92,7 @@ function App() {
             scenario={view?.scenario ?? null}
             loading={loading}
             error={error}
+            onRetry={retry}
           />
         </div>
       </main>

@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import App from './App';
 import ForecastPanel from './components/ForecastPanel';
 import ScenarioPanel from './components/ScenarioPanel';
-import { COPY, FORBIDDEN_PHRASES } from './copy';
+import { COPY, FORBIDDEN_PHRASES, STATE_COPY } from './copy';
 import { fixtureOutages } from './fixtures/operatorView';
 import type { NationalForecast } from './types';
 
@@ -57,7 +57,9 @@ describe('operator screen with the representative response', () => {
 
     expect(await within(forecast).findByText(/issue #8/)).toBeInTheDocument();
     expect(within(forecast).queryByRole('img')).not.toBeInTheDocument();
-    expect(within(scenario).getByText(COPY.scenarioEmpty)).toBeInTheDocument();
+    expect(within(scenario).getByText(STATE_COPY.scenarioEmptyTitle)).toBeInTheDocument();
+    expect(within(forecast).getByText(STATE_COPY.forecastUnavailableConsequence)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Current picture' })).toHaveTextContent('No forecast yet');
     expectNoForbiddenCopy();
   });
 
@@ -71,9 +73,12 @@ describe('operator screen with the representative response', () => {
     expect(await within(scenario).findByRole('heading', { name: new RegExp(COPY.assetMatchConfidence) })).toBeInTheDocument();
     expect(within(scenario).getByText('Reviewed match')).toBeInTheDocument();
     const table = within(scenario).getByRole('table');
-    expect(within(table).getByText('-157.0 MW')).toBeInTheDocument();
-    expect(within(table).getByText('+48.7 MW')).toBeInTheDocument();
+    expect(within(table).getByText('157.0 MW')).toBeInTheDocument();
+    expect(within(table).getByLabelText('−48.7 MW compared with all equipment in service')).toBeInTheDocument();
     expect(within(table).getByText('20.6%')).toBeInTheDocument();
+    // Plain-language finding and summary strip are derived from the same report.
+    expect(within(scenario).getByText(/reduces flow on the monitored branch by 48\.7 MW/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Current picture' })).toHaveTextContent('Peak 20.6% of rate A');
     // The forecast stays unavailable while the scenario renders.
     expect(screen.getByRole('region', { name: COPY.forecastTitle })).toHaveTextContent(/issue #8/);
     expectNoForbiddenCopy();
@@ -107,15 +112,18 @@ describe('loading, error and unavailable states keep the product labels', () => 
     expect(screen.getByRole('region', { name: COPY.scenarioTitle })).toHaveTextContent(COPY.scenarioLoading);
   });
 
-  it('labels both panels on error', () => {
+  it('labels both panels on error and offers a retry', () => {
+    const onRetry = vi.fn();
     render(
       <>
-        <ForecastPanel forecast={null} loading={false} error="HTTP 503" />
+        <ForecastPanel forecast={null} loading={false} error="HTTP 503" onRetry={onRetry} />
         <ScenarioPanel outages={[]} selectedOutageId={null} onSelectOutage={() => {}} scenario={null} loading={false} error="HTTP 503" />
       </>,
     );
-    expect(screen.getByRole('region', { name: COPY.forecastTitle })).toHaveTextContent(COPY.forecastError);
-    expect(screen.getByRole('region', { name: COPY.scenarioTitle })).toHaveTextContent(COPY.scenarioError);
+    expect(screen.getByRole('region', { name: COPY.forecastTitle })).toHaveTextContent(STATE_COPY.forecastErrorTitle);
+    expect(screen.getByRole('region', { name: COPY.scenarioTitle })).toHaveTextContent(STATE_COPY.scenarioErrorTitle);
+    fireEvent.click(screen.getByRole('button', { name: STATE_COPY.retry }));
+    expect(onRetry).toHaveBeenCalledOnce();
     expectNoForbiddenCopy();
   });
 
@@ -131,7 +139,7 @@ describe('loading, error and unavailable states keep the product labels', () => 
       />,
     );
     const scenario = screen.getByRole('region', { name: COPY.scenarioTitle });
-    expect(scenario).toHaveTextContent(COPY.notAvailable);
+    expect(scenario).toHaveTextContent(STATE_COPY.scenarioUnavailableTitle);
     expect(scenario).toHaveTextContent('Outage audit has no reviewed asset match.');
   });
 });

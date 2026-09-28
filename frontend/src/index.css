@@ -6,14 +6,19 @@
   --border: #b1b4b6;
   --border-light: #d8dadc;
   --brand: #0b2545;
-  --link: #1d4f91;
-  --forecast: #1d4f91;
-  --scenario: #6b4c2a;
-  --warning: #b10e1e;
+  --focus: #ffdd00;
+  --chart: #1d4f91;
+  --missing: #9aa0a6;
+
+  /* Semantic colour: use only for these four meanings. */
+  --normal: #00703c;
+  --normal-bg: #e5f2ea;
   --caution: #8a5a00;
   --caution-bg: #fff4d6;
-  --ok-bg: #e2eef9;
-  --missing: #9aa0a6;
+  --critical: #b10e1e;
+  --critical-bg: #fbe9ea;
+  --changed: #4c2c92;
+  --changed-bg: #efeaf8;
 
   font-family: Arial, Helvetica, sans-serif;
   font-size: 16px;

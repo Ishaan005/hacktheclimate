@@ -5,7 +5,6 @@
 export const COPY = {
   appTitle: 'Constraint outlook',
   appPhase: 'Prototype',
-  appSubtitle: 'When national constraint risk rises, and what a planned outage could change in a planning model.',
 
   forecastTitle: 'National forecast',
   forecastKind: 'Statistical forecast',
@@ -13,7 +12,6 @@ export const COPY = {
   forecastCaveat:
     'Forecasts the national constraint total only, separate from system-wide curtailment. The labels it learns from are national totals, so it does not identify a line, wind farm, node or constraint group.',
   forecastLoading: 'Loading national forecast…',
-  forecastError: 'National forecast could not be loaded.',
   contextTitle: 'Inputs available at decision time',
 
   scenarioTitle: 'TYTFS planning scenario',
@@ -22,15 +20,60 @@ export const COPY = {
   scenarioCaveat:
     'DC flows from a Ten Year Transmission Forecast Statement (TYTFS) 2024 planning case, not the 2026 operating network. Loading and headroom are screening proxies, not measured or future operational flows. The selected N-1 run is one study case, not an operational security assessment.',
   scenarioLoading: 'Loading TYTFS planning scenario…',
-  scenarioError: 'TYTFS planning scenario could not be loaded.',
-  scenarioEmpty: 'Select a reviewed outage to see its modelled effect.',
-  scenarioExcerpt: 'Showing the monitored branch only.',
 
   forecastConfidence: 'Forecast confidence',
   assetMatchConfidence: 'Asset match',
 
   notAvailable: 'Not available',
   fixtureBanner: 'Offline sample: scenario values copied from docs/NETWORK_SCENARIO_DEMO.md. Not served by the API yet.',
+} as const;
+
+// Consequence-led state messages: what the operator can and cannot rely on.
+export const STATE_COPY = {
+  forecastUnavailableTitle: 'No national outlook yet',
+  forecastUnavailableConsequence:
+    'This screen cannot show when national constraint risk rises. The planning scenario below still works, but it says nothing about timing.',
+  forecastLoadingConsequence: 'Fetching the latest national forecast. Nothing is shown until it arrives.',
+  forecastErrorTitle: 'National forecast did not load',
+  forecastErrorConsequence: 'No forecast figures are shown, so none of them can be out of date. Try again, or check that the API is running.',
+  forecastStaleTitle: 'Some forecast inputs are out of date',
+  forecastStaleConsequence: 'Treat the timeline as less reliable until these sources refresh:',
+  scenarioEmptyTitle: 'No outage selected',
+  scenarioEmptyConsequence:
+    'Pick a reviewed outage above to see how switching that equipment off would move power in the 2024 planning model.',
+  scenarioLoadingConsequence: 'Solving the planning model for this outage.',
+  scenarioErrorTitle: 'Planning scenario did not load',
+  scenarioErrorConsequence: 'No modelled flows are shown for this outage. Try again, or pick another outage.',
+  scenarioUnavailableTitle: 'This outage cannot be modelled yet',
+  scenarioUnavailableConsequence:
+    'No flow change is shown because the equipment could not be matched to the planning model with enough confidence.',
+  retry: 'Try again',
+  independence: 'The planning scenario does not change the national forecast. They answer separate questions.',
+} as const;
+
+// Plain-language definitions shown in tooltips.
+export const GLOSSARY = {
+  constraint:
+    'Wind or solar output EirGrid reduces because the network cannot carry it in that area. Measured here as a national total in MWh.',
+  eventProbability: 'The model’s chance that national constraint in that half-hour exceeds the event threshold.',
+  horizon: 'How far ahead of the decision time the half-hour is. The forecast only uses information available at the decision time.',
+  confidence:
+    'How well the forecast did on past months it had not seen, tested in time order. It says nothing about the network scenario.',
+  prAuc: 'A score from 0 to 1 for how well the model ranks risky half-hours above quiet ones. Compare it with event prevalence: rare events make high scores harder.',
+  calibration: 'Whether a 70% chance really happens about 70% of the time in past data.',
+  intervalCoverage: 'How often the real value fell inside the shaded uncertainty range in past data, compared with the target.',
+  tytfs:
+    'Ten Year Transmission Forecast Statement: EirGrid’s published planning model of the network. This one is a summer 2024 study case, not today’s grid.',
+  plannedOutage: 'Equipment EirGrid has scheduled to switch off for work. A schedule does not prove it was actually off on a given day.',
+  nMinusOne: 'One extra piece of equipment switched off on top of the planned outage, to test how the network copes. Chosen for study; not a published outage.',
+  dcFlow: 'A simplified power-flow calculation. It ignores voltage, reactive power and losses, so results are approximate.',
+  flowSize: 'How much active power the model sends along the monitored branch, ignoring direction.',
+  loading: 'Modelled flow as a share of the branch’s rate A rating. A screening figure, not measured thermal loading.',
+  headroom: 'Rate A minus modelled flow: how much more the branch could carry in the model before reaching its rating.',
+  rateA: 'The branch’s normal continuous rating in the planning case, in MVA.',
+  assetMatch:
+    'How sure we are that the outage in EirGrid’s outage list and the equipment in the planning model are the same thing. Separate from forecast confidence.',
+  loadingBand: 'Display bands used on this screen: under 80% normal, 80–100% caution, over 100% critical. They are not EirGrid operating limits.',
 } as const;
 
 // Phrases the UI must never show. Checked by the smoke test.
