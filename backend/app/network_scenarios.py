@@ -62,7 +62,9 @@ def _summarize(result: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _deltas(base: Mapping[str, Any], scenario: Mapping[str, Any]) -> list[dict[str, Any]]:
+def _deltas(base: Mapping[str, Any], scenario: Mapping[str, Any]) -> list[dict[str, Any]] | None:
+    if base["status"] == "unsolved" or scenario["status"] == "unsolved":
+        return None
     baseline = {_flow_key(flow): flow for flow in base["flows"]}
     changed = {_flow_key(flow): flow for flow in scenario["flows"]}
     deltas = []
