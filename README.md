@@ -11,6 +11,12 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pytest -q
+
+cd frontend
+npm install --include=dev
+npm run build
+cd ..
+
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
