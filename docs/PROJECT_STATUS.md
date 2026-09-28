@@ -1,6 +1,6 @@
 # Verified state and remaining work
 
-Checked locally on 27 September 2026, before the hackathon. This is a prototype status, not a performance or impact claim.
+Checked locally on 27 September 2026, before the hackathon. This is a historical snapshot, not the current feature inventory or a performance or impact claim. See the [GFS training report](GFS_CONSTRAINT_TRAINING.md) and [inference runbook](GFS_INFERENCE.md) for work completed afterward.
 
 ## What runs
 
