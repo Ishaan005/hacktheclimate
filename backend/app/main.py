@@ -6,6 +6,12 @@ from fastapi import FastAPI, HTTPException
 from .proxy import add_pressure_proxy
 from .demo import router as demo_router
 
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
+
 app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
 app.include_router(demo_router)
 DATA = Path("data/processed/canonical_ie.csv")
@@ -16,6 +22,17 @@ def _json_records(df: pd.DataFrame, cols: list[str], limit: int) -> list[dict]:
     sample = df[cols].tail(max(1, min(limit, 336)))
     # The source data deliberately retains gaps; JSON must represent them as null.
     return sample.astype(object).where(pd.notna(sample), None).to_dict(orient="records")
+
+
+if FRONTEND_DIST.is_dir():
+    @app.get("/")
+    def root():
+        return FileResponse(FRONTEND_DIST / "index.html")
+    app.mount(
+        "/",
+        StaticFiles(directory=FRONTEND_DIST, html=True),
+        name="frontend",
+    )
 
 
 @app.get("/health")
