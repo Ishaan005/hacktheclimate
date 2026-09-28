@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .demo import router as demo_router
 from .gfs_forecast import DEFAULT_OUTPUT_DIR, load_current_forecast
+from .dispatch_down.routes import router as dispatch_down_router
 from .network_forecast import build_network_forecast_from_files
 from .network import load_case
 from .network_actions import load_action_candidates
@@ -25,6 +26,7 @@ FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
 app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
 app.include_router(demo_router)
+app.include_router(dispatch_down_router)
 app.include_router(constraint_router)
 DATA = Path("data/processed/canonical_ie.csv")
 LABELED_DATA = Path("data/processed/training_table_labeled_jan2026.csv")
