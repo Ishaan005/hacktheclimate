@@ -18,5 +18,6 @@ The [project status](PROJECT_STATUS.md) records what was verified on 27 Septembe
 | Static grid import and selected outage scenario | [Cashla–Flagford planning scenario](NETWORK_SCENARIO_DEMO.md) |
 | Planned-outage reconciliation and one TYTFS scenario switch | [2026 outage audit](NETWORK_OUTAGE_RECONCILIATION_2026-09-28.md) |
 | ECP project-to-bus review and scenario allocations | [Network generator crosswalk](NETWORK_GENERATOR_CROSSWALK.md) |
+| 48 half-hour network forecast adapter and API | [Network forecast architecture](NETWORK_FORECAST_ARCHITECTURE.md) |
 
-The [data contract](../config/data_contract.yaml) lists field names and distinguishes forecast-safe inputs from same-period measurements. The API exposes historical samples and one retrospective model-to-optimiser scenario; see the [README](../README.md) for a request example.
+The [data contract](../config/data_contract.yaml) lists field names and distinguishes forecast-safe inputs from same-period measurements. The API exposes historical samples, one retrospective model-to-optimiser scenario, and an input-gated network planning forecast adapter; see the [README](../README.md) for request examples.

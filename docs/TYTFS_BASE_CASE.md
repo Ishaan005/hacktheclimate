@@ -15,9 +15,9 @@ python -m scripts.import_tytfs_case \
   --output-dir data/raw/network_case
 ```
 
-The command writes `buses.csv`, `branches.csv`, `transformers.csv`, `generators.csv`, `loads.csv`, `provenance.json`, and `validation_report.json` under the chosen output directory. `data/raw/` is ignored by Git. The provenance file records the source member and SHA-256 of the extracted RAW bytes, so a refreshed download can be compared with this check. The checked case SHA-256 is `b73cf0ca51cea4ab8f58cfc4e9e1021f561c877e4880ed979213747b8d667450`. The external ECP line ratings workbook is not merged.
+The command writes `buses.csv`, `branches.csv`, `transformers.csv`, `generators.csv`, `loads.csv`, `dc_lines.csv`, `provenance.json`, and `validation_report.json` under the chosen output directory. `data/raw/` is ignored by Git. The provenance file records the source member and SHA-256 of the extracted RAW bytes, so a refreshed download can be compared with this check. The checked case SHA-256 is `b73cf0ca51cea4ab8f58cfc4e9e1021f561c877e4880ed979213747b8d667450`. The external ECP line ratings workbook is not merged.
 
-`load_case(output_dir)` in `backend.app.network` reads the CSVs. `solve_dc_case(case, disabled_branches=(), disabled_transformers=(), injection_overrides_mw=None)` returns status, branch and transformer MW flows, source-bus angles, injection residual, islands and diagnostics. Source branch IDs are `from_bus:to_bus:circuit_id`; transformer IDs use that format for two-winding devices and `from_bus:to_bus:third_bus:circuit_id` for three-winding devices. Three-winding result flows append `/w1`, `/w2`, or `/w3`; disabling the parent transformer ID removes all windings. Injection overrides replace net generation minus load at a bus in MW.
+`load_case(output_dir)` in `backend.app.network` reads the CSVs. `solve_dc_case(case, disabled_branches=(), disabled_transformers=(), injection_overrides_mw=None, dc_transfer_overrides_mw=None)` returns status, branch and transformer MW flows, source-bus angles, injection residual, islands and diagnostics. Source branch IDs are `from_bus:to_bus:circuit_id`; transformer IDs use that format for two-winding devices and `from_bus:to_bus:third_bus:circuit_id` for three-winding devices. Three-winding result flows append `/w1`, `/w2`, or `/w3`; disabling the parent transformer ID removes all windings. Injection overrides replace AC net generation minus load at a bus in MW, before scheduled or overridden DC transfers are applied.
 
 ## Observed base state
 
@@ -28,21 +28,23 @@ The command writes `buses.csv`, `branches.csv`, `transformers.csv`, `generators.
 | RAW transformers | 1,272: 1,168 two-winding and 104 three-winding; all active |
 | RAW generators / active generators | 558 / 18 |
 | RAW loads / active loads | 264 / 231 |
+| Two-terminal DC lines / active | 2 / 2; each schedules 40 MW from the Scotland boundary to the Irish converter |
 | Active source generation / constant-power load | 3,424.416 / 3,402.300 MW |
-| Source net injection / DC slack adjustment | +22.116 / -22.116 MW |
-| Connected components | One 1,976-bus grid and one isolated zero-injection bus 86221 |
+| Source AC generation minus load | +22.116 MW |
+| Main AC grid residual after scheduled DC import | +102.116 MW before slack adjustment |
+| Connected components | One 1,976-bus modeled AC grid and Scotland bus 86221 as an explicit external DC boundary (-80 MW) |
 | Main-grid slack | Bus 52071, selected from the RAW type-3 buses |
-| DC flow records / with usable rate A | 2,552 / 1,041 |
+| DC flow records / with usable rate A | 2,552 / 1,248 |
 | Largest absolute DC flow | 456 MW |
-| Largest MW/MVA rate A proxy | 84.92%; none over 100% in this base solve |
+| Largest MW/MVA rate A proxy | 99.84%; none over 100% in this base solve |
 | Maximum nodal balance residual after slack | Below 3e-10 MW |
 
 The feasibility inventory and issue #9 mentioned **1,298 transformers**. Reading this specific V33 summer file by PSS/E record lengths gives 5,192 transformer-section lines: `1,168 × 4 + 104 × 5 = 5,192`, or **1,272 transformer records**. The 1,298 figure is not reproduced for this selected case; it may refer to another scenario or an earlier rough count. This discrepancy should not be interpreted as 26 missing imported devices.
 
 ## Interpretation and limits
 
-The DC solve is internally balanced after assigning the 22.116 MW residual to the chosen slack. It is **not** a reproduction of the original AC solution. The RAW file carries solved bus voltages and angles, but no authoritative solved branch MW-flow table to compare directly. The DC approximation omits resistance and losses, reactive power, voltage limits, shunts, converter transfers, load current/admittance terms and transformer controls. It uses fixed PSS/E active-power injections and source in-service flags.
+The DC solve is internally balanced after assigning +102.116 MW of modeled-grid residual to the main-grid slack and -80 MW to the declared Scotland external boundary. The combined source residual is +22.116 MW. It is **not** a reproduction of the original AC solution. The RAW file carries solved bus voltages and angles, but no authoritative solved branch MW-flow table to compare directly. The DC approximation omits resistance and losses, reactive power, voltage limits, shunts, converter losses and controls, load current/admittance terms and transformer controls. It uses fixed PSS/E active-power injections and source in-service flags.
 
-Three-winding transformers are reduced to a star equivalent. Twenty calculated star-leg reactances are negative, which is possible even when their pairwise values are positive; they are retained in the linear solve. Zero legs, if encountered, are approximated by `1e-8` pu. This is sufficient for a bounded scenario prototype, not an AC-grade transformer model.
+Three-winding transformers are reduced to a star equivalent after converting each CZ=2 pair impedance from its own MVA base. Each star leg uses its winding's tap, angle and rate A. Twenty calculated star-leg reactances are negative, which is possible even when their pairwise values are positive; they are retained in the linear solve. Zero legs, if encountered, are approximated by `1e-8` pu. This is sufficient for a bounded scenario prototype, not an AC-grade transformer model.
 
-The source's rate A/B/C fields are MVA. The solver reports `abs(DC MW) / rate A MVA` only as a screening proxy, not thermal loading. Zero and values at or above 9,000 MVA are treated as absent or placeholders. In this case, 178 branches and 1,133 transformers have such rate A values; three-winding winding 2/3 ratings are not applied. Published ECP ratings need a verified asset crosswalk before use. An outage that splits an active, loaded island returns `status="islanded"` and identifies islands without online generation; those islands require a dispatch response outside this solver.
+The source's rate A/B/C fields are MVA. The solver reports `abs(DC MW) / rate A MVA` only as a screening proxy, not thermal loading. Zero and values at or above 9,000 MVA are treated as absent or placeholders. In this case, 178 branches and 1,133 transformer parent records have such rate A values; 1,304 of the 2,552 modeled flow records lack a usable rate A after winding-specific ratings are applied. Published ECP ratings need a verified asset crosswalk before use. An outage that splits an active, loaded island returns `status="islanded"` and identifies islands without online generation; those islands require a dispatch response outside this solver.
