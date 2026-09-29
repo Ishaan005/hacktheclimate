@@ -10,10 +10,9 @@ npm run dev
 
 The screen is one input field. The operator describes the situation and the
 workspace shows the returned scenario: binding condition, recommended action,
-baseline vs post-action outcome and guardrails. The solver may also return
-`alternatives`: other evaluated actions, best first, each with its own outcome
-and the reasons it ranks lower. They render below the recommendation. An LLM
-scenario solver will supply that scenario; until it is linked, live mode says the solver is not
+baseline vs post-action outcome and guardrails. The recommended action carries
+`steps`: the ordered actions the operator takes, shown in a dropdown list. An
+LLM scenario solver will supply that scenario; until it is linked, live mode says the solver is not
 connected. Connect it in `solveSituation` in `src/api.ts`, which must return a
 `SolverResult` (see `src/types.ts`) or `null` for no match. A result is either a
 `scenario` or a `dispatch_down_risk` view for a UTC half-hour; the latter shows

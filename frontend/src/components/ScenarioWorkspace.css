@@ -118,7 +118,7 @@
 }
 
 /* Both cards share the row height, so no gap opens below the shorter one.
-   The carousel keeps the action card at a fixed height. */
+   The binding card's margin panel takes any spare height. */
 .workspace-flow {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -198,106 +198,6 @@
 
 .card-action .instruction {
   color: var(--color-accent-strong);
-}
-
-.chip-rank {
-  background: var(--color-accent);
-  color: var(--color-surface);
-  text-decoration: none;
-}
-
-.chip-rank:hover {
-  background: var(--color-accent-hover);
-}
-
-/* Why this action: short reasons, each with a check mark. */
-.action-reasons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4) var(--space-16);
-  margin: 0 0 var(--space-8);
-  padding: 0;
-  list-style: none;
-  color: var(--color-text);
-  font-size: var(--font-size-13);
-}
-
-.action-reasons li::before {
-  content: '✓';
-  margin-right: var(--space-4);
-  color: var(--color-accent);
-  font-weight: var(--font-weight-semibold);
-}
-
-.action-alternatives-link {
-  color: var(--color-accent);
-  font-size: var(--font-size-14);
-  font-weight: var(--font-weight-semibold);
-}
-
-/* ---- Alternative actions ---- */
-
-.card-alternatives {
-  background: var(--color-surface-muted);
-  box-shadow: none;
-}
-
-.alternatives-count {
-  padding: 0 var(--space-8);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-12);
-}
-
-.alternatives-table {
-  font-size: var(--font-size-13);
-}
-
-.alternatives-table th,
-.alternatives-table td {
-  padding: var(--space-8);
-}
-
-.alternatives-table thead th {
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-semibold);
-  white-space: nowrap;
-}
-
-.alternatives-table tbody tr:last-child > * {
-  border-bottom: 0;
-}
-
-.alternatives-table .num {
-  white-space: nowrap;
-}
-
-.alternatives-rank {
-  color: var(--color-text-muted);
-}
-
-.alternatives-table th[scope='row'] {
-  min-width: 260px;
-  font-weight: var(--font-weight-regular);
-}
-
-.alternatives-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.alternatives-instruction {
-  display: block;
-  color: var(--color-text);
-}
-
-.alternatives-reasons {
-  margin: 0;
-  padding-left: var(--space-16);
-  color: var(--color-text-muted);
 }
 
 .card-action-none {
@@ -684,57 +584,57 @@
   font-weight: var(--font-weight-medium);
 }
 
-.action-carousel {
-  margin-top: var(--space-8);
+/* Ordered steps in a dropdown under the action overview. The panel floats
+   over the content below so the card keeps its height. */
+.action-steps {
+  position: relative;
+  margin-top: var(--space-12);
+  border-top: 1px solid var(--color-border);
 }
 
-.action-carousel-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  margin-bottom: var(--space-12);
-  padding-bottom: var(--space-8);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.action-carousel-select {
-  padding: var(--space-4) var(--space-8);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-size: var(--font-size-13);
+.action-steps summary {
+  padding: var(--space-12) 0 var(--space-4);
+  color: var(--color-accent);
+  font-size: var(--font-size-14);
   font-weight: var(--font-weight-semibold);
+  cursor: pointer;
 }
 
-.action-carousel-slides {
-  display: grid;
+.action-steps summary:hover {
+  color: var(--color-accent-hover);
 }
 
-.action-carousel-slide {
-  grid-area: 1 / 1;
-  min-width: 0;
-}
-
-.action-carousel-slide .action-detail {
-  padding-top: 0;
-}
-
-.action-detail {
+.action-steps-panel {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  right: 0;
+  left: 0;
   display: grid;
   gap: var(--space-8);
-  padding-top: var(--space-8);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-12) var(--space-16) var(--space-12) var(--space-32);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  font-size: var(--font-size-14);
 }
 
-.action-detail .fields dd {
+.action-steps li {
+  padding-left: var(--space-4);
+}
+
+.action-steps li::marker {
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
-.action-detail-empty {
-  margin: 0;
+.action-step-time {
+  display: inline-block;
+  min-width: 3.5em;
+  margin-right: var(--space-8);
   color: var(--color-text-muted);
-  font-size: var(--font-size-14);
 }
 
 /* Grid assistant reply (live /v1/chat). */

@@ -108,7 +108,7 @@ function App() {
       </div>
       <main className="app-main">
         <h1 className="page-title">{COPY.appTitle}</h1>
-        <SituationInput onSubmit={describe} />
+        <SituationInput onSubmit={(text) => describe(text)} />
         {result}
       </main>
     </div>

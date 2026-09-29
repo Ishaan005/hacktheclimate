@@ -104,17 +104,8 @@ export const WORKSPACE_COPY = {
   bindingNone: 'No binding condition identified',
   actionTitle: 'Recommended action',
   actionNone: 'No recommended action',
-  actionDetailsSummary: 'Action details',
-  actionSlideOverview: 'Overview',
-  actionSlideSchedule: 'Schedule',
+  actionStepsTitle: 'Action steps',
   actionCostsTitle: 'Costs',
-  actionWhyTitle: 'Why this action',
-  actionRank: (total: number) => `Ranked 1 of ${total}`,
-  actionNoneConsidered: (count: number) => `${count} ${count === 1 ? 'action' : 'actions'} considered, none recommended`,
-  alternativesTitle: 'Other actions considered',
-  alternativesRejectedTitle: 'Actions considered and rejected',
-  alternativesWhyLower: 'Why not recommended',
-  actionCostsNone: 'No costs supplied for this action.',
   actionConditional: 'Depends on a check or confirmation that has not been made. Do not treat it as ready to issue.',
   outcomeTitle: 'New outcome',
   baseline: 'Baseline',
@@ -181,9 +172,6 @@ export const REVIEW_COPY = {
   stoppedTitle: "Can't recommend yet",
   stoppedConsequence: 'No action is evaluated until these facts are added in the table, most blocking first:',
   evaluate: 'Evaluate actions',
-  comparisonLabel: 'Compare with (optional)',
-  comparisonHint: 'An action of your own, e.g. "reduce Generator B by 40 MW", or a second situation.',
-  comparisonPlaceholder: 'e.g. charge Battery A instead',
 } as const;
 
 export const EXTRACTION_LABEL = {

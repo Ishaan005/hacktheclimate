@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { REVIEW_COPY, WORKSPACE_COPY } from '../copy';
+import { WORKSPACE_COPY } from '../copy';
 import SituationInput from './SituationInput';
 
 describe('situation input', () => {
@@ -11,15 +11,14 @@ describe('situation input', () => {
     fireEvent.change(situation, { target: { value: 'Line overload in the west\nafter the outage' } });
     fireEvent.keyDown(situation, { key: 'Enter', shiftKey: true });
     expect(onSubmit).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText(REVIEW_COPY.comparisonLabel), { target: { value: 'Storage B\ncharging' } });
     fireEvent.keyDown(situation, { key: 'Enter' });
-    expect(onSubmit).toHaveBeenCalledWith('Line overload in the west\nafter the outage', 'Storage B\ncharging');
+    expect(onSubmit).toHaveBeenCalledWith('Line overload in the west\nafter the outage');
   });
 
   it('does not submit an empty situation from the keyboard', () => {
     const onSubmit = vi.fn();
     render(<SituationInput onSubmit={onSubmit} />);
-    fireEvent.keyDown(screen.getByLabelText(REVIEW_COPY.comparisonLabel), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByLabelText(WORKSPACE_COPY.situationLabel), { key: 'Enter' });
     expect(onSubmit).not.toHaveBeenCalled();
   });
 });

@@ -1,9 +1,9 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent, TextareaHTMLAttributes } from 'react';
-import { REVIEW_COPY, WORKSPACE_COPY } from '../copy';
+import { WORKSPACE_COPY } from '../copy';
 
 type Props = {
-  onSubmit: (description: string, comparison: string | null) => void;
+  onSubmit: (description: string) => void;
   initialValue?: string;
 };
 
@@ -39,17 +39,15 @@ function AutoGrowTextarea({ value, onChange, ...rest }: AutoGrowProps) {
   );
 }
 
-// Stage 1 of the intent flow: the operator types the situation and, if they
-// want, an action of their own or a second situation to compare. A later
+// Stage 1 of the intent flow: the operator types the situation. A later
 // alert feed can pre-populate `initialValue` instead.
 function SituationInput({ onSubmit, initialValue = '' }: Props) {
   const [description, setDescription] = useState(initialValue);
-  const [comparison, setComparison] = useState('');
 
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!description.trim()) return;
-    onSubmit(description, comparison.trim() || null);
+    onSubmit(description);
   }
 
   return (
@@ -68,15 +66,6 @@ function SituationInput({ onSubmit, initialValue = '' }: Props) {
           {WORKSPACE_COPY.situationSubmit}
         </button>
       </div>
-      <label htmlFor="comparison-input" className="situation-label situation-label-secondary">{REVIEW_COPY.comparisonLabel}</label>
-      <p id="comparison-hint" className="situation-hint">{REVIEW_COPY.comparisonHint}</p>
-      <AutoGrowTextarea
-        id="comparison-input"
-        aria-describedby="comparison-hint"
-        value={comparison}
-        onChange={setComparison}
-        placeholder={REVIEW_COPY.comparisonPlaceholder}
-      />
     </form>
   );
 }

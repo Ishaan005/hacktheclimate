@@ -12,9 +12,8 @@ const [thermal] = illustrativeScenarios;
 
 afterEach(() => vi.restoreAllMocks());
 
-function describeSituation(value: string, comparison = '') {
+function describeSituation(value: string) {
   fireEvent.change(screen.getByLabelText(WORKSPACE_COPY.situationLabel), { target: { value } });
-  fireEvent.change(screen.getByLabelText(REVIEW_COPY.comparisonLabel), { target: { value: comparison } });
   fireEvent.click(screen.getByRole('button', { name: WORKSPACE_COPY.situationSubmit }));
   return screen.findByRole('region', { name: new RegExp(REVIEW_COPY.title) });
 }
@@ -92,16 +91,6 @@ describe('fact review', () => {
     fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.add} Material-event probability` }));
     fireEvent.change(within(review).getByLabelText('Material-event probability'), { target: { value: '150' } });
     expect(within(review).getByRole('button', { name: REVIEW_COPY.save })).toBeDisabled();
-  });
-
-  it('adds the operator comparison action and asks for its facts', async () => {
-    render(<App />);
-    const review = await describeSituation('line overload in the west after the outage', 'reduce Generator B instead');
-    expect(within(review).getByRole('heading', { name: 'Comparison: generator redispatch, Generator B' })).toBeInTheDocument();
-    expect(within(review).queryByRole('button', { name: REVIEW_COPY.evaluate })).not.toBeInTheDocument();
-    const stopped = within(review).getByText(REVIEW_COPY.stoppedTitle).parentElement as HTMLElement;
-    expect(within(stopped).getByText('Comparison: Connection location')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: new RegExp(WORKSPACE_COPY.clarifyTitle) })).not.toBeInTheDocument();
   });
 
   it('evaluates the reviewed case and shows the scenario', async () => {

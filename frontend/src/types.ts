@@ -363,6 +363,13 @@ export type ActionFamilyDetails =
   | { family: 'generator_redispatch'; details: GeneratorRedispatchDetails }
   | { family: 'outage_review'; details: OutageReviewDetails };
 
+// One step the operator takes to carry out the action, in order. `time` is
+// null when the step has no fixed time, e.g. a confirmation.
+export type ActionStep = {
+  time: string | null;
+  text: string;
+};
+
 export type RecommendedAction = ActionFamilyDetails & {
   assetName: string;
   location: string;
@@ -374,6 +381,7 @@ export type RecommendedAction = ActionFamilyDetails & {
   effectiveUntil: string;
   earliestExecution: string | null;
   executability: Executability;
+  steps: ActionStep[];
 };
 
 // Per-state values shown side by side. Null means unknown, never zero.
@@ -387,17 +395,6 @@ export type ActionImpact = {
   grossMarketOpportunityEur: number | null;
   netFinancialValueEur: number | null;
   estimatedAvoidedEmissionsTco2e: number | null;
-};
-
-// Another action the solver evaluated and ranked below the recommendation.
-// Each one carries its own post-action outcome so the operator can see what
-// it would have achieved.
-export type AlternativeAction = {
-  action: RecommendedAction;
-  postAction: OutcomeState;
-  netFinancialValueEur: number | null;
-  // Short plain-language reasons it ranks lower, e.g. "Breach after action".
-  lowerRankReasons: string[];
 };
 
 export type ScenarioSource = 'illustrative' | 'live';
@@ -414,11 +411,6 @@ export type WorkspaceScenario = {
   keywords: string[];
   binding: BindingCondition | null;
   action: RecommendedAction | null;
-  // Why the solver chose `action`. Empty when there is no recommendation.
-  recommendationReasons: string[];
-  // Other evaluated actions, best first. Present even when no action is
-  // recommended, so the operator can see what was rejected and why.
-  alternatives: AlternativeAction[];
   noActionReason: string | null;
   baseline: OutcomeState;
   postAction: OutcomeState | null;
