@@ -82,6 +82,36 @@ def test_assessment_preserves_four_windows_all_island_checks_and_existing_instru
     assert result["revision"] == assess_workspace(request)["revision"]
 
 
+def test_golden_path_bridges_existing_planning_evaluator_into_new_workspace():
+    payload = request_payload()
+    payload["decision_case"]["scenario_ids"] = ["T3"]
+    payload["description"] = (
+        "Planned outage in the west is causing a line overload. "
+        "High wind around Ballylickey is constrained for the next 2 hours. "
+        "What can we do to reduce dispatch-down?"
+    )
+    payload["conditions"] = [{
+        "scenario_id": "T3",
+        "situation_key": "t_outage_overload",
+        "reach": "local_area",
+        "limiting_asset": "West export route",
+        "outage_type": "planned",
+        "time_setting": "forecast",
+    }]
+    payload["proposed_plan"] = {"steps": []}
+    payload["operator_alternative"] = {"steps": []}
+
+    result = assess_workspace(WorkspaceAssessmentRequest.model_validate(payload))
+
+    assert result["source_status"] == "planning_case"
+    proposal = result["comparisons"]["proposed_plan"]
+    assert proposal["plan"]["steps"]
+    assert proposal["plan"]["steps"][0]["action_id"] in {"FLEX_LOAD", "STORAGE_CHARGE"}
+    assert proposal["benefits"]["constraint_mwh"]["value"] is not None
+    assert proposal["benefits"]["avoided_dispatch_down_mwh"]["value"] is not None
+    assert "Synthetic" in " ".join(result["evidence"]["assumptions"])
+
+
 def test_conflicting_and_stale_facts_stay_noncurrent():
     payload = request_payload()
     payload["evidence"] = [
