@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import App from './App';
+import AssistantApp from './AssistantApp';
 import * as api from './api';
 import { caseSummaryText, reviewSections } from './case';
 import { STORAGE_KEY } from './caseStore';
@@ -25,7 +25,7 @@ function row(review: HTMLElement, label: string): HTMLElement {
 describe('fact review', () => {
   it('shows each fact with value, source, time and status before anything is evaluated', async () => {
     const spy = vi.spyOn(api, 'solveSituation');
-    render(<App />);
+    render(<AssistantApp />);
     const review = await describeSituation('line overload in the west after the outage');
     const window = row(review, 'Event window');
     expect(window).toHaveTextContent('2026-09-29 15:00–16:30');
@@ -41,7 +41,7 @@ describe('fact review', () => {
   });
 
   it('marks an edited fact as corrected and keeps it after a reload', async () => {
-    const { unmount } = render(<App />);
+    const { unmount } = render(<AssistantApp />);
     let review = await describeSituation('line overload in the west after the outage');
     fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.edit} Event window` }));
     fireEvent.change(within(review).getByLabelText('Event window'), { target: { value: '15:00–18:00' } });
@@ -52,7 +52,7 @@ describe('fact review', () => {
     expect(window).toHaveTextContent('Operator correction');
 
     unmount();
-    render(<App />);
+    render(<AssistantApp />);
     review = screen.getByRole('region', { name: new RegExp(REVIEW_COPY.title) });
     window = row(review, 'Event window');
     expect(within(window).getByText('Corrected')).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe('fact review', () => {
   });
 
   it('lists missing facts most-blocking first and allows evaluation once they are added in the table', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     const review = await describeSituation('xyzzy plugh');
     const stopped = within(review).getByText(REVIEW_COPY.stoppedTitle).parentElement as HTMLElement;
     const items = within(stopped).getAllByRole('listitem').map((item) => item.textContent);
@@ -89,7 +89,7 @@ describe('fact review', () => {
   });
 
   it('rejects a number outside its range', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     const review = await describeSituation('xyzzy plugh');
     fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.add} Material-event probability` }));
     fireEvent.change(within(review).getByLabelText('Material-event probability'), { target: { value: '150' } });
@@ -98,7 +98,7 @@ describe('fact review', () => {
 
   it('evaluates the reviewed case and shows the scenario', async () => {
     const spy = vi.spyOn(api, 'solveSituation');
-    render(<App />);
+    render(<AssistantApp />);
     const review = await describeSituation('line overload in the west after the outage');
     fireEvent.click(within(review).getByRole('button', { name: REVIEW_COPY.evaluate }));
     await screen.findByRole('region', { name: thermal.title });
@@ -109,7 +109,7 @@ describe('fact review', () => {
   });
 
   it('sends dispatch-down questions straight to the risk view without a review', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     fireEvent.change(screen.getByLabelText(WORKSPACE_COPY.situationLabel), { target: { value: 'What is the dispatch-down risk next hour?' } });
     fireEvent.click(screen.getByRole('button', { name: WORKSPACE_COPY.situationSubmit }));
     await screen.findByRole('region', { name: 'Next-hour dispatch-down risk' });

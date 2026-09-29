@@ -1,0 +1,75 @@
+/* Situation table: builds on the CaseReview fact-table classes. */
+
+.situation-table {
+  display: grid;
+  gap: var(--space-12);
+  container-type: inline-size;
+}
+
+.situation-intro,
+.situation-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.situation-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-16);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+}
+
+.situation-stale p {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.situation-facts .situation-edited {
+  color: var(--color-info);
+}
+
+.situation-facts .situation-conflict {
+  margin-top: var(--space-4);
+  color: var(--color-warning-text);
+}
+
+/* Quiet text button; the ghost style lives in another component's CSS. */
+.situation-link {
+  padding: var(--space-4) var(--space-8);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.situation-link:hover {
+  background: var(--color-accent-soft);
+}
+
+.situation-edit-log {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding-left: var(--space-20);
+  font-size: var(--font-size-14);
+}
+
+.situation-edit-label {
+  font-weight: var(--font-weight-semibold);
+}
+
+.situation-edit-time {
+  margin-left: var(--space-8);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+}

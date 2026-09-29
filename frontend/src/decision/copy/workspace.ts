@@ -1,0 +1,23 @@
+// Page-level copy for the decision workspace.
+
+export const DECISION_COPY = {
+  title: 'Operator decision workspace',
+  advisoryNote: 'Helps you review a proposed plan. This app does not send instructions to the grid.',
+  fixtureNote: 'Offline sample: a historical demonstration with invented values. Not a live or validated assessment.',
+  idleTitle: 'No situation assessed yet',
+  idleConsequence: 'Pick a suggested situation or describe one. No safety result or plan is shown until an assessment returns.',
+  assessingTitle: 'Assessing the situation…',
+  assessingConsequence: 'No safety result is shown until the assessment arrives.',
+  unavailableTitle: 'No assessment available',
+  unavailableConsequence: 'The assessment service is not connected, so no safety result, plan or benefit is shown.',
+  errorTitle: 'The assessment did not load',
+  errorConsequence: 'No safety result is shown. Try again.',
+  rerun: 'Rerun assessment',
+  newSituation: 'New situation',
+  // Names of the panel regions, used by tests to find them.
+  safetyRegion: 'Safety',
+  planRegion: 'Proposed action plan',
+  navDecision: 'Decision workspace',
+  navAssistant: 'Grid assistant',
+  navLabel: 'Workspace',
+} as const;

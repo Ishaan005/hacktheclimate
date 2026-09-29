@@ -1,0 +1,148 @@
+/* Top bar: view toggle, site picker, assessment status and source badge. */
+
+.top-bar {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-12) var(--space-24);
+  padding: var(--space-16);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+/* ---- Segmented view toggle ---- */
+
+.top-bar-views {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.top-bar-view {
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 220px;
+  padding: var(--space-8) var(--space-12);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.top-bar-view + .top-bar-view {
+  border-left: 1px solid var(--color-border-strong);
+}
+
+.top-bar-view:hover {
+  background: var(--color-surface-muted);
+}
+
+.top-bar-view-selected,
+.top-bar-view-selected:hover {
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 -3px 0 var(--color-accent);
+}
+
+/* The radio stays in the accessibility tree and takes keyboard focus. */
+.top-bar-view input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.top-bar-view:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.top-bar-view-label {
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.top-bar-view-selected .top-bar-view-label {
+  color: var(--color-accent-strong);
+}
+
+.top-bar-view-hint {
+  font-size: var(--font-size-12);
+  color: var(--color-text-muted);
+}
+
+/* ---- Site picker and status fields ---- */
+
+.top-bar-site {
+  grid-column: 1;
+  max-width: 440px;
+}
+
+.top-bar-fields {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.top-bar-note {
+  grid-column: 1 / -1;
+}
+
+.top-bar-placeholder {
+  color: var(--color-text-faint);
+  font-weight: var(--font-weight-regular);
+  font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .top-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .top-bar-site,
+  .top-bar-fields {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+/* ---- Source badge: only validated live is green ---- */
+
+.source-badge {
+  border: 1px solid transparent;
+}
+
+.source-badge-live {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+}
+
+.source-badge-live-unvalidated {
+  color: var(--color-warning-text);
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning);
+}
+
+.source-badge-historical-demo {
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  border-style: dashed;
+  border-color: var(--color-accent);
+}
+
+.source-badge-planning-case {
+  color: var(--color-text);
+  background: var(--color-surface-strong);
+  border-color: var(--color-border-strong);
+}
+
+.source-badge-no-live-connection {
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border-style: dashed;
+  border-color: var(--color-border-strong);
+}

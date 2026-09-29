@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import App from './App';
+import AssistantApp from './AssistantApp';
 import * as api from './api';
 import { STORAGE_KEY } from './caseStore';
 import { newCase, SITUATION_FACTS } from './case';
@@ -33,7 +33,7 @@ async function submitSituation(value: string) {
 }
 
 async function openQuestions() {
-  render(<App />);
+  render(<AssistantApp />);
   await submitSituation('there is a problem');
   return screen.findByRole('region', { name: WORKSPACE_COPY.clarifyTitle });
 }
@@ -133,7 +133,7 @@ describe('solver follow-up questions', () => {
       threadId: null,
       clarification: { reason: 'x', questions: [{ id: 'q', kind: 'date' }] } as never,
     });
-    render(<App />);
+    render(<AssistantApp />);
     await submitSituation('anything');
     expect(await screen.findByText(WORKSPACE_COPY.solverErrorTitle)).toBeInTheDocument();
     expect(screen.getByText(/cannot show/)).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe('solver follow-up questions', () => {
         questions: [{ id: 'note', kind: 'text', prompt: 'More?', helpText: null, required: false, placeholder: null, maxLength: null }],
       },
     });
-    render(<App />);
+    render(<AssistantApp />);
     await submitSituation('anything');
     for (let round = 1; round <= MAX_CLARIFICATION_ROUNDS; round += 1) {
       const form = await screen.findByRole('region', { name: new RegExp(WORKSPACE_COPY.clarifyTitle) });
@@ -176,11 +176,11 @@ describe('solver follow-up questions', () => {
 
   it('resumes the open questions after a reload', async () => {
     const spy = vi.spyOn(api, 'solveSituation');
-    const { unmount } = render(<App />);
+    const { unmount } = render(<AssistantApp />);
     await submitSituation('there is a problem');
     await screen.findByRole('region', { name: WORKSPACE_COPY.clarifyTitle });
     unmount();
-    render(<App />);
+    render(<AssistantApp />);
     const form = screen.getByRole('region', { name: WORKSPACE_COPY.clarifyTitle });
     expect(within(form).getByText('Question 1 of 4')).toBeInTheDocument();
     expect(within(form).getByText('there is a problem')).toBeInTheDocument();

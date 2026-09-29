@@ -1,0 +1,151 @@
+/* Bottom evidence drawer (UI brief section 7). Collapsed by default. */
+
+.evidence-drawer {
+  padding: 0;
+}
+
+.evidence-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-12);
+  padding: var(--space-12) var(--space-20);
+  cursor: pointer;
+}
+
+.evidence-summary-title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.evidence-summary-hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+}
+
+.evidence-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-16) var(--space-24);
+  padding: var(--space-4) var(--space-20) var(--space-20);
+  border-top: 1px solid var(--color-border);
+}
+
+.evidence-section {
+  min-width: 0;
+}
+
+/* The inputs table needs the full width. */
+.evidence-section:has(.evidence-table) {
+  grid-column: 1 / -1;
+}
+
+.evidence-heading {
+  margin: var(--space-12) 0 var(--space-8);
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-semibold);
+}
+
+.evidence-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0 0 var(--space-8);
+  font-size: var(--font-size-14);
+}
+
+.evidence-fields {
+  display: grid;
+  gap: var(--space-8);
+  margin: 0;
+  font-size: var(--font-size-14);
+}
+
+.evidence-fields dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+}
+
+.evidence-fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.evidence-table th[scope='row'] {
+  font-weight: var(--font-weight-medium);
+}
+
+.evidence-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding-left: var(--space-20);
+  font-size: var(--font-size-14);
+}
+
+.evidence-actions {
+  gap: var(--space-8);
+}
+
+.evidence-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-14);
+}
+
+.evidence-meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+}
+
+.evidence-decision {
+  display: inline-block;
+  margin-right: var(--space-8);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-12);
+  font-weight: var(--font-weight-semibold);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.evidence-decision-included {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+.evidence-decision-rejected {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.evidence-decision-conditional {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+}
+
+.evidence-action-name {
+  font-weight: var(--font-weight-medium);
+}
+
+.evidence-reason {
+  display: block;
+  color: var(--color-text-muted);
+}
+
+.evidence-status {
+  font-weight: var(--font-weight-semibold);
+}
+
+.evidence-status-current {
+  color: var(--color-success);
+}
+
+.evidence-status-stale,
+.evidence-status-conflicting {
+  color: var(--color-warning-text);
+}
+
+.evidence-status-missing {
+  color: var(--color-danger);
+}

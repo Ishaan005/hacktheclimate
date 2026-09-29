@@ -71,3 +71,35 @@
   font-size: var(--font-size-28);
   font-weight: var(--font-weight-bold);
 }
+
+/* The decision workspace puts two panels side by side, so it takes more width. */
+.app-main-wide {
+  max-width: 1320px;
+}
+
+.masthead-nav {
+  display: flex;
+  gap: var(--space-4);
+  margin-left: auto;
+}
+
+.masthead-tab {
+  padding: var(--space-4) var(--space-12);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-inverse);
+  font: inherit;
+  font-size: var(--font-size-14);
+  cursor: pointer;
+}
+
+.masthead-tab:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.masthead-tab[aria-current='page'] {
+  background: var(--color-surface);
+  color: var(--color-accent-strong);
+  font-weight: var(--font-weight-semibold);
+}

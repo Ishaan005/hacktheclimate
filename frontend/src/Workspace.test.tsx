@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import App from './App';
+import AssistantApp from './AssistantApp';
 import OutcomeComparisonPanel from './components/OutcomeComparisonPanel';
 import { FORBIDDEN_PHRASES, REVIEW_COPY, WORKSPACE_COPY } from './copy';
 import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
@@ -32,14 +32,14 @@ async function evaluateSituation(value: string) {
 
 describe('situation input and workspace', () => {
   it('starts with only the input field and no scenario', () => {
-    render(<App />);
+    render(<AssistantApp />);
     expect(screen.getByLabelText(WORKSPACE_COPY.situationLabel)).toBeInTheDocument();
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: WORKSPACE_COPY.situationSubmit })).toBeDisabled();
   });
 
   it('returns a complete instruction with security before value', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     await evaluateSituation('line overload in the west after the outage');
     const region = await screen.findByRole('region', { name: thermal.title });
     expect(within(region).getByText('Issued 14:55 — Generator A to 100 MW by 15:10, effective until 16:30.')).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('situation input and workspace', () => {
   });
 
   it('replaces the result with a new description', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     await evaluateSituation('overload in the west');
     await screen.findByRole('region', { name: thermal.title });
     await evaluateSituation('Low voltage in the north-west at the evening ramp');
@@ -66,7 +66,7 @@ describe('situation input and workspace', () => {
   });
 
   it('shows no action when the scenario has none', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     await evaluateSituation('SNSP overnight');
     const region = await screen.findByRole('region', { name: snsp.title });
     expect(within(region).getByText(WORKSPACE_COPY.actionNone)).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('situation input and workspace', () => {
   });
 
   it('returns the next-hour dispatch-down risk and its day chart', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     submitSituation('What is the dispatch-down risk next hour?');
     const card = await screen.findByRole('region', { name: 'Next-hour dispatch-down risk' });
     expect(await within(card).findByText('High risk')).toBeInTheDocument();
@@ -84,7 +84,7 @@ describe('situation input and workspace', () => {
   });
 
   it('asks for every required fact when nothing matches, and evaluates nothing', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     submitSituation('xyzzy plugh');
     const review = await screen.findByRole('region', { name: new RegExp(REVIEW_COPY.title) });
     expect(within(review).getByText(REVIEW_COPY.stoppedTitle)).toBeInTheDocument();

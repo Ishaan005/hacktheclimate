@@ -8,6 +8,24 @@ npm ci
 npm run dev
 ```
 
+## Decision workspace (main screen)
+
+The main screen follows the [UI brief](../docs/UI_BRIEF_2026-09-29.md). It has
+a top bar (national or site view, source badge), a search bar limited to the
+locked T1–T4, H1–H4 and SNSP scope, the situation table, safety checks (left),
+the proposed plan (right), a four-column comparison and an evidence drawer.
+The code is in `src/decision/` (types, display rules, locked scope, fixture,
+API) and `src/components/decision/`.
+
+The screen shows a backend assessment from `POST /v1/decision/assess`. That
+route does not exist yet, so live mode shows "No assessment available" (the
+API returns 405). Use `VITE_API_MODE=fixture npm run dev` to see the
+demonstration assessment. `src/decision/rules.ts` only makes the display more
+cautious. For example, a stale, unvalidated or unknown result is never shown
+as Actionable. It never creates a safety result.
+
+## Grid assistant (second tab)
+
 The screen is one input field. The operator describes the situation and the
 workspace shows the returned scenario: binding condition, recommended action,
 baseline vs post-action outcome and guardrails. The recommended action carries
