@@ -12,13 +12,17 @@ from backend.app.decision import (
     load_action_catalogue, load_contract_manifest, load_demo_policy,
     resolve_action_ids, resolve_case_context,
 )
+from backend.app.decision.action_safety import (
+    evaluate_action_bundle_operational_safety,
+    evaluate_action_operational_safety,
+)
 from backend.app.decision.contracts import Contract, utc
 from backend.app.network import NetworkCase
 from backend.app.network_actions import screen_action_bundles
 from backend.app.network_forecast import _parse_time, validate_forecast_rows
 from backend.app.network_scenarios import Asset
 from backend.app.operator_view import build_operator_view
-from backend.app.safety import CheckResult, SafetyResult
+from backend.app.safety import CheckResult, SafetyResult, combine_checks
 
 
 class OperatorEvaluationRequest(Contract):
@@ -232,6 +236,12 @@ def evaluate_operator_case(
         for candidate in legacy_flex_candidates
     }
     resolved_by_id = {item.action_id: item for item in resolved_actions}
+    action_operational_by_id = {
+        str(candidate["action_id"]): evaluate_action_operational_safety(
+            candidate, request.decision_case
+        ).to_dict()
+        for candidate in legacy_flex_candidates
+    }
     actions = []
     for action in view["actions"]:
         family = family_by_instance[action["action_id"]]
@@ -241,6 +251,7 @@ def evaluate_operator_case(
             "contract_action_id": family,
             "required_safety_rules": resolution.required_safety_rules,
             "required_safety_families": resolution.required_safety_families,
+            "action_specific": action_operational_by_id[action["action_id"]],
         })
 
     bundle_generation = generate_action_bundles(planning_candidates)
@@ -249,11 +260,28 @@ def evaluate_operator_case(
         for bundle in bundle_generation.bundles
         if not bundle.is_baseline
     ]
+    planning_candidate_by_id = {
+        str(candidate["action_id"]): candidate for candidate in planning_candidates
+    }
+    bundle_operational = {
+        bundle["bundle_id"]: evaluate_action_bundle_operational_safety(
+            [
+                planning_candidate_by_id[action_id]
+                for action_id in bundle["action_instance_ids"]
+            ],
+            request.decision_case,
+        )
+        for bundle in non_baseline
+    }
     bundle_screen = screen_action_bundles(
         case, request.forecast_rows, reviewed_crosswalk, planning_candidates,
         non_baseline,
         planned_outage=planned_outage,
         selected_contingency=_selected_contingency(view),
+        timing_verified_by_bundle={
+            bundle_id: result.timing_verified
+            for bundle_id, result in bundle_operational.items()
+        },
     ) if non_baseline else {
         "evaluated": [],
         "ranked_screening_pass_bundles": [],
@@ -277,12 +305,11 @@ def evaluate_operator_case(
         "missing_required_safety_rules": [],
     }
 
-    # The network action screen directly evaluates these six rule families.
-    # Asset capability and timing remain decision-contract requirements and
-    # therefore keep a bundle UNKNOWN until separate evidence is wired in.
+    # The network screen evaluates transmission physics. The action-specific
+    # layer separately evaluates execution capability and timing. Other safety
+    # families remain unresolved until dedicated evidence/model support exists.
     directly_screened_rules = {
-        "network_loading", "islanding", "renewable_share",
-        "voltage", "inertia", "rocof",
+        "network_loading", "islanding", "asset_capability", "timing",
     }
     directly_screened_families = {"transmission"}
     bundle_options = [baseline_bundle]
@@ -302,7 +329,15 @@ def evaluate_operator_case(
         missing_family_checks = sorted(
             set(required_families) - directly_screened_families
         )
-        safety = evaluation["safety_overall"]
+        operational = bundle_operational[evaluation["bundle_id"]]
+        safety = combine_checks({
+            "network": CheckResult(
+                evaluation["safety_overall"],
+                "family-level physical network screen",
+            ),
+            "asset_capability": operational.asset_capability,
+            "timing": operational.timing,
+        })
         if safety != "FAIL" and (missing_rule_checks or missing_family_checks):
             safety = "UNKNOWN"
         bundle_options.append({
@@ -313,6 +348,7 @@ def evaluate_operator_case(
             "missing_required_safety_rules": missing_rule_checks,
             "required_safety_families": required_families,
             "missing_required_safety_families": missing_family_checks,
+            "action_specific": operational.to_dict(),
             "safety_overall": safety,
             "expected_dispatch_down_mwh": None,
         })
