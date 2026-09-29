@@ -14,7 +14,9 @@ from backend.app.network_forecast import (
     normalized_load_shares, reviewed_generation_groups, validate_forecast_rows,
 )
 from backend.app.network_scenarios import Asset
-from backend.app.safety import (\n    CheckResult, combine_checks, evaluate_safety, evaluate_transmission_family,\n)
+from backend.app.safety import (
+    CheckResult, combine_checks, evaluate_safety, evaluate_transmission_family,
+)
 
 MAX_CANDIDATES = 3
 
