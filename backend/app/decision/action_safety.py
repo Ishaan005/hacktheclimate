@@ -8,7 +8,7 @@ timing from the action type. Missing evidence stays UNKNOWN.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Literal, Mapping
 
 from pydantic import Field, model_validator
@@ -30,6 +30,9 @@ class ActionOperationalEvidence(Contract):
         "reviewed", "blocking", "not_required", "unreviewed"
     ] | None = None
     evidence_reference: str
+    available_at: datetime
+    max_age_seconds: int = Field(ge=0)
+    valid_until: datetime | None = None
 
     @model_validator(mode="after")
     def valid_reference(self):
@@ -37,6 +40,11 @@ class ActionOperationalEvidence(Contract):
             raise ValueError("operational action evidence needs an evidence reference")
         if self.named_asset_or_party is not None and not self.named_asset_or_party.strip():
             raise ValueError("named asset or party must be nonempty when supplied")
+        utc(self.available_at)
+        if self.valid_until is not None:
+            utc(self.valid_until)
+            if utc(self.valid_until) < utc(self.available_at):
+                raise ValueError("operational evidence validity cannot end before availability")
         return self
 
 
@@ -75,10 +83,14 @@ class ActionBundleOperationalResult:
     actions: dict[str, ActionOperationalResult]
 
     @property
-    def timing_verified(self) -> bool | None:
-        if self.timing.status == "PASS":
+    def relief_timing_verified(self) -> bool | None:
+        response_status = combine_checks({
+            action_id: result.checks["response_time"]
+            for action_id, result in self.actions.items()
+        })
+        if response_status == "PASS":
             return True
-        if self.timing.status == "FAIL":
+        if response_status == "FAIL":
             return False
         return None
 
@@ -87,7 +99,7 @@ class ActionBundleOperationalResult:
             "overall": self.overall,
             "asset_capability": self.asset_capability.__dict__,
             "timing": self.timing.__dict__,
-            "timing_verified": self.timing_verified,
+            "relief_timing_verified": self.relief_timing_verified,
             "actions": {
                 action_id: result.to_dict()
                 for action_id, result in self.actions.items()
@@ -153,14 +165,48 @@ def evaluate_action_operational_safety(
         raise ValueError("operational_evidence must be an object")
     evidence = ActionOperationalEvidence.model_validate(dict(payload))
     reference = evidence.evidence_reference
+    available_at = utc(evidence.available_at)
+    decision_time = utc(case.as_of)
+    if available_at > decision_time:
+        raise ValueError("operational action evidence was unavailable at the decision time")
+    evidence_age = (decision_time - available_at).total_seconds()
+    if evidence_age > evidence.max_age_seconds:
+        stale = CheckResult(
+            "UNKNOWN",
+            "Operational action evidence exceeds its declared freshness limit.",
+            reference,
+        )
+        return ActionOperationalResult(
+            action_id=action_id,
+            asset_capability=stale,
+            timing=stale,
+            checks={
+                "identity": stale,
+                "location": stale,
+                "authority": stale,
+                "permission": stale,
+                "availability": stale,
+                "response_time": stale,
+                "duration": stale,
+                "capability": stale,
+                "side_effects": stale,
+            },
+        )
 
+    candidate_identity = (
+        evidence.named_asset_or_party
+        or str(candidate.get("asset_id", "")).strip()
+        or str(candidate.get("source_asset_id", "")).strip()
+        or str(candidate.get("renewable_group_id", "")).strip()
+        or str(candidate.get("interconnector_id", "")).strip()
+    )
     identity = (
         CheckResult(
             "PASS",
-            f"Named action asset or party: {evidence.named_asset_or_party}.",
+            f"Named action asset or party: {candidate_identity}.",
             reference,
         )
-        if evidence.named_asset_or_party
+        if candidate_identity
         else CheckResult(
             "UNKNOWN",
             "No named asset or responsible party was supplied.",
@@ -227,6 +273,12 @@ def evaluate_action_operational_safety(
         availability = CheckResult(
             "FAIL",
             "The proposed action window does not overlap the decision window.",
+            reference,
+        )
+    elif evidence.valid_until is not None and utc(evidence.valid_until) < target_start:
+        availability = CheckResult(
+            "UNKNOWN",
+            "Operational availability evidence does not remain valid through the first target interval.",
             reference,
         )
 
