@@ -6,8 +6,8 @@ action contract and bundle engine without the external TYTFS working files.
 
 ## Start the teammate demo
 
-Clone the repository and check out `feat/golden-path-demo` (PR #60). To show
-the Azure OpenAI case assistant, first fetch your own team credentials into a
+Clone the repository and check out `feat/golden-path-demo` (PR #60). To use
+Azure OpenAI for the existing intake step, first fetch your team credentials into a
 git-ignored `.env` using Azure CLI and Python 3.11:
 
 ```bash
@@ -30,8 +30,7 @@ docker run --rm --env-file .env -p 8000:8000 htc-golden-demo
 Open <http://127.0.0.1:8000/>. The container serves both the built UI and API;
 it does not need local Python or Node after `.env` is prepared. Docker must be
 installed and running. If Azure access is unavailable, omit `--env-file .env`:
-the computed case still works and the UI explicitly reports that the AI
-explanation is unavailable.
+the computed case still works using rule-based intake.
 
 For local development without Docker, use Python 3.11 and Node 22. From the
 repository root on macOS or Linux, install once and run the preflight:
@@ -57,7 +56,7 @@ npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 Open <http://127.0.0.1:5173/>. Keep the UI in its default API mode; fixture
 mode uses invented screen fixtures and does not run this backend path. The
 computed case needs no Azure credentials, external planning files or current
-GFS snapshot. The AI explanation needs the `.env` prepared above. If the page
+GFS snapshot. Azure intake needs the `.env` prepared above. If the page
 has an earlier case, enter either prompt in the top situation box to replace it.
 
 On Windows PowerShell, use `py -3.11 -m venv .venv`, then
@@ -83,11 +82,10 @@ After fact review, **Evaluate actions** runs the backend-owned golden path.
 The review should show local network limit and planned outage, `next 2 hours`,
 and `West`. The screen should then say **Demo planning case** and **Modeled
 candidate**.
-With Azure configured, an **Azure OpenAI case assistant** card appears below
-the guardrails. It explains the computed result and accepts questions such as
-"Why is this only a modeled candidate?" The assistant's words do not set any
-numbers, choose the bundle, or change the safety result. If Azure is unavailable,
-the card says so while the computed result remains usable.
+With Azure configured, the existing intake step calls Azure OpenAI. If its
+extraction agrees with the checked demo facts, fact review says **Read by the
+language model**. If it differs or Azure is unavailable, intake uses the same
+checked facts from rules. The workspace layout stays the same.
 
 Expected story:
 
@@ -112,8 +110,6 @@ Use:
 This resolves to T4. The additional synthetic circuit loss islands the West
 demo area, so the action disappears and the UI explains why no modeled
 candidate survives.
-The Azure assistant can explain this refusal, but it cannot restore the
-candidate.
 
 Use this second case to show that a failed network screen removes the
 candidate. Re-enter the hero prompt to return to the positive case.
@@ -161,9 +157,9 @@ does not read `data/raw/`, `data/inference/`, Azure credentials, or a local
 TYTFS case. The repository also tracks the processed datasets, saved models,
 metrics, source manifests, and audit documentation used by other project paths.
 
-The Azure explanation is a separate live call after the deterministic result;
-it needs the teammate's own Key Vault credentials and network access. No key
-or generated assistant answer is committed.
+Azure intake needs the teammate's own Key Vault credentials and network
+access. No key or generated model output is committed. Direct questions typed
+into the existing situation box use the existing `/v1/chat` route.
 
 Original workbooks and raw downloads remain outside Git or under ignored
 `data/raw/`; generated current inference snapshots under `data/inference/` are

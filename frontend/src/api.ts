@@ -93,33 +93,6 @@ export async function fetchReviewedOutages(signal?: AbortSignal): Promise<Review
 // API is down), so the UI can say so instead of showing a generic error.
 export class SolverUnavailableError extends Error {}
 
-export type WorkspaceAssistantAnswer = { reply: string; model: string };
-export type WorkspaceAssistantTurn = { question: string; reply: string };
-
-export async function askWorkspaceCase(operatorCase: unknown, question: string, history: WorkspaceAssistantTurn[] = [], signal?: AbortSignal): Promise<WorkspaceAssistantAnswer> {
-  const response = await fetch('/v1/workspace/ask', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ case: operatorCase, question, history }),
-    signal,
-  });
-  if (!response.ok) {
-    let detail: string | null = null;
-    try {
-      const body = await response.json();
-      if (typeof body?.detail === 'string') detail = body.detail;
-    } catch {
-      // Use the status line when the API did not return JSON.
-    }
-    throw new Error(detail ?? `/v1/workspace/ask returned HTTP ${response.status}`);
-  }
-  const body = await response.json() as WorkspaceAssistantAnswer;
-  if (typeof body.reply !== 'string' || !body.reply.trim() || typeof body.model !== 'string') {
-    throw new Error('Azure OpenAI returned an explanation the workspace cannot show.');
-  }
-  return body;
-}
-
 // Tools whose result is the national dispatch-down forecast. When the
 // assistant used one, the real forecast view is shown beside its reply.
 const DISPATCH_DOWN_TOOLS = new Set(['get_dispatch_down_forecast', 'get_dispatch_down_day']);
@@ -150,9 +123,8 @@ async function errorDetail(response: Response): Promise<string> {
 
 // Turns an operator's situation description into one solver result.
 // Fixture mode matches illustrative data. Reviewed live cases use the
-// deterministic workspace evaluator; direct questions use the LangGraph chat
-// route. If chat is unavailable, dispatch-down questions still open the real
-// historical replay view.
+// workspace evaluator; direct questions use the LangGraph chat route. If chat
+// is unavailable, dispatch-down questions still open the historical replay.
 export async function solveSituation(request: SolverRequest, signal?: AbortSignal): Promise<SolverResult | null> {
   if (USE_FIXTURE) return resolveFixtureSolver(request, illustrativeScenarios);
 

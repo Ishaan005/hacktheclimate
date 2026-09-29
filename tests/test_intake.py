@@ -70,8 +70,11 @@ def test_rules_extract_demo_area_and_relative_window(monkeypatch):
     assert case["facts"]["event_window"]["value"] == "next 2 hours"
 
 
-def test_golden_path_uses_rules_even_when_llm_is_configured(monkeypatch):
+def test_golden_path_rejects_model_disagreement(monkeypatch):
+    called = []
+
     def misleading_llm(_text):
+        called.append(_text)
         return {
             "scenarios": ["system_wide_curtailment"],
             "facts": {},
@@ -85,8 +88,27 @@ def test_golden_path_uses_rules_even_when_llm_is_configured(monkeypatch):
         ),
         "created_at": "2026-09-29T12:00:00Z",
     }).json()
+    assert len(called) == 1
     assert body["extraction"] == "rules"
     assert body["case"]["scenarios"] == [
         "local_network_constraint",
         "planned_outage_exposure",
     ]
+
+
+def test_golden_path_uses_azure_extraction_when_it_agrees(monkeypatch):
+    description = (
+        "Planned outage in the west is causing a line overload. "
+        "High wind around Ballylickey is constrained for the next 2 hours."
+    )
+    expected = intake.extract_with_rules(description)
+    # Scenario order is immaterial to agreement; the checked demo keeps its
+    # canonical order in the resulting case.
+    agreed = {**expected, "scenarios": list(reversed(expected["scenarios"]))}
+    body = client(monkeypatch, lambda _text: agreed).post("/v1/intake", json={
+        "description": description,
+        "created_at": "2026-09-29T12:00:00Z",
+    }).json()
+    assert body["extraction"] == "llm"
+    assert body["case"]["scenarios"] == expected["scenarios"]
+    assert body["case"]["facts"]["affected_area"]["sourceName"] == "Operator description (LLM extraction)"

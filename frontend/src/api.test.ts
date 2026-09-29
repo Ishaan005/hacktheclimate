@@ -4,7 +4,7 @@ import { splitReply } from './components/AssistantReplyCard';
 // Live mode: tests otherwise always run against fixtures.
 vi.mock('./mode', () => ({ USE_FIXTURE: false }));
 
-const { askWorkspaceCase, chatMessage, solveSituation, SolverUnavailableError } = await import('./api');
+const { chatMessage, solveSituation, SolverUnavailableError } = await import('./api');
 const { DEFAULT_TARGET, fetchDispatchDown } = await import('./dispatchDown');
 
 function request(description: string, threadId: string | null = null) {
@@ -61,15 +61,6 @@ describe('reviewed case workspace route', () => {
       }),
     );
     expect(result).toEqual({ kind: 'scenario', scenario });
-  });
-
-  it('sends a reviewed demo case to the Azure explanation endpoint', async () => {
-    const operatorCase = { id: 'case-1', originalText: 'Planned outage near Ballylickey' };
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ reply: 'This is a modeled candidate.', model: 'gpt-4.1' }));
-    await expect(askWorkspaceCase(operatorCase, 'Why?')).resolves.toEqual({ reply: 'This is a modeled candidate.', model: 'gpt-4.1' });
-    expect(fetchMock).toHaveBeenCalledWith('/v1/workspace/ask', expect.objectContaining({
-      method: 'POST', body: JSON.stringify({ case: operatorCase, question: 'Why?', history: [] }),
-    }));
   });
 });
 

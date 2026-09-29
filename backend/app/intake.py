@@ -150,6 +150,8 @@ action.family: one of storage_charging, flexible_demand, generator_redispatch, o
 action.facts: only keys allowed for that family: %s
 
 Rules: include a key ONLY if the operator explicitly stated its value. Never estimate, infer or fill defaults.
+For affected_area, use a stated compass region (for example West), not a town name.
+existing_instructions means a direction already issued to an operator, not a description of a constraint.
 Numbers as plain numbers in the listed unit. Omit everything else."""
 
 
@@ -166,7 +168,9 @@ def extract_with_llm(text: str) -> dict[str, Any]:
         ", ".join(SITUATION_FACTS),
         json.dumps({family: list(keys) for family, keys in ACTION_FACTS.items()}),
     )
-    llm = build_azure_llm(settings)
+    # Intake is an interactive step; a busy shared deployment must not hold up
+    # the deterministic demo for the chat route's longer retry window.
+    llm = build_azure_llm(settings, timeout=20, max_retries=1)
     reply = llm.invoke([SystemMessage(prompt), HumanMessage(text)])
     raw = str(reply.content).strip()
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw)
@@ -229,17 +233,31 @@ def build_case(text: str, extracted: dict[str, Any], created_at: str, source_nam
 
 
 def _extract(text: str) -> tuple[dict[str, Any], Literal["llm", "rules"]]:
-    # The backend-owned golden-path demo must be reproducible even when Azure
-    # OpenAI is configured. Its trigger is explicit enough that deterministic
-    # rules are the safer intake contract for the presentation.
+    # The demo uses Azure when available, while its checked intake facts stay
+    # stable across model versions and credential/network availability.
     lowered = text.casefold()
-    if "ballylickey" in lowered and "outage" in lowered:
-        return extract_with_rules(text), "rules"
+    demo = "ballylickey" in lowered and "outage" in lowered
+    rules = extract_with_rules(text) if demo else None
     try:
-        return extract_with_llm(text), "llm"
+        extracted = extract_with_llm(text)
+        if demo:
+            # A model may omit a stated detail or add an inferred action. In
+            # that case use the reproducible case rather than changing the
+            # demo's scenario, location or time window.
+            if (
+                not isinstance(extracted, dict)
+                or not isinstance(extracted.get("scenarios"), list)
+                or set(extracted["scenarios"]) != set(rules["scenarios"])
+                or extracted.get("facts") != rules["facts"]
+                or extracted.get("action") != rules["action"]
+            ):
+                logger.info("Intake LLM disagreed with checked demo facts; using rules")
+                return rules, "rules"
+            return rules, "llm"
+        return extracted, "llm"
     except Exception as exc:  # no Azure config, network error or bad JSON: rules still work
         logger.info("Intake LLM extraction unavailable (%s); using rules", type(exc).__name__)
-        return extract_with_rules(text), "rules"
+        return rules if demo else extract_with_rules(text), "rules"
 
 
 SOURCE_NAMES = {"llm": "Operator description (LLM extraction)", "rules": "Operator description (keyword rules)"}

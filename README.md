@@ -32,7 +32,7 @@ npm run dev
 
 The UI sends reviewed cases to `/v1/workspace/evaluate`. Without reviewed network inputs, ordinary cases show unavailable states. For layout work, use `VITE_API_MODE=fixture npm run dev`. See the [UI guide](frontend/README.md) for tests and the fixture boundary.
 
-For the teammate walkthrough, use the [golden-path demo](docs/DEMO.md) on the `feat/golden-path-demo` branch. The intake, fact review, synthetic planning network and action-bundle calculation run without external planning files. With team Key Vault access, Azure OpenAI explains the computed result and answers questions below the workspace; the screen reports when that live explanation is unavailable.
+For the teammate walkthrough, use the [golden-path demo](docs/DEMO.md) on the `feat/golden-path-demo` branch. The intake, fact review, synthetic planning network and action-bundle calculation run without external planning files. With team Key Vault access, the existing intake step uses Azure OpenAI. The checked demo facts and calculation still work if Azure is unavailable.
 
 ## API paths
 
@@ -158,7 +158,7 @@ Request fields:
 | `thread_id` | No | Continues an earlier conversation; omit it to start a new one |
 | `selected_target` | No | The UTC time selected in the UI, so "this time" refers to it |
 
-Direct questions in the UI use the same route. With the API and `npm run dev` running, type a question such as `What was the dispatch-down risk at 2026-01-24 01:00?`. The reply card shows the answer and tools used; a dispatch-down question also opens the historical replay view. Reviewed operator cases use `/v1/workspace/evaluate`, then the Azure OpenAI case assistant uses `/v1/workspace/ask` to explain that computed result and answer follow-ups. For a future constraint outlook, run the checked daily GFS inference job first, then ask about upcoming national constraint or a specific UTC half-hour. If the snapshot is missing or expired, the chat tool reports it as unavailable. National forecasts alone cannot justify a location-specific operator action.
+Direct questions in the UI use the same route. With the API and `npm run dev` running, type a question such as `What was the dispatch-down risk at 2026-01-24 01:00?`. The reply card shows the answer and tools used; a dispatch-down question also opens the historical replay view. Reviewed operator cases use `/v1/workspace/evaluate`. For a future constraint outlook, run the checked daily GFS inference job first, then ask about upcoming national constraint or a specific UTC half-hour. If the snapshot is missing or expired, the chat tool reports it as unavailable. National forecasts alone cannot justify a location-specific operator action.
 
 Candidate actions come from `config/operator_actions.txt`. To switch model, change `AZURE_OPENAI_DEPLOYMENT` in `.env` (`gpt-4.1`, `gpt-4.1-mini` or `gpt-4o`) and restart the API. A `429` response means the shared Azure endpoint is rate-limited; wait and retry.
 
