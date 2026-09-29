@@ -21,6 +21,7 @@ class ResolvedAction(Contract):
     required_parameters: list[str]
     required_evidence_fields: list[str]
     required_safety_rules: list[str]
+    required_safety_families: list[str]
     missing_parameters: list[str] = Field(default_factory=list)
     missing_evidence_fields: list[str] = Field(default_factory=list)
 
