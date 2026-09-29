@@ -22,7 +22,10 @@ from backend.app.network_actions import screen_action_bundles
 from backend.app.network_forecast import _parse_time, validate_forecast_rows
 from backend.app.network_scenarios import Asset
 from backend.app.operator_view import build_operator_view
-from backend.app.safety import CheckResult, SafetyResult, combine_checks
+from backend.app.safety import (
+    CheckResult, SafetyResult, combine_checks,
+    evaluate_high_frequency_min_generation_family, evaluate_snsp_family,
+)
 
 
 class OperatorEvaluationRequest(Contract):
@@ -182,6 +185,55 @@ def _decision_safety_label(status: str) -> str:
     return "FAIL" if status == "BREACH" else status
 
 
+def _aggregate_transmission_family(evaluation: dict[str, Any]) -> dict[str, Any]:
+    intervals = [
+        {
+            "valid_time": item["valid_time"],
+            **item["safety"]["families"]["transmission"],
+        }
+        for item in evaluation["intervals"]
+        if item.get("safety") is not None
+    ]
+    overall = (
+        combine_checks({
+            str(index): CheckResult(item["overall"], "interval transmission family")
+            for index, item in enumerate(intervals)
+        })
+        if intervals else "UNKNOWN"
+    )
+    return {
+        "family_id": "transmission",
+        "overall": overall,
+        "intervals": intervals,
+    }
+
+
+def _aggregate_snsp_family(
+    forecast_rows: list[dict[str, Any]],
+    *,
+    approved_limit_pct: float | None,
+) -> dict[str, Any]:
+    intervals = [
+        {
+            "valid_time": row["valid_time"],
+            **evaluate_snsp_family(
+                snsp_pct=row.get("snsp_pct"),
+                approved_snsp_limit_pct=approved_limit_pct,
+            ).to_dict(),
+        }
+        for row in forecast_rows
+    ]
+    overall = combine_checks({
+        str(index): CheckResult(item["overall"], "interval SNSP family")
+        for index, item in enumerate(intervals)
+    })
+    return {
+        "family_id": "snsp",
+        "overall": overall,
+        "intervals": intervals,
+    }
+
+
 def evaluate_operator_case(
     request: OperatorEvaluationRequest,
     case: NetworkCase,
@@ -213,8 +265,22 @@ def evaluate_operator_case(
         _parse_time(row["valid_time"]): _safety_result(row["network"]["safety"])
         for row in view["forecast"]
     }
-    baseline = calculate_current_plan(context, load_demo_policy(), planning_safety=by_time)
+    policy = load_demo_policy()
+    baseline = calculate_current_plan(context, policy, planning_safety=by_time)
     contract = load_contract_manifest()
+    renewable_share_rule = next(
+        (rule for rule in policy.rules if rule.rule_id == "renewable_share"),
+        None,
+    )
+    approved_snsp_limit_pct = (
+        float(renewable_share_rule.limit)
+        if (
+            renewable_share_rule is not None
+            and renewable_share_rule.approved
+            and renewable_share_rule.limit is not None
+        )
+        else None
+    )
 
     mismatches = []
     for forecast_row in view["forecast"]:
@@ -310,8 +376,12 @@ def evaluate_operator_case(
     # families remain unresolved until dedicated evidence/model support exists.
     directly_screened_rules = {
         "network_loading", "islanding", "asset_capability", "timing",
+        "frequency", "minimum_online_units", "reserve",
+        "renewable_share", "inertia", "rocof",
     }
-    directly_screened_families = {"transmission"}
+    directly_screened_families = {
+        "transmission", "high_frequency_minimum_generation", "snsp",
+    }
     bundle_options = [baseline_bundle]
     for evaluation in bundle_screen["evaluated"]:
         definition = bundle_contract[evaluation["bundle_id"]]
@@ -330,10 +400,27 @@ def evaluate_operator_case(
             set(required_families) - directly_screened_families
         )
         operational = bundle_operational[evaluation["bundle_id"]]
+        family_results: dict[str, dict[str, Any]] = {}
+        if "transmission" in required_families:
+            family_results["transmission"] = _aggregate_transmission_family(evaluation)
+        if "high_frequency_minimum_generation" in required_families:
+            family_results["high_frequency_minimum_generation"] = (
+                evaluate_high_frequency_min_generation_family().to_dict()
+            )
+        if "snsp" in required_families:
+            family_results["snsp"] = _aggregate_snsp_family(
+                request.forecast_rows,
+                approved_limit_pct=approved_snsp_limit_pct,
+            )
+
+        family_gate = combine_checks({
+            family_id: CheckResult(result["overall"], f"{family_id} family result")
+            for family_id, result in family_results.items()
+        })
         safety = combine_checks({
-            "network": CheckResult(
-                evaluation["safety_overall"],
-                "family-level physical network screen",
+            "physical_families": CheckResult(
+                family_gate,
+                "all required physical safety families",
             ),
             "asset_capability": operational.asset_capability,
             "timing": operational.timing,
@@ -348,6 +435,7 @@ def evaluate_operator_case(
             "missing_required_safety_rules": missing_rule_checks,
             "required_safety_families": required_families,
             "missing_required_safety_families": missing_family_checks,
+            "safety_families": family_results,
             "action_specific": operational.to_dict(),
             "safety_overall": safety,
             "expected_dispatch_down_mwh": None,
