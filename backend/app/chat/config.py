@@ -39,7 +39,7 @@ class ChatSettings:
 
 def get_settings() -> ChatSettings:
     _load_env_file()
-    deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4.1")
+    deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4.1-mini")
     default_version = "2025-04-01-preview" if deployment.startswith("gpt-5") else "2024-10-21"
     return ChatSettings(
         endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
