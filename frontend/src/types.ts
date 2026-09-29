@@ -255,7 +255,17 @@ export type NetworkDecision = {
 
 export type GuardrailStatus = 'within_modelled_limit' | 'breach' | 'unknown';
 
-export type GuardrailName = 'voltage' | 'thermal' | 'snsp' | 'inertia' | 'frequency';
+// Safety constraints checked for every scenario. transmission_line covers
+// line loading against rating; thermal_capacity covers transformers and other
+// substation equipment. scope says whether the effect stays in the region or
+// spreads grid-wide. min_generation covers the minimum number of synchronous
+// units and the over-frequency risk at low demand.
+export type GuardrailName =
+  | 'transmission_line'
+  | 'thermal_capacity'
+  | 'snsp'
+  | 'scope'
+  | 'min_generation';
 
 export type Guardrail = {
   name: GuardrailName;

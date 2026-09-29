@@ -326,58 +326,144 @@
 
 /* ---- Outcome comparison ---- */
 
-.outcome-table th[scope='row'] {
-  width: 1%;
+.outcome-chart {
+  margin: 0;
+}
+
+.outcome-chart-caption {
+  margin-bottom: var(--space-8);
+  color: var(--color-text-muted);
+}
+
+.outcome-legend {
+  display: flex;
+  gap: var(--space-16);
+  margin: 0 0 var(--space-12);
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+}
+
+.outcome-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.outcome-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.outcome-swatch-fill {
+  background: var(--color-accent);
+}
+
+.outcome-swatch-avoided {
+  background: var(--color-accent-soft);
+}
+
+.outcome-columns {
+  display: flex;
+  gap: var(--space-24);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.outcome-column {
+  display: flex;
+  flex: 0 0 160px;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.outcome-value {
   white-space: nowrap;
   font-weight: var(--font-weight-semibold);
 }
 
-.outcome-table td:nth-child(2) {
-  width: 1%;
-}
-
-.outcome-table td,
-.outcome-table th {
-  vertical-align: middle;
-}
-
-.outcome-bar-cell {
-  width: 100%;
-}
-
+/* Bars grow up from a shared baseline; the avoided segment stacks on top. */
 .outcome-bar {
   display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   gap: 2px;
-  height: 16px;
+  width: 48px;
+  height: 160px;
+  border-bottom: 1px solid var(--color-border-strong);
 }
 
 .outcome-bar-fill,
 .outcome-bar-avoided {
   display: block;
-  height: 100%;
+  width: 100%;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .outcome-bar-fill {
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--color-border-strong);
 }
 
-.outcome-row-post .outcome-bar-fill {
+.outcome-column-post .outcome-bar-fill {
   background: var(--color-accent);
 }
 
 .outcome-bar-avoided {
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--color-accent-soft);
 }
 
-.outcome-table .num {
-  white-space: nowrap;
+.outcome-column-post .outcome-bar-avoided + .outcome-bar-fill {
+  border-radius: 0;
+}
+
+.outcome-column-label {
   font-weight: var(--font-weight-semibold);
 }
 
 .metrics-row {
   margin-top: var(--space-16);
+}
+
+/* Chart on the left, change metrics beside it in a 2 x 2 grid. The secondary
+   metric sits on its own row under a rule so no cell is left orphaned. */
+.outcome-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 640px);
+  gap: var(--space-24) var(--space-32);
+  align-items: center;
+  justify-content: start;
+}
+
+.outcome-body .metrics-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-24) var(--space-32);
+  align-content: center;
+  margin-top: 0;
+  padding-left: var(--space-32);
+  border-left: 1px solid var(--color-border);
+}
+
+.outcome-body .metric-secondary {
+  grid-column: 1 / -1;
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 720px) {
+  .outcome-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .outcome-body .metrics-row {
+    padding-top: var(--space-16);
+    padding-left: 0;
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
 }
 
 /* ---- Guardrail table ---- */

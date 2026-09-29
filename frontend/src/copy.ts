@@ -110,7 +110,7 @@ export const WORKSPACE_COPY = {
   outcomeTitle: 'New outcome',
   baseline: 'Baseline',
   postAction: 'Post-action',
-  guardrailTitle: 'Guardrails',
+  guardrailTitle: 'Safety (constraints)',
 } as const;
 
 export const GUARDRAIL_STATUS_LABEL = {
@@ -120,11 +120,11 @@ export const GUARDRAIL_STATUS_LABEL = {
 } as const;
 
 export const GUARDRAIL_LABEL = {
-  voltage: 'Voltage',
-  thermal: 'Thermal capacity',
+  transmission_line: 'Transmission line',
+  thermal_capacity: 'Thermal capacity',
   snsp: 'SNSP',
-  inertia: 'Inertia',
-  frequency: 'Frequency',
+  scope: 'Region vs grid-wide impact',
+  min_generation: 'High frequency / minimum generation',
 } as const;
 
 export const ACTION_FAMILY_LABEL = {
