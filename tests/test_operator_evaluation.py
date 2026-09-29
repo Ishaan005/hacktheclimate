@@ -194,7 +194,13 @@ def test_operator_evaluation_exposes_redispatch_and_mixed_bundle():
     )
     assert redispatch_eval["modeled_capture_upper_bound_mwh"] == pytest.approx(0.0)
     assert "reserve" in redispatch_eval["required_safety_rules"]
-    assert "reserve" in redispatch_eval["missing_required_safety_rules"]
+    assert "reserve" not in redispatch_eval["missing_required_safety_rules"]
+    assert redispatch_eval["missing_required_safety_families"] == []
+    assert (
+        redispatch_eval["safety_families"]["high_frequency_minimum_generation"]
+        ["overall"]
+        == "UNKNOWN"
+    )
 
     mixed = next(
         item for item in result["bundle_options"]
