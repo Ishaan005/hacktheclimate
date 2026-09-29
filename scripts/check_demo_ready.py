@@ -30,7 +30,7 @@ def main() -> None:
     )
     refusal = evaluate_west_outage_demo(
         _case(
-            "Planned outage near Ballylickey plus another credible circuit loss "
+            "Planned outage in the west near Ballylickey plus another credible circuit loss "
             "creates an N-1 overload for the next 2 hours."
         ),
         ["T4"],
