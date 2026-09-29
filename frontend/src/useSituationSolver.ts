@@ -167,7 +167,13 @@ export function useSituationSolver() {
     const current = caseRef.current;
     if (!current || !readyForEvaluation(current)) return;
     roundRef.current = 0;
-    run({ description: current.originalText, threadId: null, answers: [], caseSummary: caseSummaryText(current) });
+    run({
+      description: current.originalText,
+      threadId: null,
+      answers: [],
+      caseSummary: caseSummaryText(current),
+      operatorCase: current,
+    });
   }
 
   // Question IDs are only unique within a round, so answers are matched by
