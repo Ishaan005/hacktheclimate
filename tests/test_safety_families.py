@@ -75,3 +75,18 @@ def test_transmission_family_can_pass_when_all_four_gates_are_evidenced():
     )
     assert result.overall == "PASS"
     assert result.recommendable
+
+
+def test_transmission_family_checks_shifted_bottleneck_in_contingency_state():
+    result = evaluate_transmission_family(
+        _solve(70.0),
+        _solve(60.0),
+        base_contingency_solve=_solve(90.0),
+        action_contingency_solve=_solve(110.0),
+        relief_timing_verified=True,
+    )
+
+    assert result.checks["current_forecast_thermal_margin"].status == "PASS"
+    assert result.checks["worst_credible_failure_margin"].status == "FAIL"
+    assert result.checks["new_bottleneck"].status == "FAIL"
+    assert result.checks["new_bottleneck"].asset_id == "A"
