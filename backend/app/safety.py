@@ -233,7 +233,50 @@ def evaluate_transmission_family(
             label="Credible-failure candidate",
         )
 
-    new_bottleneck = _new_bottleneck_check(base_solve, action_solve)
+    planned_bottleneck = _new_bottleneck_check(base_solve, action_solve)
+    bottleneck_checks = {"planned_state": planned_bottleneck}
+    if base_contingency_solve is not None or action_contingency_solve is not None:
+        contingency_bottleneck = (
+            _new_bottleneck_check(
+                base_contingency_solve,
+                action_contingency_solve,
+            )
+            if (
+                base_contingency_solve is not None
+                and action_contingency_solve is not None
+            )
+            else CheckResult(
+                "UNKNOWN",
+                "Both base and candidate credible-failure solves are required "
+                "to check for a shifted contingency bottleneck.",
+                "DC contingency comparison",
+            )
+        )
+        bottleneck_checks["credible_failure_state"] = contingency_bottleneck
+
+    bottleneck_status = combine_checks(bottleneck_checks)
+    if bottleneck_status == "FAIL":
+        source_check = next(
+            check for check in bottleneck_checks.values() if check.status == "FAIL"
+        )
+    elif bottleneck_status == "UNKNOWN":
+        source_check = next(
+            check for check in bottleneck_checks.values() if check.status == "UNKNOWN"
+        )
+    else:
+        source_check = min(
+            bottleneck_checks.values(),
+            key=lambda check: check.value if check.value is not None else math.inf,
+        )
+    new_bottleneck = CheckResult(
+        bottleneck_status,
+        source_check.reason,
+        source_check.evidence,
+        value=source_check.value,
+        unit=source_check.unit,
+        asset_id=source_check.asset_id,
+    )
+
     if relief_timing_verified is True:
         time_to_relief = CheckResult(
             "PASS",
