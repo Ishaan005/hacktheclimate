@@ -58,6 +58,7 @@ curl -sS http://127.0.0.1:8000/v1/demo/absorption \
 
 - [Data guide](docs/DATA_GUIDE.md): choose included files and rebuild them from the original workbooks.
 - [GFS training report](docs/GFS_CONSTRAINT_TRAINING.md): weather vintages, forecast-safe features, backtests and model limits.
+- [GFS model readiness](docs/GFS_MODEL_READINESS.md): frozen forward path, curtailment experiment and explicit promotion gates.
 - [GFS inference runbook](docs/GFS_INFERENCE.md): checked daily job, versioned output and API serving.
 - [Network forecast architecture](docs/NETWORK_FORECAST_ARCHITECTURE.md) and [safety checks](docs/NETWORK_SAFETY_ACTIONS.md): required inputs and operator boundaries.
 - [UI data handoff](docs/ui-handoff/README.md): response fixtures, TypeScript types, units and evaluation outputs.

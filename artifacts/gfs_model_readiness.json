@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-29T09:03:43.466314+00:00",
+  "decision_contract": "00Z NOAA GFS issue; 06:00 UTC decision; 48 future half-hours",
+  "model_status": "experimental national forecast; no locational, safety or avoided-energy inference",
+  "targets": {
+    "constraint": {
+      "target": "constraint_mwh",
+      "model_sha256": "4de264eb806ee903a0b2eb9c6eea6bce0adf0c16e07a467c5c0ee383de80ee59",
+      "checks": {
+        "source_and_artifact_integrity": true,
+        "forecast_safe_features": true,
+        "chronological_holdout": true,
+        "heldout_metrics_recomputed": true,
+        "calibration_and_interval_coverage_measured": true,
+        "event_pr_auc_beats_calendar_each_month_and_pooled": true,
+        "volume_mae_beats_zero_each_month": false,
+        "volume_mae_beats_zero_pooled": true
+      },
+      "volume_months_beating_zero": {
+        "2026-04": true,
+        "2026-05": true,
+        "2026-06": true,
+        "2026-07": true,
+        "2026-08": false
+      },
+      "pooled": {
+        "rows": 7342,
+        "event_prevalence": 0.49918278398256605,
+        "event_pr_auc": 0.8704228027466133,
+        "calendar_event_pr_auc": 0.6177240149004006,
+        "event_brier": 0.1501123583994718,
+        "calendar_event_brier": 0.235756677211939,
+        "event_ece_10_bins": 0.07081762177403737,
+        "expected_mae_mwh": 47.42094145913693,
+        "calendar_expected_mae_mwh": 84.32922210560874,
+        "zero_mae_mwh": 63.09094361209479,
+        "interval_80_coverage": 0.8458185780441296,
+        "interval_90_coverage": 0.9230454916916372,
+        "interval_80_mean_width_mwh": 115.73322776727643,
+        "interval_90_mean_width_mwh": 192.8565121336086
+      },
+      "event_ready_for_demo": true,
+      "volume_ready_for_demo": false
+    },
+    "curtailment": {
+      "target": "curtailment_mwh",
+      "model_sha256": "98c6c113c526608f219bd7a4813affe4625ac5864c40e14e6a14bdd4f73463b2",
+      "checks": {
+        "source_and_artifact_integrity": true,
+        "forecast_safe_features": true,
+        "chronological_holdout": true,
+        "heldout_metrics_recomputed": true,
+        "calibration_and_interval_coverage_measured": true,
+        "event_pr_auc_beats_calendar_each_month_and_pooled": true,
+        "volume_mae_beats_zero_each_month": false,
+        "volume_mae_beats_zero_pooled": false
+      },
+      "volume_months_beating_zero": {
+        "2026-04": true,
+        "2026-05": false,
+        "2026-06": true,
+        "2026-07": true,
+        "2026-08": false
+      },
+      "pooled": {
+        "rows": 7342,
+        "event_prevalence": 0.182239171887769,
+        "event_pr_auc": 0.5165489194593922,
+        "calendar_event_pr_auc": 0.26961455799487916,
+        "event_brier": 0.11850449352369392,
+        "calendar_event_brier": 0.15547404101949006,
+        "event_ece_10_bins": 0.054229252711144024,
+        "expected_mae_mwh": 53.69062455093693,
+        "calendar_expected_mae_mwh": 69.63470194153649,
+        "zero_mae_mwh": 49.92273835467175,
+        "interval_80_coverage": 0.8052301825115772,
+        "interval_90_coverage": 0.8974393898120403,
+        "interval_80_mean_width_mwh": 95.51220805985994,
+        "interval_90_mean_width_mwh": 194.24612182050194
+      },
+      "event_ready_for_demo": true,
+      "volume_ready_for_demo": false
+    }
+  },
+  "live_snapshot": {
+    "checked": true,
+    "valid": true,
+    "remaining_intervals": 42
+  },
+  "gates": {
+    "constraint_event": true,
+    "constraint_volume": false,
+    "curtailment": false,
+    "total": false,
+    "live": true
+  }
+}
