@@ -86,9 +86,10 @@ describe('fact review', () => {
 
   it('rejects a number outside its range', async () => {
     render(<AssistantApp />);
-    const review = await describeSituation('line overload in the west after the outage');
-    fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.edit} Material-event probability` }));
-    fireEvent.change(within(review).getByLabelText('Material-event probability'), { target: { value: '150' } });
+    // State of charge is a required percentage, so 150 is out of range.
+    const review = await describeSituation('xyzzy plugh, charge Battery A');
+    fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.add} State of charge at start` }));
+    fireEvent.change(within(review).getByLabelText('State of charge at start'), { target: { value: '150' } });
 
     expect(within(review).getByRole('button', { name: REVIEW_COPY.save })).toBeDisabled();
   });
