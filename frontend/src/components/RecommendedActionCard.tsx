@@ -1,6 +1,6 @@
 import { ACTION_FAMILY_LABEL, EXECUTABILITY_LABEL, WORKSPACE_COPY } from '../copy';
 import { formatTime } from '../format';
-import { effectiveExecutability, instructionText } from '../scenarios';
+import { instructionText } from '../scenarios';
 import type { RecommendedAction } from '../types';
 import ActionDetails from './ActionDetails';
 import ActionTimeline from './ActionTimeline';
@@ -23,21 +23,19 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
       </section>
     );
   }
-  const executability = effectiveExecutability(action);
-  const executableTone = executability === 'executable' ? 'chip-neutral' : 'chip-unknown';
-  const unconfirmedRequest = action.family === 'interconnector_request' && executability === 'unconfirmed';
+  const conditional = action.executability === 'conditional';
   return (
     <section
-      className={`card card-action${unconfirmedRequest ? ' card-action-conditional' : ''}`}
+      className={`card card-action${conditional ? ' card-action-conditional' : ''}`}
       aria-labelledby="action-heading"
     >
       <h3 id="action-heading" className="card-kicker">
         {WORKSPACE_COPY.actionTitle}
         <span className="chip chip-neutral">{ACTION_FAMILY_LABEL[action.family]}</span>
-        <span className={`chip ${executableTone}`}>{EXECUTABILITY_LABEL[executability]}</span>
+        <span className={`chip ${conditional ? 'chip-unknown' : 'chip-neutral'}`}>{EXECUTABILITY_LABEL[action.executability]}</span>
       </h3>
       <p className="instruction">{instructionText(action)}</p>
-      {unconfirmedRequest && <p className="action-warning">{WORKSPACE_COPY.interconnectorNotConfirmed}</p>}
+      {conditional && <p className="action-warning">{WORKSPACE_COPY.actionConditional}</p>}
       <p className="state-change">
         <span className="state-change-asset">{action.assetName} · {action.location}</span>
         <span className="state-change-values">

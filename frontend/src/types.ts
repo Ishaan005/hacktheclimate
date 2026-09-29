@@ -274,50 +274,20 @@ export type BindingCondition = {
   status: GuardrailStatus;
 };
 
+// Core MVP actions from #21. Voltage and stability support are expanded MVP;
+// interconnector changes are out of scope.
 export type ActionFamily =
-  | 'generator_setpoint'
-  | 'commitment_change'
   | 'storage_charging'
-  | 'reactive_control'
-  | 'renewable_limit'
-  | 'interconnector_request';
+  | 'flexible_demand'
+  | 'generator_redispatch'
+  | 'outage_review';
 
-// Direct dispatch is executable; an interconnector request stays unconfirmed
-// until the counterparty confirms it.
-export type Executability = 'executable' | 'conditional' | 'unconfirmed';
+// Conditional: depends on a check or confirmation not yet made.
+export type Executability = 'executable' | 'conditional';
 
-// ---- Family-specific action detail (UX plan phase 2) ----
+// ---- Family-specific action detail (UX plan phase 2, #21 metric tables) ----
 // Every field is nullable: null means the solver did not supply it, and the
 // UI shows it as not available, never as zero.
-
-export type GeneratorSetpointDetails = {
-  currentMw: number | null;
-  targetMw: number | null;
-  rampRateMwPerMin: number | null;
-  minStableGenerationMw: number | null;
-  maxOutputMw: number | null;
-  servicesRetained: string[] | null;
-  servicesLost: string[] | null;
-  redispatchCostEur: number | null;
-};
-
-export type CommitmentState = 'online' | 'offline';
-
-export type CommitmentChangeDetails = {
-  currentCommitment: CommitmentState | null;
-  targetCommitment: CommitmentState | null;
-  thermalState: 'hot' | 'warm' | 'cold' | null;
-  // Synchronisation time when starting, shutdown time when stopping.
-  transitionMinutes: number | null;
-  minOnHours: number | null;
-  minOffHours: number | null;
-  inertiaContributionMws: number | null;
-  reserveContributionMw: number | null;
-  reactiveContributionMvar: number | null;
-  startCostEur: number | null;
-  stopCostEur: number | null;
-  minimumRunCostEur: number | null;
-};
 
 export type StorageChargingDetails = {
   stateOfChargePct: number | null;
@@ -333,52 +303,55 @@ export type StorageChargingDetails = {
   degradationCostEur: number | null;
 };
 
-export type ReactiveControlDetails = {
-  currentVoltageKv: number | null;
-  targetVoltageKv: number | null;
-  currentMvar: number | null;
-  targetMvar: number | null;
-  presentMw: number | null;
-  capabilityMinMvar: number | null;
-  capabilityMaxMvar: number | null;
-  currentTapPosition: number | null;
-  targetTapPosition: number | null;
-  responseTimeSeconds: number | null;
-  voltageMarginImprovement: string | null;
-  sideEffects: string | null;
+export type DemandDirection = 'increase' | 'decrease';
+
+export type FlexibleDemandDetails = {
+  direction: DemandDirection | null;
+  changeMw: number | null;
+  availableMwh: number | null;
+  demandBaselineMw: number | null;
+  activationDelayMinutes: number | null;
+  maxDurationMinutes: number | null;
+  // MW of constraint relief per MW of demand moved.
+  constraintReliefPerMw: number | null;
+  reboundRequirement: string | null;
+  activationCostEur: number | null;
+  reboundCostEur: number | null;
 };
 
-export type RenewableLimitDetails = {
-  constraintGroup: string | null;
-  affectedUnits: string[] | null;
-  totalReductionMw: number | null;
-  dispatchReason: string | null;
-  expectedDispatchDownWasteMwh: number | null;
-  remainingSecurityMargin: string | null;
+export type GeneratorRedispatchDetails = {
+  currentMw: number | null;
+  targetMw: number | null;
+  rampRateMwPerMin: number | null;
+  minStableGenerationMw: number | null;
+  maxOutputMw: number | null;
+  startStopRestrictions: string | null;
+  servicesRetained: string[] | null;
+  servicesLost: string[] | null;
+  redispatchCostEur: number | null;
 };
 
-export type CoordinationStatus = 'confirmed' | 'unconfirmed' | 'unavailable';
-
-export type InterconnectorRequestDetails = {
-  interconnector: string | null;
-  direction: string | null;
-  requestedMw: number | null;
-  scheduledFlowMw: number | null;
-  transferCapacityMw: number | null;
-  rampLimitMwPerMin: number | null;
-  earliestFeasibleInterval: string | null;
-  coordinationStatus: CoordinationStatus;
-  crossBorderCostEur: number | null;
+export type OutageReviewDetails = {
+  outageId: string | null;
+  equipmentDescription: string | null;
+  scheduledStart: string | null;
+  scheduledEnd: string | null;
+  publicationDate: string | null;
+  outageStatus: string | null;
+  reviewedModelAsset: string | null;
+  assetMatchConfidence: string | null;
+  alternativeWindow: string | null;
+  overlappingOutages: string[] | null;
+  additionalExposureMwh: number | null;
+  financialExposureEur: number | null;
 };
 
 // The family decides which detail shape the action carries.
 export type ActionFamilyDetails =
-  | { family: 'generator_setpoint'; details: GeneratorSetpointDetails }
-  | { family: 'commitment_change'; details: CommitmentChangeDetails }
   | { family: 'storage_charging'; details: StorageChargingDetails }
-  | { family: 'reactive_control'; details: ReactiveControlDetails }
-  | { family: 'renewable_limit'; details: RenewableLimitDetails }
-  | { family: 'interconnector_request'; details: InterconnectorRequestDetails };
+  | { family: 'flexible_demand'; details: FlexibleDemandDetails }
+  | { family: 'generator_redispatch'; details: GeneratorRedispatchDetails }
+  | { family: 'outage_review'; details: OutageReviewDetails };
 
 export type RecommendedAction = ActionFamilyDetails & {
   assetName: string;
@@ -499,6 +472,10 @@ export type SolverRequest = {
   description: string;
   threadId: string | null;
   answers: ClarificationAnswer[];
+  // The reviewed case as text (description plus confirmed facts and their
+  // sources). Set once the operator has checked the facts; the live solver
+  // reads it instead of the bare description.
+  caseSummary?: string;
 };
 
 // What the situation solver can return. The LLM chooses the output type from

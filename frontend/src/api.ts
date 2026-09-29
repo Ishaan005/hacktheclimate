@@ -1,6 +1,10 @@
+import { newCase } from './case';
+import { isCase } from './caseStore';
+import { illustrativeCase } from './fixtures/illustrativeCase';
 import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
 import { fixtureOperatorView, fixtureOutages, fixtureScenario } from './fixtures/operatorView';
 import { namedTarget, resolveDispatchDownQuestion, resolveFixtureSolver } from './scenarios';
+import type { OperatorCase } from './case';
 import type { ClarificationAnswer, TraceStep, NetworkDecision, OperatorView, ReviewedOutageOption, SolverRequest, SolverResult } from './types';
 
 import { DEFAULT_TARGET } from './dispatchDown';
@@ -98,7 +102,7 @@ type ChatResponse = { thread_id: string; reply: string; tools_used: string[]; mo
 // The chat route takes one message per turn. Follow-up answers are sent as a
 // short labelled list on the same thread; the first turn is the description.
 export function chatMessage(request: SolverRequest): string {
-  if (!request.answers.length) return request.description;
+  if (!request.answers.length) return request.caseSummary ?? request.description;
   const lines = request.answers.map((answer: ClarificationAnswer) => {
     const value = answer.value === null ? '(left blank)' : Array.isArray(answer.value) ? answer.value.join(', ') : String(answer.value);
     return `- round ${answer.round}, ${answer.questionId}: ${value}`;
@@ -157,4 +161,44 @@ export async function solveSituation(request: SolverRequest, signal?: AbortSigna
     reply: { threadId: body.thread_id, text: body.reply, toolsUsed: body.tools_used, model: body.model, trace: body.trace ?? [] },
     target: aboutDispatchDown ? selectedTarget ?? DEFAULT_TARGET : null,
   };
+}
+
+// How the case facts were found: the backend's language model or keyword
+// rules, the illustrative fixture, or nothing (intake unreachable, so the
+// operator enters every fact).
+export type Extraction = 'llm' | 'rules' | 'fixture' | 'manual';
+
+export type IntakeResult = { operatorCase: OperatorCase; extraction: Extraction };
+
+// Turns the operator's words into a case to review (POST /v1/intake). If the
+// intake service cannot be reached the case starts empty rather than failing:
+// the operator can still supply every fact by hand.
+export async function startCase(description: string, comparisonText: string | null, signal?: AbortSignal): Promise<IntakeResult> {
+  const createdAt = new Date().toISOString();
+  if (USE_FIXTURE) {
+    return { operatorCase: illustrativeCase(description, comparisonText, createdAt, illustrativeScenarios), extraction: 'fixture' };
+  }
+  const manual = (): IntakeResult => ({ operatorCase: { ...newCase(description, createdAt), scenarios: ['cause_unknown'] }, extraction: 'manual' });
+  let response: Response;
+  try {
+    response = await fetch('/v1/intake', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description, comparison_text: comparisonText, created_at: createdAt }),
+      signal,
+    });
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    console.error('Intake unreachable, starting an empty case:', err);
+    return manual();
+  }
+  if (response.status === 404 || response.status === 503) {
+    console.error(`/v1/intake returned HTTP ${response.status}, starting an empty case`);
+    return manual();
+  }
+  if (!response.ok) throw new Error(`/v1/intake returned HTTP ${response.status}`);
+  const body = (await response.json()) as { case?: unknown; extraction?: unknown };
+  if (!isCase(body.case)) throw new Error('/v1/intake returned a case the workspace cannot read');
+  const extraction = body.extraction === 'llm' ? 'llm' : 'rules';
+  return { operatorCase: body.case, extraction };
 }

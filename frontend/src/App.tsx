@@ -1,11 +1,12 @@
 import AssistantReplyCard from './components/AssistantReplyCard';
+import CaseReview from './components/CaseReview';
 import ClarificationForm from './components/ClarificationForm';
 import DispatchDownResult from './components/DispatchDownResult';
 import ScenarioWorkspace from './components/ScenarioWorkspace';
 import SituationInput from './components/SituationInput';
 import StatusMessage from './components/StatusMessage';
 import { USE_FIXTURE } from './api';
-import { COPY, WORKSPACE_COPY } from './copy';
+import { COPY, REVIEW_COPY, WORKSPACE_COPY } from './copy';
 import { useSituationSolver } from './useSituationSolver';
 import './App.css';
 
@@ -13,10 +14,22 @@ import './App.css';
 // its recommended action, the next-hour dispatch-down risk, or follow-up
 // questions when the description is not enough.
 function App() {
-  const { state, description, describe, answer, retry, cancel } = useSituationSolver();
+  const { state, description, operatorCase, describe, evaluate, answer, correct, retry, cancel } = useSituationSolver();
 
   let result = null;
-  if (state.status === 'solving') {
+  if (state.status === 'intake') {
+    result = <StatusMessage tone="loading" title={REVIEW_COPY.intakeTitle} consequence={REVIEW_COPY.intakeConsequence} />;
+  } else if (state.status === 'reviewing' && operatorCase) {
+    result = (
+      <CaseReview
+        operatorCase={operatorCase}
+        extraction={state.extraction}
+        onCorrect={correct}
+        onEvaluate={evaluate}
+        onCancel={cancel}
+      />
+    );
+  } else if (state.status === 'solving') {
     result = <StatusMessage tone="loading" title={WORKSPACE_COPY.solvingTitle} consequence={WORKSPACE_COPY.solvingConsequence} />;
   } else if (state.status === 'clarifying') {
     // Key by round so each new set of questions starts with fresh answers.
@@ -28,6 +41,17 @@ function App() {
         round={state.round}
         onSubmit={answer}
         onCancel={cancel}
+      />
+    );
+  } else if (state.status === 'stopped') {
+    result = (
+      <StatusMessage
+        tone="unavailable"
+        title={WORKSPACE_COPY.stoppedTitle}
+        consequence={WORKSPACE_COPY.stoppedConsequence}
+        items={state.missing}
+        onRetry={cancel}
+        retryLabel={WORKSPACE_COPY.clarifyCancel}
       />
     );
   } else if (state.status === 'solved') {

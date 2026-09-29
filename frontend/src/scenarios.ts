@@ -6,23 +6,16 @@ import { formatTime } from './format';
 import { DEFAULT_TARGET, validateTarget } from './dispatchDown';
 import { answerLabel } from './clarification';
 import { illustrativeClarification } from './fixtures/illustrativeClarification';
-import type { Executability, RecommendedAction, SolverRequest, SolverResult, WorkspaceScenario } from './types';
+import type { RecommendedAction, SolverRequest, SolverResult, WorkspaceScenario } from './types';
 
 // Reads like a dispatch instruction, e.g.
 // "Issued 14:55 — Generator A to 100 MW by 15:10, effective until 16:30."
-// An interconnector change is a request to a counterparty, so it says so.
+// An outage recommendation asks for a review; it never cancels the outage.
 export function instructionText(action: RecommendedAction): string {
-  const verb = action.family === 'interconnector_request' ? 'Requested' : 'Issued';
-  return `${verb} ${formatTime(action.issueTime)} — ${action.assetName} to ${action.targetState} by ${formatTime(action.targetTime)}, effective until ${formatTime(action.effectiveUntil)}.`;
-}
-
-// An interconnector request is never shown as executable until the
-// counterparty confirms it, whatever the solver reported.
-export function effectiveExecutability(action: RecommendedAction): Executability {
-  if (action.family === 'interconnector_request' && action.details.coordinationStatus !== 'confirmed') {
-    return 'unconfirmed';
+  if (action.family === 'outage_review') {
+    return `Review by ${formatTime(action.issueTime)} — ${action.assetName}: ${action.targetState}, effective until ${formatTime(action.effectiveUntil)}.`;
   }
-  return action.executability;
+  return `Issued ${formatTime(action.issueTime)} — ${action.assetName} to ${action.targetState} by ${formatTime(action.targetTime)}, effective until ${formatTime(action.effectiveUntil)}.`;
 }
 
 // Avoided waste needs both states. Null when either is unknown.

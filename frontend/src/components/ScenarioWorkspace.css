@@ -16,6 +16,16 @@
   font-weight: var(--font-weight-semibold);
 }
 
+.situation-label-secondary {
+  margin-top: var(--space-8);
+  font-size: var(--font-size-14);
+}
+
+.situation-label-secondary {
+  margin-top: var(--space-8);
+  font-size: var(--font-size-14);
+}
+
 .situation-hint {
   margin: 0;
   color: var(--color-text-muted);
@@ -411,7 +421,7 @@
 
 /* ---- Action-family detail ---- */
 
-/* An unconfirmed request must not look as executable as direct dispatch. */
+/* A conditional action must not look as ready as an executable one. */
 .card-action-conditional {
   border-color: var(--color-status-unknown);
   border-style: dashed;

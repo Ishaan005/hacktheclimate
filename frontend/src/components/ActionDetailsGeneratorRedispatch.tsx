@@ -1,8 +1,9 @@
+import { COPY } from '../copy';
 import { formatEur, formatList, formatNumber } from '../format';
-import type { GeneratorSetpointDetails } from '../types';
+import type { GeneratorRedispatchDetails } from '../types';
 import ActionDetailFields from './ActionDetailFields';
 
-function ActionDetailsGeneratorSetpoint({ details }: { details: GeneratorSetpointDetails }) {
+function ActionDetailsGeneratorRedispatch({ details }: { details: GeneratorRedispatchDetails }) {
   return (
     <ActionDetailFields
       fields={[
@@ -11,6 +12,7 @@ function ActionDetailsGeneratorSetpoint({ details }: { details: GeneratorSetpoin
         { label: 'Ramp rate', value: formatNumber(details.rampRateMwPerMin, 'MW/min', 1), mono: true },
         { label: 'Minimum stable generation', value: formatNumber(details.minStableGenerationMw, 'MW'), mono: true },
         { label: 'Maximum output', value: formatNumber(details.maxOutputMw, 'MW'), mono: true },
+        { label: 'Start and stop restrictions', value: details.startStopRestrictions ?? COPY.notAvailable },
         { label: 'Services retained', value: formatList(details.servicesRetained) },
         { label: 'Services lost', value: formatList(details.servicesLost) },
       ]}
@@ -19,4 +21,4 @@ function ActionDetailsGeneratorSetpoint({ details }: { details: GeneratorSetpoin
   );
 }
 
-export default ActionDetailsGeneratorSetpoint;
+export default ActionDetailsGeneratorRedispatch;
