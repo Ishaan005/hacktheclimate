@@ -172,11 +172,7 @@ function RunTraceDiagram({ trace }: { trace: TraceStep[] }) {
           ))}
         </svg>
         {steps.length ? (
-          {steps.length ? (
           <RunTimeline steps={steps} skipped={skipped} />
-        ) : (
-          <p className="field-hint">{WORKSPACE_COPY.traceEmpty}</p>
-        )}
         ) : (
           <p className="field-hint">{WORKSPACE_COPY.traceEmpty}</p>
         )}

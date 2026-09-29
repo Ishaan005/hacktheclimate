@@ -2,7 +2,6 @@ import AssistantReplyCard from './components/AssistantReplyCard';
 import CaseReview from './components/CaseReview';
 import ClarificationForm from './components/ClarificationForm';
 import RunTraceDiagram from './components/RunTraceDiagram';
-import RunTraceDiagram from './components/RunTraceDiagram';
 import DispatchDownResult from './components/DispatchDownResult';
 import ScenarioWorkspace from './components/ScenarioWorkspace';
 import SituationInput from './components/SituationInput';
@@ -17,9 +16,6 @@ import './App.css';
 // questions when the description is not enough.
 function App() {
   const { state, description, operatorCase, describe, evaluate, answer, correct, retry, cancel } = useSituationSolver();
-
-  // The assistant's run trace, shown once at the very end of the page.
-  const trace = state.status === 'solved' && state.result.kind === 'assistant_reply' ? state.result.reply.trace : [];
 
   // The assistant's run trace, shown once at the very end of the page.
   const trace = state.status === 'solved' && state.result.kind === 'assistant_reply' ? state.result.reply.trace : [];

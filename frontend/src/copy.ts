@@ -78,7 +78,6 @@ export const WORKSPACE_COPY = {
   assistantTitle: 'Grid assistant',
   traceTitle: 'How the assistant answered',
   traceEmpty: 'No assistant run yet. Describe a situation above and each step it takes will appear here.',
-  traceEmpty: 'No assistant run yet. Describe a situation above and each step it takes will appear here.',
   traceSummary: 'Path through the LangGraph for this reply',
   traceSkipped: 'Not used this time',
   assistantToolsUsed: 'Data used',
