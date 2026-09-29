@@ -484,7 +484,10 @@ export type ClarificationRequest = {
 // Null means the operator left an optional question unanswered.
 export type ClarificationAnswerValue = string | string[] | number | null;
 
+// Question IDs are only unique within one round, so an answer names its
+// round too: round 2 may reuse an ID from round 1 without replacing it.
 export type ClarificationAnswer = {
+  round: number;
   questionId: string;
   value: ClarificationAnswerValue;
 };

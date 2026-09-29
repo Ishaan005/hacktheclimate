@@ -243,7 +243,7 @@ function ClarificationForm({ clarification, description, round, onSubmit, onCanc
       document.getElementById(`clarify-${question.id}`)?.focus();
       return;
     }
-    if (last) onSubmit(toAnswers(questions, values));
+    if (last) onSubmit(toAnswers(questions, values, round));
     else goTo(step + 1);
   }
 

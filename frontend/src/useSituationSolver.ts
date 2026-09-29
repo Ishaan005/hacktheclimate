@@ -79,12 +79,15 @@ export function useSituationSolver() {
     run({ description: text, threadId: null, answers: [] });
   }
 
-  // Later answers to the same question replace earlier ones.
+  // Question IDs are only unique within a round, so answers are matched by
+  // round and ID: resubmitting a round replaces that round's answers, while a
+  // later round reusing an ID keeps the earlier answer.
   function answer(answers: ClarificationAnswer[]) {
     const current = requestRef.current;
     if (!current) return;
-    const answered = new Set(answers.map((item) => item.questionId));
-    run({ ...current, answers: [...current.answers.filter((item) => !answered.has(item.questionId)), ...answers] });
+    const key = (item: ClarificationAnswer) => `${item.round}:${item.questionId}`;
+    const answered = new Set(answers.map(key));
+    run({ ...current, answers: [...current.answers.filter((item) => !answered.has(key(item))), ...answers] });
   }
 
   function retry() {

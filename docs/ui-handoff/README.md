@@ -80,5 +80,6 @@ When an operator's description is not enough to pick a scenario, the situation s
 - Question kinds are `text`, `single_choice`, `multi_choice` and `number`. The UI renders a `number` question as a slider with a matching number field.
 - `helpText`, `placeholder`, `maxLength`, `minSelected`, `maxSelected`, `unit` and `defaultValue` are optional. `required` defaults to false.
 - The frontend checks the payload with `parseClarificationRequest` (`frontend/src/clarification.ts`) before rendering it. A malformed payload shows an error state and renders no form.
-- The next request resends the original description with every answer so far, plus `threadId` if the solver supplied one: `{ "description": "...", "threadId": "...", "answers": [{ "questionId": "limit", "value": "thermal" }] }`. An optional question left blank is sent as `null`.
+- The next request resends the original description with every answer so far, plus `threadId` if the solver supplied one: `{ "description": "...", "threadId": "...", "answers": [{ "round": 1, "questionId": "limit", "value": "thermal" }] }`. An optional question left blank is sent as `null`.
+- Question IDs only need to be unique within one round. Each answer carries its `round` (starting at 1), so a later round can reuse an ID such as `area` without replacing the earlier answer.
 - The UI stops after three rounds of questions and shows an error.

@@ -91,10 +91,10 @@ describe('solver follow-up questions', () => {
         description: 'there is a problem',
         threadId: null,
         answers: [
-          { questionId: 'limit', value: 'low_voltage' },
-          { questionId: 'area', value: ['north_west'] },
-          { questionId: 'lead_time', value: null },
-          { questionId: 'detail', value: null },
+          { round: 1, questionId: 'limit', value: 'low_voltage' },
+          { round: 1, questionId: 'area', value: ['north_west'] },
+          { round: 1, questionId: 'lead_time', value: null },
+          { round: 1, questionId: 'detail', value: null },
         ],
       },
       expect.any(AbortSignal),
@@ -137,7 +137,15 @@ describe('solver follow-up questions', () => {
     }
     expect(await screen.findByText(WORKSPACE_COPY.solverErrorTitle)).toBeInTheDocument();
     expect(api.solveSituation).toHaveBeenLastCalledWith(
-      expect.objectContaining({ threadId: 'thread-1' }),
+      expect.objectContaining({
+        threadId: 'thread-1',
+        // Every round reuses the ID "note"; each round's answer is kept.
+        answers: [
+          { round: 1, questionId: 'note', value: null },
+          { round: 2, questionId: 'note', value: null },
+          { round: 3, questionId: 'note', value: null },
+        ],
+      }),
       expect.any(AbortSignal),
     );
   });

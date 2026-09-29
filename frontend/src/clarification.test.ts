@@ -72,12 +72,12 @@ describe('validateAnswer', () => {
 
 describe('answers', () => {
   it('sends blank optional answers as null', () => {
-    const answers = toAnswers(illustrativeClarification.questions, { limit: 'thermal', area: ['west'], lead_time: null, detail: '' });
+    const answers = toAnswers(illustrativeClarification.questions, { limit: 'thermal', area: ['west'], lead_time: null, detail: '' }, 1);
     expect(answers).toEqual([
-      { questionId: 'limit', value: 'thermal' },
-      { questionId: 'area', value: ['west'] },
-      { questionId: 'lead_time', value: null },
-      { questionId: 'detail', value: null },
+      { round: 1, questionId: 'limit', value: 'thermal' },
+      { round: 1, questionId: 'area', value: ['west'] },
+      { round: 1, questionId: 'lead_time', value: null },
+      { round: 1, questionId: 'detail', value: null },
     ]);
   });
 

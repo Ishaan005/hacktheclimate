@@ -174,10 +174,14 @@ export function validateAnswer(question: ClarificationQuestion, value: Clarifica
 
 // Empty optional answers go back as null so the solver can tell "left blank"
 // from an actual value.
-export function toAnswers(questions: ClarificationQuestion[], values: Record<string, ClarificationAnswerValue>): ClarificationAnswer[] {
+export function toAnswers(
+  questions: ClarificationQuestion[],
+  values: Record<string, ClarificationAnswerValue>,
+  round: number,
+): ClarificationAnswer[] {
   return questions.map((question) => {
     const value = values[question.id] ?? null;
-    return { questionId: question.id, value: isEmptyAnswer(value) ? null : value };
+    return { round, questionId: question.id, value: isEmptyAnswer(value) ? null : value };
   });
 }
 
