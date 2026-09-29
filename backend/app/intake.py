@@ -229,6 +229,12 @@ def build_case(text: str, extracted: dict[str, Any], created_at: str, source_nam
 
 
 def _extract(text: str) -> tuple[dict[str, Any], Literal["llm", "rules"]]:
+    # The backend-owned golden-path demo must be reproducible even when Azure
+    # OpenAI is configured. Its trigger is explicit enough that deterministic
+    # rules are the safer intake contract for the presentation.
+    lowered = text.casefold()
+    if "ballylickey" in lowered and "outage" in lowered:
+        return extract_with_rules(text), "rules"
     try:
         return extract_with_llm(text), "llm"
     except Exception as exc:  # no Azure config, network error or bad JSON: rules still work
