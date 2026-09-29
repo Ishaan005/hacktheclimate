@@ -12,7 +12,7 @@ from test_network_forecast import _case, _crosswalk, _rows
 from test_network_safety_actions import _candidate
 
 
-def _request(*, evidence: bool = True) -> OperatorEvaluationRequest:
+def _request(*, evidence: bool = True, action_candidates=None) -> OperatorEvaluationRequest:
     rows = _rows()
     for row in rows:
         row["recoverable_renewable_mw"] = {"South-West": {"wind": 10.0}}
@@ -38,7 +38,9 @@ def _request(*, evidence: bool = True) -> OperatorEvaluationRequest:
         forecast_available_at=as_of - timedelta(minutes=5),
         forecast_version="synthetic-test-1",
         forecast_evidence_reference="synthetic unit test",
-        forecast_rows=rows, action_candidates=[_candidate()], evidence=values,
+        forecast_rows=rows,
+        action_candidates=[_candidate()] if action_candidates is None else action_candidates,
+        evidence=values,
     )
 
 
@@ -86,3 +88,38 @@ def test_mismatched_or_late_forecast_is_rejected():
         row["issue_time"] = "2026-09-28T23:50:00Z"
     with pytest.raises(ValidationError, match="later than the request"):
         OperatorEvaluationRequest.model_validate(payload)
+
+
+def test_evaluation_includes_baseline_and_shared_budget_bundles():
+    second = _candidate().copy()
+    second["action_id"] = "illustrative-flex-2"
+    result = evaluate_operator_case(
+        _request(action_candidates=[_candidate(), second]),
+        _case(), _crosswalk(), planned_outage=Asset("branch", "1:3:1"),
+    )
+    assert result["baseline_bundle"]["bundle_id"] == "BASELINE"
+    assert result["baseline_bundle"]["modeled_capture_upper_bound_mwh"] == 0
+    assert result["baseline_bundle"]["expected_dispatch_down_mwh"] == pytest.approx(1056)
+
+    pair = next(
+        bundle for bundle in result["bundle_options"]
+        if len(bundle["action_instance_ids"]) == 2
+    )
+    assert pair["modeled_capture_upper_bound_mwh"] == pytest.approx(10.0)
+    assert pair["expected_avoided_dispatch_down_mwh"] is None
+    assert "asset_capability" in pair["missing_required_safety_rules"]
+    assert pair["safety_overall"] == "UNKNOWN"
+    assert result["best_screening_pass_bundle"] is None
+    assert result["recommendation"] is None
+
+
+def test_no_action_candidates_leaves_baseline_as_only_bundle_option():
+    result = evaluate_operator_case(
+        _request(action_candidates=[]),
+        _case(), _crosswalk(), planned_outage=Asset("branch", "1:3:1"),
+    )
+    assert [bundle["bundle_id"] for bundle in result["bundle_options"]] == ["BASELINE"]
+    assert result["best_modeled_capture_bundle"] == "BASELINE"
+    assert result["best_screening_pass_bundle"] is None
+    assert any("No scenario-valid planning-supported action candidates" in reason
+               for reason in result["blocking_reasons"])
