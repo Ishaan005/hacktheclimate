@@ -59,33 +59,33 @@ describe('plan panel', () => {
     const reordered: Assessment = { ...fixtureAssessment, proposed: { ...proposed, steps: [...proposed.steps].reverse() } };
     renderPanel(reordered);
     const steps = within(proposedSection()).getAllByRole('listitem');
-    expect(steps[0]).toHaveTextContent('Main action');
+    expect(steps[0]).toHaveTextContent('Redispatch');
     expect(steps[0]).toHaveTextContent('Reduce Wind Farm A by 40 MW');
-    expect(steps[1]).toHaveTextContent('Supporting step');
+    expect(steps[1]).toHaveTextContent('Battery charging');
     expect(steps[1]).toHaveTextContent('Charge Battery B at 15 MW.');
+    expect(steps[0]).not.toHaveTextContent('Step 1');
+    expect(steps[1]).not.toHaveTextContent('Step 2');
   });
 
-  it('shows the MW effect with MW and never MWh or energy saved', () => {
+  it('shows the expected route relief as green MW saved with a blue relief label', () => {
     renderPanel(fixtureAssessment);
     const section = proposedSection();
-    expect(within(section).getByText('−32 MW')).toBeInTheDocument();
-    expect(within(section).getByText('−12 MW')).toBeInTheDocument();
-    expect(panel().textContent).not.toMatch(/MWh|energy saved/i);
+    const saved = within(section).getByText('44 MW saved');
+    expect(saved).toHaveClass('plan-outcome-saved');
+    expect(within(section).getByText('Expected route relief')).toHaveClass('plan-outcome-relief');
+    expect(panel().textContent).not.toMatch(/MWh/i);
   });
 
-  it('shows who does each step, permission, timing and blockers', () => {
+  it('shows where each step happens and its timing without permission fields', () => {
     renderPanel(fixtureAssessment);
     const [main, supporting] = within(proposedSection()).getAllByRole('listitem');
     expect(main).toHaveTextContent('Wind Farm A / Tynagh CCGT');
-    expect(main).toHaveTextContent('Needs acceptance by Tynagh generator owner');
-    expect(main).toHaveTextContent('Pending');
+    expect(main).toHaveTextContent('Where / who');
     expect(main).toHaveTextContent('16:00');
     expect(main).toHaveTextContent('16:20');
     expect(main).toHaveTextContent('120 min');
-    // A pending acceptance counts as a blocker.
-    expect(main).toHaveTextContent('Permission from Tynagh generator owner (pending)');
-    expect(supporting).toHaveTextContent('Direct instruction');
-    expect(supporting).toHaveTextContent('1 safety check needs evidence');
+    expect(main).not.toHaveTextContent('Permission');
+    expect(supporting).toHaveTextContent('Battery B');
   });
 
   it('shows dependencies between steps', () => {
@@ -118,7 +118,6 @@ describe('plan panel', () => {
   it('stays Conditional until acceptance is recorded, then shows Actionable', () => {
     renderPanel(cleanAssessment('pending'));
     expect(within(panel()).getByText(PLAN_LABEL.conditional)).toBeInTheDocument();
-    expect(within(proposedSection()).getByText(/Waiting for Tynagh generator owner to accept/)).toBeInTheDocument();
     expect(screen.queryByText(PLAN_LABEL.actionable)).not.toBeInTheDocument();
   });
 
@@ -174,13 +173,12 @@ describe('plan panel', () => {
     expect(onSetAlternative).toHaveBeenLastCalledWith(null);
   });
 
-  it('never offers a button that sends an instruction, and says so', () => {
+  it('never offers a button that sends an instruction', () => {
     const alternative = copyAsAlternative(fixtureAssessment.proposed);
     renderPanel(fixtureAssessment, { alternative, stale: true });
     for (const button of screen.getAllByRole('button')) {
       expect(button).not.toHaveAccessibleName(/send|issue|dispatch/i);
     }
-    expect(screen.getByText(PLAN_COPY.noSendNote)).toBeInTheDocument();
   });
 
   it('explains when there is no proposed plan in one short line', () => {
@@ -212,18 +210,15 @@ describe('plan panel', () => {
     const header = heading.closest('.panel-header') as HTMLElement;
     const { label } = planLabel(fixtureAssessment.proposed as Plan, fixtureAssessment, false);
     expect(within(header).getByText(PLAN_LABEL[label])).toBeInTheDocument();
-    expect(within(header).getByText(PLAN_COPY.noSendNote)).toHaveClass('panel-meta');
   });
 
-  it('leads each step with its instruction and marks pending permission', () => {
+  it('leads each step with its instruction and timing', () => {
     renderPanel(fixtureAssessment);
     const [main, supporting] = within(proposedSection()).getAllByRole('listitem');
     expect(within(main).getByRole('heading', { level: 4 })).toHaveTextContent('Reduce Wind Farm A by 40 MW; increase Tynagh CCGT by 40 MW.');
     expect(main).toHaveClass('plan-step-conditional');
-    expect(within(main).getByText('Needs acceptance by Tynagh generator owner · Pending')).toHaveClass('chip-unknown');
     expect(supporting).not.toHaveClass('plan-step-conditional');
-    expect(within(supporting).getByText('Direct instruction')).not.toHaveClass('chip-unknown');
-    for (const label of Object.values(PLAN_COPY.fields).slice(0, 6)) {
+    for (const label of [PLAN_COPY.fields.startTime, PLAN_COPY.fields.effectTime, PLAN_COPY.fields.duration]) {
       expect(within(main).getByText(label)).toBeInTheDocument();
     }
   });

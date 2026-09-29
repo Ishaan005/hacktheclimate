@@ -153,6 +153,49 @@ function hasMetric(check: SafetyCheck | undefined): boolean {
   return !!check && (check.value !== null || check.margin !== null);
 }
 
+function keyCheckTitle(label: string): string {
+  switch (label) {
+    case 'Worst flow after one further failure':
+      return 'Contingency loading (worst flow after one further failure)';
+    case 'Inertia and RoCoF':
+      return 'Frequency stability (inertia and RoCoF)';
+    case 'Flow versus rating on limiting route':
+      return 'Route loading (flow versus rating on limiting route)';
+    case 'Relief arrives before breach':
+      return 'Response lead time (relief arrives before breach)';
+    case 'All-island SNSP margin':
+      return 'SNSP headroom (all-island margin)';
+    default:
+      return label;
+  }
+}
+
+function KeyChecks({ checks, demo }: { checks: SafetyCheck[]; demo: boolean }) {
+  // The demo leads with measured checks; unresolved gates remain visible below.
+  const shown = byResult(demo
+    ? checks.filter((check) => check.result === 'fail' || hasMetric(check))
+    : checks).slice(0, 3);
+  if (!shown.length) return <p className="safety-empty">No safety measurements are available for this case.</p>;
+  return (
+    <div className="safety-key-checks" aria-label="Key safety checks">
+      {shown.map((check) => (
+        <div key={check.id} className="safety-key-check" data-key-check={check.id}>
+          <div className="safety-key-heading">
+            <strong>{keyCheckTitle(check.label)}</strong>
+            <ResultChip result={check.result} prefix={check.label} />
+          </div>
+          <div className="safety-key-value">{check.value ?? check.margin ?? 'No result'}</div>
+          <div className="safety-key-context">
+            {check.limit && <span>Limit {check.limit}</span>}
+            {check.value !== null && check.margin && <span>Margin {check.margin}</span>}
+          </div>
+          {check.result === 'unknown' && <p>{check.reason}</p>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // The API returns baseline and assessed-plan checks in separate columns.
 // Keep their values separate so a passing line check cannot imply that the
 // whole plan passed its other safety gates.
@@ -250,6 +293,7 @@ function SafetyPanel({ assessment, overall, plan, view, demo = false, stale = fa
   const id = useId();
   const families = familyOrder(assessment);
   const planChecks = plan ? checksForPlan(plan, assessment.actionChecks) : [];
+  const pendingChecks = assessment.familyChecks.filter((check) => check.result === 'unknown' && !hasMetric(check));
 
   return (
     <section className="card safety-panel" aria-labelledby={`${id}-title`}>
@@ -263,10 +307,18 @@ function SafetyPanel({ assessment, overall, plan, view, demo = false, stale = fa
 
       {demo && assessment.currentChecks
         ? <MetricComparison assessment={assessment} plan={plan} stale={stale} />
-        : <FamilyChecks assessment={assessment} families={families} demo={demo} />}
+        : <KeyChecks checks={assessment.familyChecks} demo={demo} />}
+      {demo && pendingChecks.length > 0 && <p className="safety-pending">
+        {overall.result === 'unknown' && <strong>Safety not yet established. </strong>}
+        Still unverified: {pendingChecks.map((check) => check.label).join('; ')}.
+      </p>}
+
+      <details className="safety-details">
+        <summary>All safety checks</summary>
+        <FamilyChecks assessment={assessment} families={families} demo={demo} />
 
       {/* Site view keeps the all-island limits in plain sight. */}
-      {view === 'site' && (!demo || !assessment.currentChecks) && (
+      {view !== 'national' && (!demo || !assessment.currentChecks) && (
         <section aria-labelledby={`${id}-island`}>
           <h3 id={`${id}-island`} className="panel-section-title">{SAFETY_COPY.allIslandTitle}</h3>
           {assessment.allIslandChecks.length
@@ -306,6 +358,7 @@ function SafetyPanel({ assessment, overall, plan, view, demo = false, stale = fa
           );
         })}
       </section>}
+      </details>
     </section>
   );
 }

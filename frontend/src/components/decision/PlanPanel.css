@@ -37,6 +37,30 @@
   font-weight: var(--font-weight-semibold);
 }
 
+.plan-outcome {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-13);
+}
+
+.plan-outcome strong {
+  font-size: var(--font-size-20);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-outcome-relief {
+  color: var(--color-accent-strong);
+}
+
+.plan-outcome-saved {
+  color: var(--color-success);
+}
+
 .plan-label {
   display: flex;
   flex-wrap: wrap;
@@ -121,7 +145,7 @@
 }
 
 .plan-step-fields {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-8) var(--space-16);
 }
 
@@ -131,10 +155,6 @@
 
 .plan-step-fields dd {
   font-variant-numeric: tabular-nums;
-}
-
-.plan-field-permission {
-  grid-column: span 2;
 }
 
 /* Party names can be long, so this chip wraps. */
@@ -147,9 +167,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .plan-field-permission {
-    grid-column: 1 / -1;
-  }
 }
 
 .plan-step-links {

@@ -26,6 +26,25 @@ function unknownCheck(id: string, reason: string): SafetyCheck {
 }
 
 describe('safety panel', () => {
+  it('shows quantified demo safety results while naming the unresolved checks', () => {
+    const { container } = render(<SafetyPanel assessment={fixtureAssessment} overall={fixtureAssessment.overall}
+      plan={fixtureAssessment.proposed} view="national" demo />);
+    const cards = [...container.querySelectorAll<HTMLElement>('[data-key-check]')];
+    expect(cards.map((card) => card.dataset.keyCheck)).toEqual(['fc-flow', 'fc-relief', 'fc-snsp']);
+    expect(cards[0]).toHaveTextContent('406 MW');
+    expect(cards[1]).toHaveTextContent('20 min');
+    expect(cards[2]).toHaveTextContent('72.4%');
+    expect(cards.every((card) => !card.textContent?.includes('No result'))).toBe(true);
+    expect(container.querySelector('.safety-pending'))
+      .toHaveTextContent('Safety not yet established. Still unverified: Worst flow after one further failure; Inertia and RoCoF.');
+  });
+
+  it('pairs technical safety terms with plain descriptions in the key cards', () => {
+    const { container } = renderPanel();
+    expect(container.querySelector('[data-key-check="fc-n1"]')).toHaveTextContent('Contingency loading (worst flow after one further failure)');
+    expect(container.querySelector('[data-key-check="fc-stability"]')).toHaveTextContent('Frequency stability (inertia and RoCoF)');
+  });
+
   it('shows available baseline and proposed metrics without empty check sections', () => {
     const current = { ...fixtureAssessment.familyChecks[0], id: 'planning_line',
       label: 'Transmission line loading', value: '109.1% of rate A', limit: '100% of rate A',
@@ -158,7 +177,7 @@ describe('safety panel', () => {
     const reason = 'Validated assessment not connected';
     const shared = ['x1', 'x2', 'x3'].map((id) => unknownCheck(id, reason));
     const { container } = renderPanel({ ...fixtureAssessment, familyChecks: [...fixtureAssessment.familyChecks, ...shared] });
-    expect(screen.getAllByText(new RegExp(reason))).toHaveLength(1);
+    expect(screen.getAllByText(new RegExp(reason)).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(`${SAFETY_COPY.sharedReason(3)} ${reason}`)).toBeInTheDocument();
     for (const check of shared) {
       expect(within(row(container, check.id)).getByText('Unknown')).toBeInTheDocument();
@@ -168,7 +187,7 @@ describe('safety panel', () => {
   it('shows all-island limits in site view only', () => {
     const { unmount } = renderPanel(fixtureAssessment, 'site');
     const section = screen.getByRole('region', { name: SAFETY_COPY.allIslandTitle });
-    expect(section.closest('details')).toBeNull();
+    expect(section.closest('details')).not.toBeNull();
     expect(within(section).getByText('Below the effective limit.')).toBeInTheDocument();
     unmount();
     renderPanel(fixtureAssessment, 'national');

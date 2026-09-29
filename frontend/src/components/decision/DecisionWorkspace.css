@@ -90,6 +90,12 @@
   font-weight: var(--font-weight-regular);
 }
 
+.decision-summary-asset {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-semibold);
+}
+
 .decision-stale {
   display: flex;
   flex-wrap: wrap;

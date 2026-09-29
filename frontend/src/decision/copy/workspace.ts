@@ -14,7 +14,7 @@ export const DECISION_COPY = {
   errorConsequence: 'No safety result is shown. Try again.',
   rerun: 'Rerun assessment',
   summaryTitle: 'Decision summary',
-  summaryBinding: 'What is limiting',
+  summaryBinding: 'Issue summary',
   summaryNoBinding: 'No limiting condition named',
   summarySafety: 'Overall safety',
   summaryPlan: 'Proposed plan',

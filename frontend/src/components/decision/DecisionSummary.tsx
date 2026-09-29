@@ -29,6 +29,7 @@ function DecisionSummary({ assessment, overall, plan, stale, demo = false }: Pro
               <li key={`${condition.scenarioId}-${condition.situationKey}`}>
                 <span className="decision-summary-family">{FAMILY_LABEL[familyOf(condition.scenarioId)]}</span>
                 <span>{suggestionByKey(condition.situationKey)?.text ?? FAMILY_LABEL[familyOf(condition.scenarioId)]}</span>
+                {condition.limitingAsset && <span className="decision-summary-asset">{condition.limitingAsset}</span>}
               </li>
             ))}
           </ul>

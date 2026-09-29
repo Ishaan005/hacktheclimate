@@ -9,6 +9,19 @@ import SourceBadge from './SourceBadge';
 import TopBar from './TopBar';
 
 describe('top bar', () => {
+  it('offers three views and named plant buttons in the precise grid', () => {
+    const onViewChange = vi.fn();
+    const { rerender } = render(<TopBar context={null} view="national" siteId={null} validated={false} onViewChange={onViewChange} />);
+    expect(screen.getAllByRole('radio')).toHaveLength(3);
+    fireEvent.click(screen.getByRole('radio', { name: 'Precise grid' }));
+    expect(onViewChange).toHaveBeenLastCalledWith('precise', DEMO_SITES[0].id);
+    rerender(<TopBar context={null} view="precise" siteId={DEMO_SITES[0].id} validated={false} onViewChange={onViewChange} />);
+    const plants = screen.getByRole('group', { name: 'Plants in planning case' });
+    expect(within(plants).getAllByRole('button')).toHaveLength(DEMO_SITES.length);
+    fireEvent.click(within(plants).getByRole('button', { name: DEMO_SITES[1].name }));
+    expect(onViewChange).toHaveBeenLastCalledWith('precise', DEMO_SITES[1].id);
+  });
+
   it('switches between the national and site views', () => {
     const onViewChange = vi.fn();
     const { rerender } = render(

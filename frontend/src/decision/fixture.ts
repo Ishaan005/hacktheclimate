@@ -124,7 +124,7 @@ export const fixtureAssessment: Assessment = {
       deliveredReliefMw: estimate(0, null, null, 'MW', 'No new relief', 'Demonstration'),
       responseTimeMinutes: notEstablished('min', 'No new instruction.'),
       timeToBreachMinutes: estimate(35, 25, 50, 'min', 'Planning-case flow trend', 'TYTFS 2024 (DC)'),
-      constrainedMwh: estimate(62, 40, 90, 'MWh', 'Planning-case replay', 'Demonstration'),
+      constrainedMwh: estimate(40, 30, 50, 'MWh', 'Planning-case replay', 'Demonstration'),
       curtailedMwh: notEstablished('MWh', 'No curtailment model for this window.'),
     },
     {
@@ -133,7 +133,7 @@ export const fixtureAssessment: Assessment = {
       deliveredReliefMw: estimate(44, 30, 44, 'MW', 'Step MW effects at limiting route', 'Demonstration'),
       responseTimeMinutes: estimate(20, 15, 25, 'min', 'Declared ramp', 'Demonstration asset register'),
       timeToBreachMinutes: notEstablished('min', 'No breach expected if relief arrives; further-failure study missing.'),
-      constrainedMwh: estimate(22, 10, 40, 'MWh', 'Planning-case replay', 'Demonstration'),
+      constrainedMwh: estimate(20, 10, 30, 'MWh', 'Planning-case replay', 'Demonstration'),
       curtailedMwh: notEstablished('MWh', 'No curtailment model for this window.'),
     },
     {
@@ -147,7 +147,7 @@ export const fixtureAssessment: Assessment = {
     },
   ],
   benefits: {
-    avoidedDispatchDownMwh: { ...estimate(40, 0, 80, 'MWh', 'No-new-instruction minus proposed, planning-case replay', 'Demonstration'), notEstablishedReason: null },
+    avoidedDispatchDownMwh: { ...estimate(20, 0, 40, 'MWh', 'No-new-instruction minus proposed, planning-case replay', 'Demonstration'), notEstablishedReason: null },
     siteRiskProbability: notEstablished('%', 'No validated site model.'),
     siteRiskExpectedMwh: notEstablished('MWh', 'No validated site model.'),
     nationalContext: 'Experimental national constraint forecast: context only, not a site outcome.',

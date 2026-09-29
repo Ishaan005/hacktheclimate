@@ -44,7 +44,7 @@ export type CauseUnknown = {
 
 // ---- Top bar ----
 
-export type ViewMode = 'national' | 'site';
+export type ViewMode = 'national' | 'precise' | 'site';
 
 // Never show a demonstration as live.
 export type DataSourceKind = 'live' | 'historical_demo' | 'planning_case' | 'no_live_connection';

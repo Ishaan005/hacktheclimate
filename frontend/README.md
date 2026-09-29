@@ -10,10 +10,12 @@ npm run dev
 
 ## Decision workspace (main screen)
 
-The main screen follows the [UI brief](../docs/UI_BRIEF_2026-09-29.md). It has
-a top bar (national or site view, source badge), a free-text situation box
-with an Assess button, a summary of what is limiting, safety checks (left),
-the proposed plan (right), a four-column comparison and an evidence drawer.
+The main screen has National grid, Precise grid, and Site views. The two
+planning views list named plants from the ECP GSS 2 workbook; their Ballylickey
+station association is a reviewed planning proxy, not a verified farm terminal.
+After assessment, the page shows an issue summary, compact safety checks, a
+timed action plan, a two-column dispatch-down comparison, three illustrative
+impact values, and an evidence drawer.
 The code is in `src/decision/` (types, display rules, locked scope, fixture,
 API) and `src/components/decision/`.
 
@@ -27,6 +29,18 @@ benefits. An operator can create an alternative even when the backend has no
 proposal; edits remain out of date until reassessed. `src/decision/rules.ts`
 only makes the display more cautious and never creates a safety result. Use
 `VITE_API_MODE=fixture npm run dev` for the separate historical demonstration.
+In that mode, the three named plants have different illustrative action plans,
+route checks and comparison values. The shared all-island SNSP check is the
+same across plants; none of the plant effects or connections is validated.
+
+The impact cards use comparable constrained MWh for transmission cases and
+curtailed MWh for SNSP or high-frequency/minimum-generation cases. They show
+dashes when comparison energy is unavailable. The fixed €100/MWh, €0 plan cost,
+and 0.35 tCO₂/MWh are demonstration assumptions, not verified market value,
+actual cost, or displaced emissions. They never populate backend financial or
+carbon claims. Only a passing assessed plan receives an avoided dispatch-down
+label; other chart reductions are scenario comparisons. The plan's "MW saved"
+figure denotes expected power relief at the limiting route, not saved MWh.
 
 ## Grid assistant (second tab)
 

@@ -6,13 +6,15 @@ export const TOP_BAR_COPY = {
   viewLegend: 'View',
   viewLabel: {
     national: 'National grid',
-    site: 'Precise grid / site',
+    precise: 'Precise grid',
+    site: 'Site',
   } satisfies Record<ViewMode, string>,
   viewHint: {
     national: 'All-island conditions and affected groups.',
-    site: 'One site, its connection and the route that limits it.',
+    precise: 'Browse named plants in the planning grid case.',
+    site: 'Focus on one named plant.',
   } satisfies Record<ViewMode, string>,
-  siteLabel: 'Site',
+  siteLabel: 'Plant',
   location: 'Location',
   allIsland: 'All-island',
   connection: 'Connection',
@@ -23,7 +25,7 @@ export const TOP_BAR_COPY = {
   source: 'Source',
   noAssessment: 'No assessment yet',
   noSite: 'No site selected',
-  siteAllIslandNote: 'All-island limits that affect this site still apply. The safety panel shows them.',
+  siteAllIslandNote: 'Plant names come from the ECP planning workbook. Connections and plant outcomes are not live or verified.',
   // A live feed without a full assessment keeps its own label and tone, so it
   // never carries the same badge as a fully assessed live result.
   liveFeed: 'Live feed',

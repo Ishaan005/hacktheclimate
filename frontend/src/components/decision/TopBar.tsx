@@ -15,7 +15,7 @@ type Props = {
   onViewChange: (view: ViewMode, siteId: string | null) => void;
 };
 
-const VIEWS: ViewMode[] = ['national', 'site'];
+const VIEWS: ViewMode[] = ['national', 'precise', 'site'];
 
 // Only current data looks settled. Stale, missing and conflicting are amber.
 const STATUS_TONE: Record<DataStatus, string> = {
@@ -30,14 +30,14 @@ const STATUS_TONE: Record<DataStatus, string> = {
 // which source the assessment comes. Both views show the same status fields.
 function TopBar({ context, view, siteId, validated, onViewChange }: Props) {
   const demo = context !== null && isDemoSource(context.sourceKind);
-  const site = view === 'site' ? siteById(siteId) : undefined;
+  const site = view !== 'national' ? siteById(siteId) : undefined;
   // Use the assessment's site details only when they are for this site.
-  const contextForSite = context && context.view === 'site' && context.siteId === siteId ? context : null;
-  const location = view === 'site' ? site?.name ?? TOP_BAR_COPY.noSite : TOP_BAR_COPY.allIsland;
+  const contextForSite = context && context.view === view && context.siteId === siteId ? context : null;
+  const location = view !== 'national' ? site?.name ?? TOP_BAR_COPY.noSite : TOP_BAR_COPY.allIsland;
 
   function selectView(next: ViewMode) {
     if (next === view) return;
-    onViewChange(next, next === 'site' ? siteId ?? DEMO_SITES[0].id : null);
+    onViewChange(next, next === 'national' ? null : siteId ?? DEMO_SITES[0].id);
   }
 
   return (
@@ -89,7 +89,7 @@ function TopBar({ context, view, siteId, validated, onViewChange }: Props) {
             <dt>{TOP_BAR_COPY.location}</dt>
             <dd>{location}</dd>
           </div>
-          {view === 'site' && site && (
+          {view !== 'national' && site && (
             <>
               <div>
                 <dt>{TOP_BAR_COPY.connection}</dt>
@@ -120,7 +120,22 @@ function TopBar({ context, view, siteId, validated, onViewChange }: Props) {
         </dl>
       </div>
 
-      {view === 'site' && <p className="field-hint top-bar-note">{TOP_BAR_COPY.siteAllIslandNote}</p>}
+      {view === 'precise' && (
+        <div className="top-bar-plants" role="group" aria-label="Plants in planning case">
+          {DEMO_SITES.map((plant) => (
+            <button
+              key={plant.id}
+              type="button"
+              className={`top-bar-plant${plant.id === siteId ? ' top-bar-plant-selected' : ''}`}
+              aria-pressed={plant.id === siteId}
+              onClick={() => onViewChange('precise', plant.id)}
+            >
+              {plant.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {view !== 'national' && <p className="field-hint top-bar-note">{TOP_BAR_COPY.siteAllIslandNote}</p>}
     </header>
   );
 }

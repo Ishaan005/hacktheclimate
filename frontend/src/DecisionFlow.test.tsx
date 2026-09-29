@@ -50,7 +50,7 @@ describe('decision workspace end to end (fixture)', () => {
   it('makes the assessment stale after an input change until it is rerun', async () => {
     await assessOutageAndSnsp();
     expect(screen.queryAllByText(STALE_NOTE)).toHaveLength(0);
-    fireEvent.click(screen.getByRole('radio', { name: 'Precise grid / site' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Site' }));
     // Out of date is said once, in its own banner above the summary card,
     // with the only rerun button.
     const notices = screen.getAllByText(DECISION_COPY.summaryStale);
@@ -68,10 +68,40 @@ describe('decision workspace end to end (fixture)', () => {
 
   it('keeps all-island checks visible in the site view', async () => {
     await assessOutageAndSnsp();
-    fireEvent.click(screen.getByRole('radio', { name: 'Precise grid / site' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Site' }));
     fireEvent.click(screen.getAllByRole('button', { name: DECISION_COPY.rerun })[0]);
     const safety = await screen.findByRole('region', { name: DECISION_COPY.safetyRegion });
+    fireEvent.click(within(safety).getByText('All safety checks'));
     expect(within(safety).getAllByText(/All-island limits that affect this decision/)[0]).toBeVisible();
+  });
+
+  it('uses a distinct demo plan and safety result for each precise-grid plant', async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Precise grid' }));
+    assessSituation('route overloaded during an outage and SNSP near the limit');
+    let safety = await screen.findByRole('region', { name: DECISION_COPY.safetyRegion });
+    let plan = screen.getByRole('region', { name: DECISION_COPY.planRegion });
+    expect(safety.querySelector('[data-key-check="fc-flow"]')).toHaveTextContent('406 MW');
+    expect(within(plan).getByRole('heading', { name: /Reduce Ballybane 2 by 40 MW/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Ballybane 3 \(Glanta Commons\)/ }));
+    assessSituation('route overloaded during an outage and SNSP near the limit');
+    safety = await screen.findByRole('region', { name: DECISION_COPY.safetyRegion });
+    plan = screen.getByRole('region', { name: DECISION_COPY.planRegion });
+    expect(safety.querySelector('[data-key-check="fc-flow"]')).toHaveTextContent('419 MW');
+    expect(safety.querySelector('[data-key-check="fc-relief"]')).toHaveTextContent('25 min');
+    expect(within(plan).getByRole('heading', { name: /Reduce Ballybane 3 by 35 MW/ })).toBeInTheDocument();
+    expect(within(plan).queryByRole('heading', { name: /Charge Battery B/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Kealkil \(Curraglass\)/ }));
+    assessSituation('route overloaded during an outage and SNSP near the limit');
+    safety = await screen.findByRole('region', { name: DECISION_COPY.safetyRegion });
+    plan = screen.getByRole('region', { name: DECISION_COPY.planRegion });
+    expect(safety.querySelector('[data-key-check="fc-flow"]')).toHaveTextContent('426 MW');
+    expect(safety.querySelector('[data-key-check="fc-relief"]')).toHaveTextContent('12 min');
+    expect(within(plan).getByRole('heading', { name: 'Charge Battery C at 15 MW.' })).toBeInTheDocument();
+    expect(within(plan).getByRole('heading', { name: /Increase flexible demand at Curraglass/ })).toBeInTheDocument();
+    expect(within(plan).queryByRole('heading', { name: /Reduce Ballybane/ })).not.toBeInTheDocument();
   });
 
   it('keeps a forecast surplus in intake and shows no safety result or plan', async () => {

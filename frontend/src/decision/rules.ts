@@ -123,7 +123,7 @@ export function outcomeFor(outcomes: OutcomeState[], column: ComparisonColumn): 
   return outcomes.find((outcome) => outcome.column === column);
 }
 
-// All four columns must share one window. Returns the mismatched columns.
+// Compared columns must share one window. Returns the mismatched columns.
 export function windowMismatches(outcomes: OutcomeState[]): ComparisonColumn[] {
   const available = outcomes.filter((outcome) => outcome.available);
   const reference = available[0];

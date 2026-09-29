@@ -208,7 +208,7 @@ export function toBackendRequest(request: AssessmentRequest, now = new Date()) {
     decision_case: {
       case_id: `workspace-${request.description.trim().slice(0, 40) || 'case'}`,
       scenario_ids: scenarioIds, cause_unknown: scenarioIds.length === 0,
-      location: request.view === 'site' ? siteById(request.siteId)?.name ?? request.siteId : 'All-island',
+      location: request.view !== 'national' ? siteById(request.siteId)?.name ?? request.siteId : 'All-island',
       asset_ids: [], as_of: asOf, starts_at: start.toISOString(), ends_at: end.toISOString(),
       existing_instructions: [],
     },
@@ -223,7 +223,7 @@ export function toBackendRequest(request: AssessmentRequest, now = new Date()) {
       snsp_drivers: condition.snspDrivers,
       jurisdiction: condition.jurisdiction,
     })),
-    view: request.view, site_id: request.view === 'site' ? request.siteId : null,
+    view: request.view === 'national' ? 'national' : 'site', site_id: request.view === 'national' ? null : request.siteId,
     evidence: caseEvidence(request, asOf),
     proposed_plan: { steps: [] }, operator_alternative: backendPlan(request.alternative),
   };
@@ -334,7 +334,7 @@ function backendPlanView(
 }
 
 export function fromBackendAssessment(raw: BackendAssessment, request: AssessmentRequest): Assessment {
-  const site = request.view === 'site' ? siteById(request.siteId) : undefined;
+  const site = request.view !== 'national' ? siteById(request.siteId) : undefined;
   const proposal = raw.comparisons.proposed_plan;
   const alternative = raw.comparisons.operator_alternative;
   const selected = request.alternative && alternative.plan.steps.length ? alternative
@@ -363,7 +363,7 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
   const reason = NOT_VALIDATED;
   return {
     validated: false,
-    context: { view: request.view, location: request.view === 'site' ? site?.name ?? raw.location ?? 'Site not selected' : 'All-island',
+    context: { view: request.view, location: request.view !== 'national' ? site?.name ?? raw.location ?? 'Site not selected' : 'All-island',
       siteId: request.siteId, siteConnection: null, limitingRoute: null,
       currentTime: raw.decision_time, windowStart: raw.window.starts_at, windowEnd: raw.window.ends_at,
       sourceKind: raw.source_status === 'historical_demonstration' ? 'historical_demo' : raw.source_status,
@@ -381,7 +381,7 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
     overall: { result: status(selected.safety.status), reason: operatorReason(selected.safety.reason) ?? '',
       missingEvidence: selected.safety.missing_checks.map(label) },
     currentChecks, familyChecks, crossChecks, actionChecks,
-    allIslandChecks: request.view === 'site' ? familyChecks.filter((check) => check.family !== 'transmission') : [],
+    allIslandChecks: request.view !== 'national' ? familyChecks.filter((check) => check.family !== 'transmission') : [],
     proposed: proposedPlan,
     alternative: altPlan,
     outcomes: [

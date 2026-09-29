@@ -3,11 +3,11 @@
 
 import type { ComparisonColumn } from '../types';
 
-export const COLUMN_ORDER: ComparisonColumn[] = ['current', 'no_new_instruction', 'proposed', 'operator_alternative'];
+export const COLUMN_ORDER: ComparisonColumn[] = ['no_new_instruction', 'proposed'];
 
 export const COLUMN_LABEL: Record<ComparisonColumn, string> = {
   current: 'Current plan',
-  no_new_instruction: 'No new instruction',
+  no_new_instruction: 'No input',
   proposed: 'Proposed plan',
   operator_alternative: 'Operator alternative',
 };
@@ -17,7 +17,7 @@ export const COMPARISON_COPY = {
   measure: 'Measure',
   baselineTag: 'Baseline for claimed improvements',
   // formatWindow already ends in UTC.
-  window: (range: string) => `All columns cover ${range}, including instructions already in force`,
+  window: (range: string) => `Both plans cover ${range}, including instructions already in force`,
   mismatch: (columns: string) =>
     `Window mismatch: ${columns} use a different time window or leave out active instructions. Those columns are not comparable.`,
   safetyGroup: 'Safety and response',
@@ -44,7 +44,7 @@ export const BENEFIT_COPY = {
   noneEstablishedNoPlan: 'Benefits not established. No proposed plan has been assessed, so no benefit can be claimed.',
   showDetails: 'Show benefit details',
   avoided: 'Avoided dispatch-down',
-  avoidedDetail: 'No new instruction minus proposed plan.',
+  avoidedDetail: 'No input minus proposed plan.',
   avoidedNote: 'A MW × time upper bound is not proven saved energy.',
   siteRisk: 'Site dispatch-down risk',
   siteProbability: 'Probability',

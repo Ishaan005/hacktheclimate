@@ -59,7 +59,7 @@ export function useDecisionWorkspace() {
   }
 
   function request(overrides: Partial<AssessmentRequest> = {}): AssessmentRequest {
-    return { description, view, siteId, conditions, facts, edits, alternative, ...overrides };
+    return { description, view, siteId: view === 'national' ? null : siteId, conditions, facts, edits, alternative, ...overrides };
   }
 
   // The operator's own words go to the assessment as typed. Scenario hints
@@ -79,7 +79,7 @@ export function useDecisionWorkspace() {
 
   function changeView(next: ViewMode, nextSiteId: string | null = null) {
     setView(next);
-    setSiteId(next === 'site' ? nextSiteId : null);
+    setSiteId(next === 'national' ? siteId : nextSiteId);
     bump();
   }
 
