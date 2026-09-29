@@ -399,7 +399,7 @@ export type ActionImpact = {
   estimatedAvoidedEmissionsTco2e: number | null;
 };
 
-export type ScenarioSource = 'illustrative' | 'live' | 'demo';
+export type ScenarioSource = 'illustrative' | 'live' | 'demo' | 'planning_case' | 'no_live_connection';
 // placeholder workspace scenario
 export type WorkspaceScenario = {
   id: string;

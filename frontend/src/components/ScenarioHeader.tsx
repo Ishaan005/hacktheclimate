@@ -5,13 +5,15 @@ import type { WorkspaceScenario } from '../types';
 function ScenarioHeader({ scenario }: { scenario: WorkspaceScenario }) {
   const illustrative = scenario.source === 'illustrative';
   const demo = scenario.source === 'demo';
+  const planning = scenario.source === 'planning_case';
+  const disconnected = scenario.source === 'no_live_connection';
   return (
     <header className="scenario-header">
       <div className="scenario-header-main">
         <p className="scenario-header-chips">
           <span className="chip chip-advisory" title={WORKSPACE_COPY.advisoryNote}>{WORKSPACE_COPY.advisory}</span>
-          <span className={`chip ${illustrative || demo ? 'chip-unknown' : 'chip-neutral'}`}>
-            {illustrative ? WORKSPACE_COPY.illustrative : demo ? WORKSPACE_COPY.demo : WORKSPACE_COPY.live}
+          <span className={`chip ${illustrative || demo || planning || disconnected ? 'chip-unknown' : 'chip-neutral'}`}>
+            {illustrative ? WORKSPACE_COPY.illustrative : demo ? WORKSPACE_COPY.demo : planning ? 'Planning case' : disconnected ? 'No live connection' : WORKSPACE_COPY.live}
           </span>
         </p>
         <h2 id="workspace-heading">{scenario.title}</h2>

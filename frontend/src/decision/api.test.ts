@@ -15,12 +15,13 @@ async function liveApi() {
 const request = { description: 'x', view: 'national' as const, siteId: null, conditions: [], facts: [], edits: [], alternative: null };
 
 describe('assessDecision in live mode', () => {
-  it('reports unavailable, not an error, while the backend route does not exist', async () => {
+  it('reports unavailable when the assessment API responds unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 405 })));
     const { assessDecision } = await liveApi();
     const result = await assessDecision(request);
     expect(result.status).toBe('unavailable');
     if (result.status === 'unavailable') expect(result.reason).toContain('HTTP 405');
+    expect(fetch).toHaveBeenCalledWith('/v1/workspace/assess', expect.objectContaining({ method: 'POST' }));
   });
 
   it('reports unavailable when the API cannot be reached', async () => {

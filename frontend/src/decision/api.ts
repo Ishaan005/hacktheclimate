@@ -1,4 +1,5 @@
 import { USE_FIXTURE } from '../mode';
+import { fromBackendAssessment, isBackendAssessment, toBackendRequest } from './backend';
 import { fixtureAssessment } from './fixture';
 import type { Assessment, BindingCondition, OperatorEdit, Plan, SituationFact, ViewMode } from './types';
 
@@ -16,7 +17,7 @@ export type AssessmentResponse =
   | { status: 'ok'; assessment: Assessment }
   | { status: 'unavailable'; reason: string };
 
-const ENDPOINT = '/v1/decision/assess';
+const ENDPOINT = '/v1/workspace/assess';
 
 // Fixture mode returns the demonstration assessment with the operator's
 // conditions, facts and alternative carried over. It does not recompute any
@@ -46,9 +47,6 @@ function fixtureResponse(request: AssessmentRequest): AssessmentResponse {
   };
 }
 
-// The backend assessment route (POST /v1/decision/assess) is not built yet.
-// Until it is, live mode says so instead of showing any result: safety
-// results must come from a validated backend assessment, never the browser.
 export async function assessDecision(request: AssessmentRequest, signal?: AbortSignal): Promise<AssessmentResponse> {
   if (USE_FIXTURE) return fixtureResponse(request);
   let response: Response;
@@ -56,7 +54,7 @@ export async function assessDecision(request: AssessmentRequest, signal?: AbortS
     response = await fetch(ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
+      body: JSON.stringify(toBackendRequest(request)),
       signal,
     });
   } catch (error) {
@@ -66,9 +64,11 @@ export async function assessDecision(request: AssessmentRequest, signal?: AbortS
   if (response.status === 404 || response.status === 405 || response.status === 503) {
     return {
       status: 'unavailable',
-      reason: `The API has no assessment route yet (${ENDPOINT} returned HTTP ${response.status}). Start the UI with VITE_API_MODE=fixture to see the demonstration assessment.`,
+      reason: `The assessment API is unavailable (${ENDPOINT} returned HTTP ${response.status}).`,
     };
   }
   if (!response.ok) throw new Error(`${ENDPOINT} returned HTTP ${response.status}`);
-  return { status: 'ok', assessment: (await response.json()) as Assessment };
+  const body: unknown = await response.json();
+  if (!isBackendAssessment(body)) throw new Error(`${ENDPOINT} returned an invalid assessment`);
+  return { status: 'ok', assessment: fromBackendAssessment(body, request) };
 }

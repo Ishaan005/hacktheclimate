@@ -28,5 +28,6 @@ The [project status](PROJECT_STATUS.md) is a 27 September verification snapshot.
 | Combined case intake, action simulations and output inspection | [Operator case evaluation](OPERATOR_EVALUATION.md) |
 | Self-contained teammate presentation | [Golden-path demo](DEMO.md) |
 | Read-only case preview and pending scenario/action handoff | [Case-flow handoff](DECISION_HANDOFF.md) |
+| Issue #61 operator workspace contract | [Workspace backend handoff](WORKSPACE_BRIEF_API.md) |
 
 The [data contract](../config/data_contract.yaml) distinguishes forecast-safe inputs from same-period measurements. The [README](../README.md) lists current API paths.
