@@ -21,11 +21,6 @@
   font-size: var(--font-size-14);
 }
 
-.situation-label-secondary {
-  margin-top: var(--space-8);
-  font-size: var(--font-size-14);
-}
-
 .situation-hint {
   margin: 0;
   color: var(--color-text-muted);
@@ -35,17 +30,23 @@
 .situation-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: var(--space-8);
   margin-top: var(--space-4);
 }
 
-.situation input {
+/* Text boxes grow with their content (see AutoGrowTextarea) up to about
+   eight lines, then scroll. */
+.situation textarea {
   flex: 1 1 280px;
   min-width: 0;
+  max-height: calc(8lh + 2 * var(--space-8));
   padding: var(--space-8) var(--space-12);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   font: inherit;
+  line-height: var(--line-height-default);
+  resize: none;
 }
 
 /* ---- Workspace ---- */
@@ -116,6 +117,8 @@
   color: var(--color-text);
 }
 
+/* Both cards share the row height, so no gap opens below the shorter one.
+   The carousel keeps the action card at a fixed height. */
 .workspace-flow {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -130,7 +133,43 @@
 
 /* The binding guardrail is the most prominent guardrail object on screen. */
 .card-binding {
+  display: flex;
+  flex-direction: column;
   border-left-width: 4px;
+}
+
+/* Margin to limit is the number the operator acts on, so it reads as a
+   hero value between the meter and the supporting facts. The panel takes
+   any spare height when the action card is taller. */
+.binding-margin {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  gap: var(--space-2);
+  margin: var(--space-12) 0;
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.binding-margin-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+}
+
+.binding-margin-value {
+  font-size: var(--font-size-24);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.binding-margin-breach {
+  background: var(--color-danger-soft);
+}
+
+.binding-margin-breach .binding-margin-value {
+  color: var(--color-danger);
 }
 
 .card-binding-breach {
@@ -145,13 +184,27 @@
   border-left-color: var(--color-status-unknown);
 }
 
+/* The recommended action is the decision on screen, so it carries the
+   accent: thicker border, tinted surface, raised shadow. */
 .card-action {
-  border-color: var(--color-accent);
+  border: 2px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent-soft) 35%, var(--color-surface));
+  box-shadow: var(--shadow-md);
+}
+
+.card-action .card-kicker {
+  color: var(--color-accent);
+}
+
+.card-action .instruction {
+  color: var(--color-accent-strong);
 }
 
 .card-action-none {
   border-color: var(--color-border-strong);
   border-style: dashed;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .instruction {
@@ -228,8 +281,13 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* Current state in red, target state in green. */
 .state-change-from {
-  color: var(--color-text-muted);
+  color: var(--color-danger);
+}
+
+.state-change-to {
+  color: var(--color-success);
 }
 
 /* Room above and below the track for the alternating event labels. */
@@ -523,21 +581,41 @@
   font-weight: var(--font-weight-medium);
 }
 
-.action-details {
-  margin-top: var(--space-16);
-  border-top: 1px solid var(--color-border);
+.action-carousel {
+  margin-top: var(--space-8);
 }
 
-.action-details summary {
-  padding: var(--space-12) 0 var(--space-4);
-  color: var(--color-accent);
-  font-size: var(--font-size-14);
+.action-carousel-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-bottom: var(--space-12);
+  padding-bottom: var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.action-carousel-select {
+  padding: var(--space-4) var(--space-8);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-13);
   font-weight: var(--font-weight-semibold);
-  cursor: pointer;
 }
 
-.action-details summary:hover {
-  color: var(--color-accent-hover);
+.action-carousel-slides {
+  display: grid;
+}
+
+.action-carousel-slide {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.action-carousel-slide .action-detail {
+  padding-top: 0;
 }
 
 .action-detail {
@@ -550,11 +628,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-.action-detail-subhead {
-  margin: var(--space-8) 0 0;
+.action-detail-empty {
+  margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--font-size-13);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-14);
 }
 
 /* Grid assistant reply (live /v1/chat). */

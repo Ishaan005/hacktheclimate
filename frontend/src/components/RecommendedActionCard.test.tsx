@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ACTION_FAMILY_LABEL, COPY, FORBIDDEN_PHRASES, WORKSPACE_COPY } from '../copy';
 import { illustrativeScenarios } from '../fixtures/illustrativeScenarios';
@@ -28,10 +28,23 @@ describe('action-family detail modules', () => {
     }
   });
 
-  it('keeps family detail behind a disclosure labelled with the family', () => {
+  it('switches action detail slides from the dropdown', () => {
     const card = renderCard(actionFor('generator_redispatch'));
-    const summary = within(card).getByText(`${WORKSPACE_COPY.actionDetailsSummary}: Generator redispatch`);
-    expect(summary.closest('details')).not.toHaveAttribute('open');
+    // Hidden slides have no accessible name, so find them by their label.
+    const slide = (name: string) => card.querySelector(`[aria-roledescription="slide"][aria-label="${name}"]`);
+    const select = within(card).getByRole('combobox', { name: WORKSPACE_COPY.actionDetailsSummary });
+    expect(slide('1 of 4: Overview')).toBeVisible();
+    expect(slide('3 of 4: Generator redispatch')).not.toBeVisible();
+    fireEvent.change(select, { target: { value: '1' } });
+    expect(slide('2 of 4: Schedule')).toBeVisible();
+    fireEvent.change(select, { target: { value: '3' } });
+    expect(slide(`4 of 4: ${WORKSPACE_COPY.actionCostsTitle}`)).toBeVisible();
+    expect(slide('1 of 4: Overview')).not.toBeVisible();
+  });
+
+  it('keeps the conditional warning outside the carousel', () => {
+    const card = renderCard(actionFor('outage_review'));
+    expect(within(card).getByText(WORKSPACE_COPY.actionConditional).closest('.action-carousel')).toBeNull();
   });
 
   it('renders generator redispatch detail and its cost', () => {

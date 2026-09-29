@@ -7,9 +7,14 @@ export type DetailField = {
   mono?: boolean;
 };
 
+// Which half to render: capability and timing, or costs. The action
+// carousel shows each half on its own slide.
+export type DetailPart = 'fields' | 'costs';
+
 type Props = {
   fields: DetailField[];
   costs?: DetailField[];
+  part: DetailPart;
 };
 
 function FieldList({ fields, label }: { fields: DetailField[]; label?: string }) {
@@ -25,17 +30,21 @@ function FieldList({ fields, label }: { fields: DetailField[]; label?: string })
   );
 }
 
-// Shared layout for every action family: capability and timing first, then
-// the costs that apply to the action.
-function ActionDetailFields({ fields, costs }: Props) {
+// Shared layout for every action family.
+function ActionDetailFields({ fields, costs, part }: Props) {
+  if (part === 'fields') {
+    return (
+      <div className="action-detail">
+        <FieldList fields={fields} />
+      </div>
+    );
+  }
   return (
     <div className="action-detail">
-      <FieldList fields={fields} />
-      {costs && costs.length > 0 && (
-        <>
-          <h4 className="action-detail-subhead">{WORKSPACE_COPY.actionCostsTitle}</h4>
-          <FieldList fields={costs} label={WORKSPACE_COPY.actionCostsTitle} />
-        </>
+      {costs && costs.length > 0 ? (
+        <FieldList fields={costs} label={WORKSPACE_COPY.actionCostsTitle} />
+      ) : (
+        <p className="action-detail-empty">{WORKSPACE_COPY.actionCostsNone}</p>
       )}
     </div>
   );

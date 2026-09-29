@@ -2,10 +2,12 @@ import { COPY, DEMAND_DIRECTION_LABEL } from '../copy';
 import { formatEur, formatNumber } from '../format';
 import type { FlexibleDemandDetails } from '../types';
 import ActionDetailFields from './ActionDetailFields';
+import type { DetailPart } from './ActionDetailFields';
 
-function ActionDetailsFlexibleDemand({ details }: { details: FlexibleDemandDetails }) {
+function ActionDetailsFlexibleDemand({ details, part }: { details: FlexibleDemandDetails; part: DetailPart }) {
   return (
     <ActionDetailFields
+      part={part}
       fields={[
         { label: 'Direction', value: details.direction ? DEMAND_DIRECTION_LABEL[details.direction] : COPY.notAvailable },
         { label: 'Demand change', value: formatNumber(details.changeMw, 'MW'), mono: true },

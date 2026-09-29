@@ -2,12 +2,14 @@ import { COPY } from '../copy';
 import { formatDateTime, formatEur, formatList, formatNumber } from '../format';
 import type { OutageReviewDetails } from '../types';
 import ActionDetailFields from './ActionDetailFields';
+import type { DetailPart } from './ActionDetailFields';
 
 // A publication lists planned work; it is not proof of the actual switch
 // state, so the status is shown as published.
-function ActionDetailsOutageReview({ details }: { details: OutageReviewDetails }) {
+function ActionDetailsOutageReview({ details, part }: { details: OutageReviewDetails; part: DetailPart }) {
   return (
     <ActionDetailFields
+      part={part}
       fields={[
         { label: 'Outage ID', value: details.outageId ?? COPY.notAvailable, mono: true },
         { label: 'Equipment', value: details.equipmentDescription ?? COPY.notAvailable },

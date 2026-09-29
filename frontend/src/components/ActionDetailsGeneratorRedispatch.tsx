@@ -2,10 +2,12 @@ import { COPY } from '../copy';
 import { formatEur, formatList, formatNumber } from '../format';
 import type { GeneratorRedispatchDetails } from '../types';
 import ActionDetailFields from './ActionDetailFields';
+import type { DetailPart } from './ActionDetailFields';
 
-function ActionDetailsGeneratorRedispatch({ details }: { details: GeneratorRedispatchDetails }) {
+function ActionDetailsGeneratorRedispatch({ details, part }: { details: GeneratorRedispatchDetails; part: DetailPart }) {
   return (
     <ActionDetailFields
+      part={part}
       fields={[
         { label: 'Current output', value: formatNumber(details.currentMw, 'MW'), mono: true },
         { label: 'Target output', value: formatNumber(details.targetMw, 'MW'), mono: true },
