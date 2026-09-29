@@ -66,8 +66,10 @@ clearly synthetic planning example:
 
 The command also writes a request JSON beside the output. Edit that request to
 use sourced case conditions and actions, then rerun with `--request PATH --output
-PATH`. See [operator evaluation](docs/OPERATOR_EVALUATION.md) for the input
-contract and evidence gates.
+PATH`. The checked-in [example request](examples/operator_evaluation/operator_example_output.request.json)
+and [example output](examples/operator_evaluation/operator_example_output.json)
+show the complete synthetic run. See [operator evaluation](docs/OPERATOR_EVALUATION.md)
+for the input contract and evidence gates.
 
 ## Work with the data and models
 

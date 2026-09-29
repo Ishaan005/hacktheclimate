@@ -8,7 +8,7 @@ The same request can be run locally:
 .venv/bin/python -m scripts.run_operator_evaluation --example \
   --output data/raw/network_case/operator_example_output.json
 .venv/bin/python -m scripts.run_operator_evaluation \
-  --request data/raw/network_case/operator_example_output.request.json \
+  --request examples/operator_evaluation/operator_example_output.request.json \
   --output data/raw/network_case/operator_example_rerun.json
 ```
 
@@ -17,7 +17,7 @@ With the API running, the same request can be posted:
 ```bash
 curl -sS http://127.0.0.1:8000/v1/operator/evaluate \
   -H 'Content-Type: application/json' \
-  --data-binary @data/raw/network_case/operator_example_output.request.json
+  --data-binary @examples/operator_evaluation/operator_example_output.request.json
 ```
 
 The example uses the **real TYTFS 2024 planning topology** and reviewed
@@ -26,7 +26,10 @@ constraint, curtailment, recoverable renewable MW and flexible load actions are
 invented scenario assumptions. The example's `scenario_assumption` action
 status is never a safety pass. Neither file represents an operational forecast,
 measured dispatch-down, an approved action, or avoided energy. Generated files
-are under ignored `data/raw/`.
+have checked-in copies at
+[`examples/operator_evaluation/operator_example_output.request.json`](../examples/operator_evaluation/operator_example_output.request.json)
+and [`examples/operator_evaluation/operator_example_output.json`](../examples/operator_evaluation/operator_example_output.json).
+The commands above write fresh local results under ignored `data/raw/`.
 
 ## Input contract
 
