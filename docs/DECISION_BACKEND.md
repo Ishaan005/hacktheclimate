@@ -13,6 +13,7 @@
 `load_cases` reads the included synthetic/modelled examples. `append_case` adds schema-versioned records to a chosen JSONL file without replacing earlier records or accepting duplicate IDs. `search_cases` filters by decision-time availability, scenario and minimum quality, then ranks by location, matching conditions, quality, and recency. Each result explains its match and says whether its outcome is observed, estimated, or modelled. A real observed record requires a measured, case-level source reference. Store operational case libraries outside the demo fixture, with source review before ingestion.
 
 The [case-flow handoff](DECISION_HANDOFF.md) documents the read-only preview route, current data gaps, and the exact approvals needed before it can join action selection.
+The [locked scenario catalogue](../config/decision_scenarios_v1.json) now contains the nine product labels from issue #47; the action and metric contract remains pending.
 
 ## Current limits
 

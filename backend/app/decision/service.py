@@ -12,6 +12,7 @@ from .contracts import Contract, DecisionCase, EvidenceValue, PastCase, Resolved
 from .evidence import resolve_case_context
 from .manifest import DecisionContractManifest, contract_gaps, fact_gaps, required_case_facts
 from .policy import SafetyPolicy
+from .scenarios import ScenarioCatalogue, ScenarioIntakeCoverage, assess_scenario_intake, load_scenario_catalogue
 from .sources import EvidenceSourceResult
 
 
@@ -34,6 +35,7 @@ class CaseEvaluation(Contract):
     contract_status: str
     sources: list[EvidenceSourceResult]
     context: ResolvedContext
+    scenario_intake: list[ScenarioIntakeCoverage]
     evidence_coverage: dict[str, EvidenceCoverage]
     current_plan: BaselineResult
     similar_cases: list[ComparableCase]
@@ -71,10 +73,12 @@ def evaluate_case(
     conditions: dict[str, float | str] | None = None,
     illustrative_action: IllustrativeAction | None = None,
     planning_safety: dict[datetime, SafetyResult] | None = None,
+    catalogue: ScenarioCatalogue | None = None,
 ) -> CaseEvaluation:
     """Resolve known inputs and return reasons instead of an invented decision."""
     required = {"constraint_mwh", "curtailment_mwh", *required_case_facts(manifest, case)}
     context = resolve_case_context(case, evidence, required_fields=required)
+    intake = assess_scenario_intake(context, catalogue or load_scenario_catalogue())
     coverage = _coverage(context, {"constraint_mwh", "curtailment_mwh"})
     baseline = calculate_current_plan(context, policy, planning_safety=planning_safety)
     similar = search_cases(past_cases or [], case, conditions=conditions)
@@ -87,6 +91,10 @@ def evaluate_case(
         ) if illustrative_action else None
     )
     blockers = contract_gaps(manifest, case)
+    blockers.extend(
+        f"{item.scenario_id} scenario identification facts incomplete ({len(item.missing_fields)} missing)"
+        for item in intake if item.missing_fields
+    )
     blockers.extend(fact_gaps(manifest, context))
     if case.existing_instructions:
         blockers.append("Existing instruction effects need source review before operational use")
@@ -102,6 +110,7 @@ def evaluate_case(
         blockers.append(f"Current-plan safety policy {baseline.safety.overall.lower()}")
     return CaseEvaluation(
         case=case, contract_status=manifest.status, sources=sources, context=context,
+        scenario_intake=intake,
         evidence_coverage=coverage,
         current_plan=baseline, similar_cases=similar,
         optimistic_scenario=optimistic, blocking_reasons=list(dict.fromkeys(blockers)),

@@ -17,7 +17,7 @@ def main() -> None:
     response = TestClient(app).post("/v1/decision/preview", json={
         "case": {
             "case_id": f"illustrative-{uuid4()}",
-            "scenario_ids": ["illustrative-local-constraint"],
+            "scenario_ids": ["T1"],
             "location": "illustrative-location",
             "asset_ids": [],
             "as_of": as_of.isoformat(),
@@ -31,6 +31,7 @@ def main() -> None:
     print(json.dumps({
         "contract_status": result["contract_status"],
         "source_status": result["sources"][0]["status"],
+        "scenario_intake": result["scenario_intake"],
         "evidence_coverage": result["evidence_coverage"],
         "expected_constraint_mwh": result["current_plan"]["expected_constraint_mwh"],
         "expected_dispatch_down_mwh": result["current_plan"]["expected_dispatch_down_mwh"],

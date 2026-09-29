@@ -9,6 +9,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from .contracts import Contract, DecisionCase, ResolvedContext, utc
+from .scenarios import load_scenario_catalogue
 
 DEFAULT_MANIFEST = Path(__file__).resolve().parents[3] / "config/decision_contract_status.json"
 
@@ -30,6 +31,7 @@ class FactRequirement(Contract):
 class DecisionContractManifest(Contract):
     schema_version: Literal[1] = 1
     status: Literal["pending_review", "approved"]
+    scenario_catalogue_reference: str | None = None
     approval_reference: str | None
     scenario_ids: list[str]
     action_ids: list[str]
@@ -46,7 +48,8 @@ class DecisionContractManifest(Contract):
                for facts in self.required_facts_by_scenario.values()):
             raise ValueError("required facts must be unique within each scenario")
         if self.status == "approved" and (
-            not self.approval_reference or not self.scenario_ids or not self.action_ids
+            not self.approval_reference or not self.scenario_catalogue_reference
+            or not self.scenario_ids or not self.action_ids
             or not self.outcome_metrics_approved
             or set(self.required_facts_by_scenario) != set(self.scenario_ids)
             or any(not facts for facts in self.required_facts_by_scenario.values())
@@ -56,16 +59,24 @@ class DecisionContractManifest(Contract):
 
 
 def load_contract_manifest(path: Path = DEFAULT_MANIFEST) -> DecisionContractManifest:
-    return DecisionContractManifest.model_validate_json(path.read_text())
+    manifest = DecisionContractManifest.model_validate_json(path.read_text())
+    if manifest.scenario_catalogue_reference:
+        catalogue = load_scenario_catalogue()
+        if (manifest.scenario_catalogue_reference != catalogue.source
+            or set(manifest.scenario_ids) != {item.scenario_id for item in catalogue.definitions}):
+            raise ValueError("manifest scenario IDs must match the locked catalogue")
+    return manifest
 
 
 def contract_gaps(manifest: DecisionContractManifest, case: DecisionCase) -> list[str]:
-    if manifest.status != "approved":
-        return ["Scenario, action, and metric contract is pending domain review"]
     gaps = []
+    if case.cause_unknown:
+        gaps.append("Limiting cause unknown; collect the scenario identification facts")
     unknown = sorted(set(case.scenario_ids) - set(manifest.scenario_ids))
     if unknown:
-        gaps.append(f"Unapproved scenario IDs: {', '.join(unknown)}")
+        gaps.append(f"Unknown scenario IDs: {', '.join(unknown)}")
+    if manifest.status != "approved":
+        gaps.append("Action, required-fact, and outcome-metric contracts are pending domain review")
     return gaps
 
 

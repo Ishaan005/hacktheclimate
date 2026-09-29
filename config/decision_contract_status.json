@@ -1,8 +1,9 @@
 {
   "schema_version": 1,
   "status": "pending_review",
+  "scenario_catalogue_reference": "https://github.com/Ishaan005/hacktheclimate/issues/47",
   "approval_reference": null,
-  "scenario_ids": [],
+  "scenario_ids": ["T1", "T2", "T3", "T4", "H1", "H2", "H3", "H4", "SNSP"],
   "action_ids": [],
   "required_facts_by_scenario": {},
   "outcome_metrics_approved": false
