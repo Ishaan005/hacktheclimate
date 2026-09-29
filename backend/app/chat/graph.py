@@ -56,7 +56,7 @@ def build_graph(llm: BaseChatModel, tools: Sequence[BaseTool], checkpointer=None
     return graph.compile(checkpointer=checkpointer or MemorySaver())
 
 
-def build_azure_llm(settings) -> BaseChatModel:
+def build_azure_llm(settings, *, timeout: int = 60, max_retries: int = 3) -> BaseChatModel:
     from langchain_openai import AzureChatOpenAI
 
     kwargs = dict(
@@ -64,8 +64,8 @@ def build_azure_llm(settings) -> BaseChatModel:
         api_key=settings.api_key,
         azure_deployment=settings.deployment,
         api_version=settings.api_version,
-        max_retries=3,
-        timeout=60,
+        max_retries=max_retries,
+        timeout=timeout,
     )
     if not settings.is_reasoning_model:
         kwargs["temperature"] = 0

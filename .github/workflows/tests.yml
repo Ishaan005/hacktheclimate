@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.11'
           cache: pip
-      - run: python -m pip install -r requirements.txt
+      - run: python -m pip install -r requirements.txt -r requirements-chat.txt
       - run: python -m pip check
       - run: python -m pytest -q
       - run: python -m scripts.check_demo_ready

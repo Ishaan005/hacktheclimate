@@ -1,0 +1,36 @@
+.demo-assistant {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.demo-assistant-note,
+.demo-assistant-model {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+}
+
+.demo-assistant-exchange {
+  padding-top: var(--space-12);
+  border-top: 1px solid var(--color-border);
+}
+
+.demo-assistant-exchange p {
+  margin: var(--space-4) 0;
+  white-space: pre-wrap;
+}
+
+.demo-assistant-form {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.demo-assistant-form > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.demo-assistant-form input {
+  flex: 1 1 260px;
+  min-width: 0;
+}

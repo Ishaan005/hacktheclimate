@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI
@@ -128,3 +129,81 @@ def test_hero_prompt_runs_intake_to_workspace_end_to_end():
     assert scenario["action"] is not None
     assert scenario["baseline"]["dispatchDownWasteMwh"] == pytest.approx(40.0)
     assert scenario["postAction"]["dispatchDownWasteMwh"] == pytest.approx(20.0)
+
+
+def test_azure_case_assistant_receives_computed_demo_result_not_raw_operator_text(monkeypatch):
+    from backend.app.chat import config, graph
+
+    monkeypatch.setattr(config, "get_settings", lambda: SimpleNamespace(configured=True, deployment="gpt-4.1"))
+    messages_seen = []
+
+    class FakeModel:
+        def invoke(self, messages):
+            messages_seen.extend(messages)
+            return SimpleNamespace(content="The modeled candidate clears the synthetic line screen; other checks remain unknown.")
+
+    monkeypatch.setattr(graph, "build_azure_llm", lambda _settings, **_kwargs: FakeModel())
+    app = FastAPI()
+    app.include_router(workspace.router)
+    client = TestClient(app)
+    case = _case(
+        "Private operator wording: Planned outage near Ballylickey causes a line overload.",
+        ["local_network_constraint", "planned_outage_exposure"],
+    )
+    response = client.post("/v1/workspace/ask", json={
+        "case": case,
+        "question": "What does this show?",
+        "history": [{"question": "Earlier question?", "reply": "Earlier answer."}],
+    })
+
+    assert response.status_code == 200
+    assert response.json()["model"] == "gpt-4.1"
+    assert "modeled candidate" in response.json()["reply"]
+    assert "109.1%" in messages_seen[0].content
+    assert "Private operator wording" not in messages_seen[0].content
+    assert [message.content for message in messages_seen[1:]] == [
+        "Earlier question?", "Earlier answer.", "What does this show?",
+    ]
+
+
+def test_case_assistant_reports_missing_azure_configuration(monkeypatch):
+    from backend.app.chat import config
+
+    monkeypatch.setattr(config, "get_settings", lambda: SimpleNamespace(configured=False))
+    app = FastAPI()
+    app.include_router(workspace.router)
+    response = TestClient(app).post("/v1/workspace/ask", json={
+        "case": _case(
+            "Planned outage near Ballylickey causes a line overload.",
+            ["local_network_constraint", "planned_outage_exposure"],
+        ),
+        "question": "Explain this result.",
+    })
+    assert response.status_code == 503
+    assert "Azure OpenAI is not configured" in response.json()["detail"]
+
+
+def test_case_assistant_reports_azure_overload_without_hiding_the_computed_case(monkeypatch):
+    from backend.app.chat import config, graph
+
+    monkeypatch.setattr(config, "get_settings", lambda: SimpleNamespace(configured=True, deployment="gpt-4.1"))
+    overloaded = type("OpenAIAPIError", (Exception,), {})
+
+    class BusyModel:
+        def invoke(self, _messages):
+            raise overloaded("temporary service failure")
+
+    monkeypatch.setattr(graph, "build_azure_llm", lambda _settings, **_kwargs: BusyModel())
+    app = FastAPI()
+    app.include_router(workspace.router)
+    case = _case(
+        "Planned outage near Ballylickey causes a line overload.",
+        ["local_network_constraint", "planned_outage_exposure"],
+    )
+    client = TestClient(app)
+    answer = client.post("/v1/workspace/ask", json={"case": case, "question": "Explain this result."})
+    evaluation = client.post("/v1/workspace/evaluate", json={"case": case})
+    assert answer.status_code == 503
+    assert "overloaded" in answer.json()["detail"]
+    assert evaluation.status_code == 200
+    assert evaluation.json()["scenario"]["source"] == "demo"

@@ -6,24 +6,39 @@ action contract and bundle engine without the external TYTFS working files.
 
 ## Start the teammate demo
 
-Clone the repository and check out `feat/golden-path-demo` (PR #60). The easiest
-cross-platform route is Docker Desktop or Docker Engine. From the repository
-root:
+Clone the repository and check out `feat/golden-path-demo` (PR #60). To show
+the Azure OpenAI case assistant, first fetch your own team credentials into a
+git-ignored `.env` using Azure CLI and Python 3.11:
+
+```bash
+az login --tenant 6c51c659-9d52-41af-81f7-dde16380e813
+az account set --subscription eb517801-6c35-40b5-8651-3fea5cc570b0
+python3.11 -m scripts.fetch_azure_openai_env
+```
+
+On Windows, use `py -3.11 -m scripts.fetch_azure_openai_env` for the last
+command. A clone never contains the Azure key.
+
+The easiest cross-platform app route is Docker Desktop or Docker Engine. From
+the repository root:
 
 ```bash
 docker build -t htc-golden-demo .
-docker run --rm -p 8000:8000 htc-golden-demo
+docker run --rm --env-file .env -p 8000:8000 htc-golden-demo
 ```
 
-Open <http://127.0.0.1:8000/>. The container serves both the built UI and API,
-so it does not need local Python or Node. Docker must be installed and running.
+Open <http://127.0.0.1:8000/>. The container serves both the built UI and API;
+it does not need local Python or Node after `.env` is prepared. Docker must be
+installed and running. If Azure access is unavailable, omit `--env-file .env`:
+the computed case still works and the UI explicitly reports that the AI
+explanation is unavailable.
 
 For local development without Docker, use Python 3.11 and Node 22. From the
 repository root on macOS or Linux, install once and run the preflight:
 
 ```bash
 python3.11 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -r requirements.txt -r requirements-chat.txt
 cd frontend && npm ci && cd ..
 .venv/bin/python -m scripts.check_demo_ready
 ```
@@ -40,10 +55,10 @@ npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
 Open <http://127.0.0.1:5173/>. Keep the UI in its default API mode; fixture
-mode uses invented screen fixtures and does not run this backend path. No
-Azure credentials, external planning files or current GFS snapshot are needed
-for the two prompts below. If the page has an earlier case, enter either prompt
-in the top situation box to replace it.
+mode uses invented screen fixtures and does not run this backend path. The
+computed case needs no Azure credentials, external planning files or current
+GFS snapshot. The AI explanation needs the `.env` prepared above. If the page
+has an earlier case, enter either prompt in the top situation box to replace it.
 
 On Windows PowerShell, use `py -3.11 -m venv .venv`, then
 `.\.venv\Scripts\python.exe` in place of `.venv/bin/python` in the commands
@@ -68,6 +83,11 @@ After fact review, **Evaluate actions** runs the backend-owned golden path.
 The review should show local network limit and planned outage, `next 2 hours`,
 and `West`. The screen should then say **Demo planning case** and **Modeled
 candidate**.
+With Azure configured, an **Azure OpenAI case assistant** card appears below
+the guardrails. It explains the computed result and accepts questions such as
+"Why is this only a modeled candidate?" The assistant's words do not set any
+numbers, choose the bundle, or change the safety result. If Azure is unavailable,
+the card says so while the computed result remains usable.
 
 Expected story:
 
@@ -92,6 +112,8 @@ Use:
 This resolves to T4. The additional synthetic circuit loss islands the West
 demo area, so the action disappears and the UI explains why no modeled
 candidate survives.
+The Azure assistant can explain this refusal, but it cannot restore the
+candidate.
 
 Use this second case to show that a failed network screen removes the
 candidate. Re-enter the hero prompt to return to the positive case.
@@ -138,6 +160,10 @@ The golden path is packaged in tracked backend source and configuration. It
 does not read `data/raw/`, `data/inference/`, Azure credentials, or a local
 TYTFS case. The repository also tracks the processed datasets, saved models,
 metrics, source manifests, and audit documentation used by other project paths.
+
+The Azure explanation is a separate live call after the deterministic result;
+it needs the teammate's own Key Vault credentials and network access. No key
+or generated assistant answer is committed.
 
 Original workbooks and raw downloads remain outside Git or under ignored
 `data/raw/`; generated current inference snapshots under `data/inference/` are

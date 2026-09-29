@@ -20,6 +20,9 @@ Live mode uses the existing UI as the contract:
 - `POST /v1/workspace/evaluate` accepts that reviewed case, runs the configured
   decision/network/action backend, and returns the existing `WorkspaceScenario`
   shape.
+- `POST /v1/workspace/ask` gives Azure OpenAI the computed synthetic demo result
+  to explain and answer case questions. It never changes the action or safety
+  checks, and reports unavailable when Azure is not configured.
 
 Missing planning files, unresolved scenario detail, unsupported safety checks,
 or unvalidated avoided-energy estimates return a live workspace with no

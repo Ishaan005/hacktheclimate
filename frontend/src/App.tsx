@@ -58,7 +58,7 @@ function App() {
     // Key by content so a new answer resets any time the operator changed.
     const solved = state.result;
     if (solved.kind === 'scenario') {
-      result = <ScenarioWorkspace key={solved.scenario.id} scenario={solved.scenario} />;
+      result = <ScenarioWorkspace key={solved.scenario.id} scenario={solved.scenario} operatorCase={operatorCase} />;
     } else if (solved.kind === 'assistant_reply') {
       result = (
         <>
