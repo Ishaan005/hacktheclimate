@@ -437,7 +437,9 @@ def _workspace_scenario(
         "modelRunAt": issue_time,
         "summary": (
             "Evidence-gated planning result using the current forecast bundle and "
-            "the configured TYTFS planning case. Missing checks remain unknown."
+            "the configured TYTFS planning case. The operator description is not "
+            "proof that its named asset matches the configured model asset; missing "
+            "checks remain unknown."
         ),
         "keywords": [],
         "binding": {
