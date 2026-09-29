@@ -112,14 +112,45 @@ def test_evaluation_includes_baseline_and_shared_budget_bundles():
     )
     assert pair["modeled_capture_upper_bound_mwh"] == pytest.approx(10.0)
     assert pair["expected_avoided_dispatch_down_mwh"] is None
-    assert "asset_capability" in pair["missing_required_safety_rules"]
+    assert pair["missing_required_safety_rules"] == []
     assert pair["required_safety_families"] == ["transmission"]
     assert pair["missing_required_safety_families"] == []
+    assert pair["action_specific"]["asset_capability"]["status"] == "UNKNOWN"
+    assert pair["action_specific"]["timing"]["status"] == "UNKNOWN"
     # A modeled breach wins over unresolved contract checks: FAIL must not be
     # softened to UNKNOWN just because asset capability/timing are also missing.
     assert pair["safety_overall"] == "FAIL"
     assert result["best_screening_pass_bundle"] is None
     assert result["recommendation"] is None
+
+
+
+def test_complete_action_evidence_resolves_asset_and_timing_contract_rules():
+    candidate = _candidate()
+    candidate["operational_evidence"] = {
+        "named_asset_or_party": "Flexible demand site A",
+        "authority_status": "confirmed",
+        "permission_status": "confirmed",
+        "availability_status": "available",
+        "response_time_minutes": 10.0,
+        "sustain_duration_minutes": 60.0,
+        "capability_mw": 10.0,
+        "side_effects_review_status": "reviewed",
+        "evidence_reference": "synthetic operator evidence",
+    }
+    result = evaluate_operator_case(
+        _request(action_candidates=[candidate]),
+        _case(), _crosswalk(), planned_outage=Asset("branch", "1:3:1"),
+    )
+
+    bundle = next(
+        item for item in result["bundle_options"]
+        if item["action_instance_ids"] == ["illustrative-flex-1"]
+    )
+    assert bundle["action_specific"]["asset_capability"]["status"] == "PASS"
+    assert bundle["action_specific"]["timing"]["status"] == "PASS"
+    assert "asset_capability" not in bundle["missing_required_safety_rules"]
+    assert "timing" not in bundle["missing_required_safety_rules"]
 
 
 def test_no_action_candidates_leaves_baseline_as_only_bundle_option():
