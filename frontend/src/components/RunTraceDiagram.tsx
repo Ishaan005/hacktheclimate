@@ -6,20 +6,15 @@ import './RunTraceDiagram.css';
 // the API says which nodes and edges this reply actually used.
 const NODES: Record<string, { x: number; y: number; label: string; terminal?: boolean }> = {
   __start__: { x: 150, y: 24, label: 'start', terminal: true },
-  load_actions: { x: 150, y: 88, label: 'load_actions' },
-  agent: { x: 150, y: 152, label: 'agent' },
-  tools: { x: 62, y: 224, label: 'tools' },
-  select_action: { x: 238, y: 224, label: 'select_action' },
-  __end__: { x: 238, y: 288, label: 'end', terminal: true },
+  run_all_tools: { x: 150, y: 96, label: 'run_all_tools' },
+  answer: { x: 150, y: 168, label: 'answer' },
+  __end__: { x: 150, y: 240, label: 'end', terminal: true },
 };
 
 const EDGES: { from: string; to: string; conditional?: boolean }[] = [
-  { from: '__start__', to: 'load_actions' },
-  { from: 'load_actions', to: 'agent' },
-  { from: 'agent', to: 'tools', conditional: true },
-  { from: 'tools', to: 'agent' },
-  { from: 'agent', to: 'select_action', conditional: true },
-  { from: 'select_action', to: '__end__' },
+  { from: '__start__', to: 'run_all_tools' },
+  { from: 'run_all_tools', to: 'answer' },
+  { from: 'answer', to: '__end__' },
 ];
 
 const W = 112;
@@ -38,18 +33,29 @@ export function edgeCounts(trace: TraceStep[]): Map<string, number> {
 function edgePath(from: string, to: string): string {
   const a = NODES[from];
   const b = NODES[to];
-  if (from === 'tools' && to === 'agent') {
-    // Loop back up on the left so it does not overlap agent -> tools.
-    return `M ${a.x - 20} ${a.y - H / 2} C ${a.x - 40} ${a.y - 40}, ${b.x - 70} ${b.y + 10}, ${b.x - W / 2} ${b.y}`;
-  }
   return `M ${a.x} ${a.y + H / 2} L ${b.x} ${b.y - H / 2}`;
 }
 
 const STEP_LABELS: Record<string, string> = {
-  load_actions: 'Load candidate actions',
+  run_all_tools: 'Run every tool',
+  answer: 'Write the reply',
+  // Older API versions.
   agent: 'Model reasoning',
   tools: 'Run tools',
-  select_action: 'Final reply',
+};
+
+type ToolStatus = 'ok' | 'error' | 'not_applicable';
+
+function toolStatus(tool: TraceTool): ToolStatus {
+  if (tool.status === 'not_applicable' || tool.status === 'error' || tool.status === 'ok') return tool.status;
+  return tool.ok === false ? 'error' : 'ok';
+}
+
+const STATUS_MARK: Record<ToolStatus, string> = { ok: '✓', error: '✕', not_applicable: '–' };
+const STATUS_TEXT: Record<ToolStatus, string> = {
+  ok: WORKSPACE_COPY.traceToolOk,
+  error: WORKSPACE_COPY.traceToolError,
+  not_applicable: WORKSPACE_COPY.traceToolNotApplicable,
 };
 
 function formatMs(ms?: number): string | null {
@@ -66,7 +72,8 @@ function formatArgs(args?: TraceTool['args']): string {
 // chip per tool so parallel calls and failures are visible at a glance.
 export function RunTimeline({ steps, skipped }: { steps: TraceStep[]; skipped: string[] }) {
   const total = steps.reduce((sum, step) => sum + (step.durationMs ?? 0), 0);
-  const toolCalls = steps.filter((step) => step.node === 'tools').reduce((n, step) => n + (step.tools?.length ?? 1), 0);
+  const toolCalls = steps.filter((step) => step.node === 'tools' || step.node === 'run_all_tools')
+    .reduce((n, step) => n + (step.tools ?? []).filter((tool) => toolStatus(tool) !== 'not_applicable').length, 0);
   return (
     <div className="run-timeline">
       <p className="run-timeline-head">
@@ -79,7 +86,8 @@ export function RunTimeline({ steps, skipped }: { steps: TraceStep[]; skipped: s
         <li className="rt-step rt-terminal"><span className="rt-dot" />start</li>
         {steps.map((step, index) => {
           const tools = step.tools ?? [];
-          const failed = step.node === 'tools' && tools.some((tool) => tool.ok === false);
+          const runsTools = step.node === 'tools' || step.node === 'run_all_tools';
+          const failed = runsTools && tools.some((tool) => toolStatus(tool) === 'error');
           const share = total && step.durationMs ? Math.max(4, Math.round((step.durationMs / total) * 100)) : 0;
           return (
             <li key={index} className={`rt-step rt-${step.node}${failed ? ' rt-failed' : ''}`}>
@@ -100,13 +108,13 @@ export function RunTimeline({ steps, skipped }: { steps: TraceStep[]; skipped: s
                       </li>
                     ))}
                   </ul>
-                ) : step.node === 'tools' && tools.length > 0 ? (
+                ) : runsTools && tools.length > 0 ? (
                   <ul className="rt-chips">
                     {tools.map((tool, i) => (
-                      <li key={i} className={`rt-chip ${tool.ok === false ? 'rt-chip-error' : 'rt-chip-ok'}`}>
-                        <span aria-hidden="true">{tool.ok === false ? '✕' : '✓'}</span>
+                      <li key={i} className={`rt-chip rt-chip-${toolStatus(tool)}`} title={formatArgs(tool.args)}>
+                        <span aria-hidden="true">{STATUS_MARK[toolStatus(tool)]}</span>
                         <span className="mono">{tool.name}</span>
-                        <span className="rt-args">{tool.ok === false ? WORKSPACE_COPY.traceToolError : WORKSPACE_COPY.traceToolOk}</span>
+                        <span className="rt-args">{STATUS_TEXT[toolStatus(tool)]}</span>
                       </li>
                     ))}
                   </ul>
@@ -136,7 +144,7 @@ function RunTraceDiagram({ trace }: { trace: TraceStep[] }) {
     <details className="run-trace" open>
       <summary>{WORKSPACE_COPY.traceTitle}</summary>
       <div className="run-trace-body">
-        <svg viewBox="0 0 300 312" className="run-trace-graph" role="img" aria-label={WORKSPACE_COPY.traceSummary}>
+        <svg viewBox="0 0 300 264" className="run-trace-graph" role="img" aria-label={WORKSPACE_COPY.traceSummary}>
           <defs>
             <marker id="trace-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />

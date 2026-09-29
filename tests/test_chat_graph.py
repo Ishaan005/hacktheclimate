@@ -35,43 +35,48 @@ def get_dispatch_down_forecast(target_timestamp: str) -> dict:
     return {"risk": "high", "event_probability": 0.954, "expected_dispatch_down_mwh": 37.2}
 
 
-def test_agent_calls_tool_then_answers_and_remembers_thread():
+@tool
+def get_current_constraint_day() -> dict:
+    """Fake forward outlook."""
+    return {"sum_expected_constraint_mwh": 1.0}
+
+
+def test_runs_every_tool_then_answers_once_and_remembers_thread():
     llm = ScriptedModel(replies=[
-        AIMessage("", tool_calls=[{"name": "get_dispatch_down_forecast", "args": {"target_timestamp": "2026-01-24T01:00:00Z"}, "id": "c1"}]),
         AIMessage("High risk: 95.4% chance, 37.2 MWh expected (historical replay)."),
         AIMessage("Still 01:00 UTC on 24 Jan."),
     ], seen=[])
-    graph = build_graph(llm, [get_dispatch_down_forecast])
+    graph = build_graph(llm, [get_dispatch_down_forecast, get_current_constraint_day])
     config = {"configurable": {"thread_id": "t1"}}
 
     result = graph.invoke({"messages": [HumanMessage("Risk at 01:00 on the 24th?")], "selected_target": "2026-01-24T01:00"}, config)
-    tool_msgs = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert tool_msgs and "0.954" in tool_msgs[0].content
+    results = result["tool_results"]
+    assert results["get_dispatch_down_forecast"]["event_probability"] == 0.954
+    assert results["get_current_constraint_day"]["status"] == "not_applicable"
     assert result["messages"][-1].content.startswith("High risk")
+    assert len(llm.seen) == 1  # one model call per question
     assert "2026-01-24T01:00 UTC selected" in llm.seen[0][0].content
-    assert "Candidate operator actions" not in llm.seen[0][0].content
-    assert "get_scenario_actions" in llm.seen[0][0].content
+    assert "0.954" in llm.seen[0][1].content
+    assert not any(isinstance(m, ToolMessage) for m in result["messages"])
 
-    follow_up = graph.invoke({"messages": [HumanMessage("Which time was that?")], "selected_target": None}, config)
-    assert len(follow_up["messages"]) == 6
+    follow_up = graph.invoke({"messages": [HumanMessage("Which time was that?")], "selected_target": "2026-01-24T01:00"}, config)
+    assert len(follow_up["messages"]) == 4
+    assert len(llm.seen) == 2
 
 
-def test_trace_records_the_path_that_actually_ran():
-    llm = ScriptedModel(replies=[
-        AIMessage("", tool_calls=[{"name": "get_dispatch_down_forecast", "args": {"target_timestamp": "2026-01-24T01:00:00Z"}, "id": "c1"}]),
-        AIMessage("High risk (historical replay)."),
-        AIMessage("Hello."),
-    ], seen=[])
-    graph = build_graph(llm, [get_dispatch_down_forecast])
+def test_trace_is_run_all_tools_then_answer():
+    llm = ScriptedModel(replies=[AIMessage("High risk (historical replay)."), AIMessage("Hello.")], seen=[])
+    graph = build_graph(llm, [get_dispatch_down_forecast, get_current_constraint_day])
     config = {"configurable": {"thread_id": "trace"}}
 
-    _, trace = run_with_trace(graph, {"messages": [HumanMessage("Risk?")], "selected_target": None}, config)
-    assert [step["node"] for step in trace] == ["__start__", "agent", "tools", "agent", "__end__"]
-    assert trace[1]["detail"] == "requested get_dispatch_down_forecast"
-    assert trace[2]["detail"] == "ran get_dispatch_down_forecast"
+    _, trace = run_with_trace(graph, {"messages": [HumanMessage("Risk at 2026-01-24 01:00?")], "selected_target": None}, config)
+    assert [step["node"] for step in trace] == ["__start__", "run_all_tools", "answer", "__end__"]
+    statuses = {t["name"]: t["status"] for t in trace[1]["tools"]}
+    assert statuses == {"get_dispatch_down_forecast": "ok", "get_current_constraint_day": "not_applicable"}
+    assert "stated in the message" in trace[1]["detail"]
 
-    _, trace = run_with_trace(graph, {"messages": [HumanMessage("Hi")], "selected_target": None}, config)
-    assert [step["node"] for step in trace] == ["__start__", "agent", "__end__"]
+    _, trace = run_with_trace(graph, {"messages": [HumanMessage("Hi, same time 2026-01-24 01:00")], "selected_target": None}, config)
+    assert "reused" in trace[1]["detail"]
 
 
 def test_chat_route_returns_the_trace(monkeypatch):
@@ -84,9 +89,24 @@ def test_chat_route_returns_the_trace(monkeypatch):
     monkeypatch.setattr(routes, "get_chat_graph", lambda: build_graph(llm, [get_dispatch_down_forecast]))
     app = FastAPI()
     app.include_router(routes.router)
-    body = TestClient(app).post("/v1/chat", json={"message": "Hi"}).json()
+    body = TestClient(app).post("/v1/chat", json={"message": "Hi", "selected_target": "2026-01-24T01:00:00Z"}).json()
     assert body["reply"] == "Hello."
-    assert [step["node"] for step in body["trace"]] == ["__start__", "agent", "__end__"]
+    assert body["tools_used"] == ["get_dispatch_down_forecast"]
+    assert [step["node"] for step in body["trace"]] == ["__start__", "run_all_tools", "answer", "__end__"]
+
+
+def test_target_and_scenario_resolution():
+    from datetime import datetime, timezone
+
+    from backend.app.chat.graph import resolve_scenarios, resolve_target
+
+    now = datetime(2026, 9, 29, 10, 10, tzinfo=timezone.utc)
+    assert resolve_target("x", "2026-01-24T01:10", now)[0].isoformat() == "2026-01-24T01:00:00+00:00"
+    assert resolve_target("at 2026-09-30 18:45", None, now)[0].isoformat() == "2026-09-30T18:30:00+00:00"
+    assert resolve_target("upcoming?", None, now)[0].isoformat() == "2026-09-29T10:30:00+00:00"
+    assert resolve_scenarios("is this T2 or snsp", None) == ["T2", "SNSP"]
+    assert resolve_scenarios("nothing", ["H1"]) == ["H1"]
+    assert len(resolve_scenarios("nothing", None)) == 9
 
 
 def test_current_constraint_tools_use_checked_snapshot(monkeypatch):
@@ -131,19 +151,19 @@ def test_scenario_action_tool_uses_decision_contract():
     assert "RESERVE_RAMP_ACTION" not in by_id
 
 
-def test_graph_calls_current_model_tool(monkeypatch):
+def test_graph_runs_current_model_tool_for_future_target(monkeypatch):
     monkeypatch.setattr(forecast_tools, "_current_constraint_snapshot", lambda: {
         "issue_time_utc": "2026-09-29T00:00:00Z", "generated_at_utc": "2026-09-29T06:15:00Z",
-        "served_at_utc": "2026-09-29T10:00:00Z", "forecast_end_utc": "2026-09-30T06:00:00Z",
+        "served_at_utc": "2026-09-29T10:00:00Z", "forecast_end_utc": "2099-09-30T06:00:00Z",
         "model": {"name": "gfs_constraint_final_candidate", "artifact_sha256": "abc"},
         "limitations": ["Experimental"],
-        "forecasts": [{"target_time_utc": "2026-09-29T12:30:00Z", "expected_constraint_mwh": 8.0}],
+        "forecasts": [{"target_time_utc": "2099-09-29T12:30:00Z", "expected_constraint_mwh": 8.0}],
     })
-    llm = ScriptedModel(replies=[
-        AIMessage("", tool_calls=[{"name": "get_current_constraint_forecast", "args": {"target_timestamp": "2026-09-29T12:30:00Z"}, "id": "c2"}]),
-        AIMessage("Experimental national constraint forecast: 8.0 MWh."),
-    ], seen=[])
-    graph = build_graph(llm, forecast_tools.FORECAST_TOOLS)
-    result = graph.invoke({"messages": [HumanMessage("What is the upcoming constraint at 12:30 UTC?")], "selected_target": None}, {"configurable": {"thread_id": "forward"}})
-    messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert len(messages) == 1 and "experimental_forward_forecast" in messages[0].content
+    llm = ScriptedModel(replies=[AIMessage("Experimental national constraint forecast: 8.0 MWh.")], seen=[])
+    tools = [forecast_tools.get_current_constraint_forecast, forecast_tools.get_current_constraint_day, forecast_tools.check_constraint]
+    graph = build_graph(llm, tools)
+    result = graph.invoke({"messages": [HumanMessage("Constraint at 2099-09-29 12:30?")], "selected_target": None}, {"configurable": {"thread_id": "forward"}})
+    results = result["tool_results"]
+    assert results["get_current_constraint_forecast"]["mode"] == "experimental_forward_forecast"
+    assert results["get_current_constraint_day"]["sum_expected_constraint_mwh"] == 8.0
+    assert results["check_constraint"]["status"] == "not_applicable"

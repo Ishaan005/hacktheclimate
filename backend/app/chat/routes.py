@@ -4,11 +4,11 @@ import uuid
 from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 
 from .config import get_settings
-from .graph import build_azure_llm, build_graph, run_with_trace
+from .graph import build_azure_llm, build_graph, run_with_trace, tool_results_used
 from .tools import FORECAST_TOOLS
 
 router = APIRouter(prefix="/v1/chat", tags=["chat assistant"])
@@ -18,12 +18,15 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     thread_id: str | None = None
     selected_target: str | None = None
+    # Scenario IDs from the intake case (T1-T4, H1-H4, SNSP). Omit to use any named in the message, else all.
+    scenario_ids: list[str] | None = None
 
 
 class TraceTool(BaseModel):
     name: str
     args: dict | None = None
     ok: bool | None = None
+    status: str | None = None  # ok, error or not_applicable
 
 
 class TraceStep(BaseModel):
@@ -64,12 +67,13 @@ def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(503, str(exc)) from exc
 
     thread_id = request.thread_id or str(uuid.uuid4())
-    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 12}
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 6}
     try:
         before = len(graph.get_state(config).values.get("messages", []))
         result, trace = run_with_trace(
             graph,
-            {"messages": [HumanMessage(request.message)], "selected_target": request.selected_target},
+            {"messages": [HumanMessage(request.message)], "selected_target": request.selected_target,
+             "scenario_ids": request.scenario_ids},
             config,
         )
     except Exception as exc:  # surface rate limits clearly; the endpoint is shared by all teams
@@ -87,6 +91,6 @@ def chat(request: ChatRequest) -> ChatResponse:
         raise
 
     new_messages = result["messages"][before:]
-    tools_used = [m.name for m in new_messages if isinstance(m, ToolMessage) and m.name]
+    tools_used = tool_results_used(result.get("tool_results"))
     reply = next((m.content for m in reversed(new_messages) if isinstance(m, AIMessage) and m.content), "")
     return ChatResponse(thread_id=thread_id, reply=str(reply), tools_used=tools_used, model=get_settings().deployment, trace=trace)

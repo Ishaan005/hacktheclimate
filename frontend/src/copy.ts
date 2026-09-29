@@ -117,6 +117,7 @@ export const WORKSPACE_COPY = {
   traceStepsTitle: 'Every step, in order',
   traceToolOk: 'returned data',
   traceToolError: 'returned an error',
+  traceToolNotApplicable: 'not applicable to this question',
 } as const;
 
 export const GUARDRAIL_STATUS_LABEL = {

@@ -517,6 +517,7 @@ export type TraceTool = {
   name: string;
   args?: Record<string, unknown> | null;
   ok?: boolean | null;
+  status?: 'ok' | 'error' | 'not_applicable' | null;
 };
 
 export type TraceStep = {
