@@ -77,7 +77,3 @@ def test_redispatch_planning_readiness_requires_explicit_physical_caps():
     assert action.missing_parameters == []
     assert action.missing_evidence_fields == []
     assert "reserve" in action.required_safety_rules
-    assert action.required_safety_families == [
-        "high_frequency_minimum_generation",
-        "transmission",
-    ]

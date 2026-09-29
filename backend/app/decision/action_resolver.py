@@ -8,20 +8,7 @@ from pydantic import Field
 
 from .actions import ActionCatalogue, ExecutionStatus, load_action_catalogue
 from .contracts import Contract, DecisionCase
-from .scenarios import SCENARIO_IDS, load_scenario_catalogue
-
-RULE_SAFETY_FAMILY = {
-    "network_loading": "transmission",
-    "islanding": "transmission",
-    "voltage": "transmission",
-    "system_strength": "transmission",
-    "frequency": "high_frequency_minimum_generation",
-    "minimum_online_units": "high_frequency_minimum_generation",
-    "reserve": "high_frequency_minimum_generation",
-    "renewable_share": "snsp",
-    "inertia": "snsp",
-    "rocof": "snsp",
-}
+from .scenarios import SCENARIO_IDS
 
 
 class ResolvedAction(Contract):
@@ -34,7 +21,6 @@ class ResolvedAction(Contract):
     required_parameters: list[str]
     required_evidence_fields: list[str]
     required_safety_rules: list[str]
-    required_safety_families: list[str]
     missing_parameters: list[str] = Field(default_factory=list)
     missing_evidence_fields: list[str] = Field(default_factory=list)
 
@@ -69,11 +55,6 @@ def resolve_action_ids(
         return []
 
     catalogue = catalogue or load_action_catalogue()
-    scenario_catalogue = load_scenario_catalogue()
-    family_by_scenario = {
-        definition.scenario_id: definition.family
-        for definition in scenario_catalogue.definitions
-    }
     parameters = set(available_parameters)
     evidence = set(available_evidence_fields)
     resolved: list[ResolvedAction] = []
@@ -82,15 +63,6 @@ def resolve_action_ids(
         if not matched:
             continue
         uncovered = sorted(set(active) - set(action.applicable_scenarios))
-        safety_rules = action.safety_rules_for(matched)
-        safety_families = {
-            family_by_scenario[scenario_id] for scenario_id in matched
-        }
-        safety_families.update(
-            RULE_SAFETY_FAMILY[rule]
-            for rule in safety_rules
-            if rule in RULE_SAFETY_FAMILY
-        )
         resolved.append(ResolvedAction(
             action_id=action.action_id,
             name=action.name,
@@ -100,8 +72,7 @@ def resolve_action_ids(
             uncovered_scenarios=uncovered,
             required_parameters=list(action.required_parameters),
             required_evidence_fields=list(action.required_evidence_fields),
-            required_safety_rules=safety_rules,
-            required_safety_families=sorted(safety_families),
+            required_safety_rules=action.safety_rules_for(matched),
             missing_parameters=sorted(set(action.required_parameters) - parameters),
             missing_evidence_fields=sorted(set(action.required_evidence_fields) - evidence),
         ))

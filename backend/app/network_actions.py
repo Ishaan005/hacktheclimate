@@ -14,9 +14,7 @@ from backend.app.network_forecast import (
     normalized_load_shares, reviewed_generation_groups, validate_forecast_rows,
 )
 from backend.app.network_scenarios import Asset
-from backend.app.safety import (
-    CheckResult, combine_checks, evaluate_safety, evaluate_transmission_family,
-)
+from backend.app.safety import CheckResult, combine_checks, evaluate_safety
 
 MAX_CANDIDATES = 3
 
@@ -224,17 +222,8 @@ def screen_actions(
             # current national forecast supplies no validated action formula.
             planned_safety = evaluate_safety(solve).to_dict()
             n1_safety = evaluate_safety(n1_action).to_dict() if n1_action is not None else None
-            transmission_family = evaluate_transmission_family(
-                base_solve,
-                solve,
-                base_contingency_solve=n1_base,
-                action_contingency_solve=n1_action,
-            ).to_dict()
             overall = combine_checks({
                 "planned_outage": CheckResult(planned_safety["overall"], "scenario result"),
-                "transmission_family": CheckResult(
-                    transmission_family["overall"], "family-level transmission result"
-                ),
                 **({"selected_n_minus_one": CheckResult(n1_safety["overall"], "scenario result")}
                    if n1_safety is not None else {}),
                 **({"action_location": CheckResult("UNKNOWN", "Action location is a scenario assumption")}
@@ -243,12 +232,8 @@ def screen_actions(
             intervals.append({
                 "valid_time": row["valid_time"], "applied_mw": applied,
                 "modeled_capture_upper_bound_mwh": applied * 0.5,
-                "safety": {
-                    "overall": overall,
-                    "planned_outage": planned_safety,
-                    "selected_n_minus_one": n1_safety,
-                    "families": {"transmission": transmission_family},
-                },
+                "safety": {"overall": overall, "planned_outage": planned_safety,
+                           "selected_n_minus_one": n1_safety},
                 "network_effect": {
                     "planned_outage": {
                         "asset_id": planned_outage.asset_id,
@@ -386,7 +371,6 @@ def screen_action_bundles(
     *,
     planned_outage: Asset = DEFAULT_PLANNED_OUTAGE,
     selected_contingency: Asset | None = None,
-    timing_verified_by_bundle: Mapping[str, bool | None] | None = None,
 ) -> dict[str, Any]:
     """Simulate heterogeneous planning-supported action bundles on one grid state.
 
@@ -631,27 +615,16 @@ def screen_action_bundles(
 
             planned_safety = evaluate_safety(solve).to_dict()
             n1_safety = evaluate_safety(n1_action).to_dict() if n1_action is not None else None
-            transmission_family = evaluate_transmission_family(
-                base_solve,
-                solve,
-                base_contingency_solve=n1_base,
-                action_contingency_solve=n1_action,
-                relief_timing_verified=(
-                    timing_verified_by_bundle or {}
-                ).get(bundle_id),
-            ).to_dict()
             has_assumption = any(
                 candidate["review_status"] == "scenario_assumption"
                 for candidate in bundle_candidates.values()
             )
             overall = combine_checks({
-                "transmission_family": CheckResult(
-                    transmission_family["overall"], "family-level transmission result"
-                ),
-                **({"action_location": CheckResult(
-                    "UNKNOWN",
-                    "One or more action locations are scenario assumptions",
-                )} if has_assumption else {}),
+                "planned_outage": CheckResult(planned_safety["overall"], "scenario result"),
+                **({"selected_n_minus_one": CheckResult(n1_safety["overall"], "scenario result")}
+                   if n1_safety is not None else {}),
+                **({"action_location": CheckResult("UNKNOWN", "One or more action locations are scenario assumptions")}
+                   if has_assumption else {}),
             })
             intervals.append({
                 "valid_time": row["valid_time"],
@@ -667,7 +640,6 @@ def screen_action_bundles(
                     "overall": overall,
                     "planned_outage": planned_safety,
                     "selected_n_minus_one": n1_safety,
-                    "families": {"transmission": transmission_family},
                 },
                 "network_effect": {
                     "planned_outage": {
