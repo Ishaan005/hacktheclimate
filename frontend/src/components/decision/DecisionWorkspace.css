@@ -1,0 +1,24 @@
+/* Page layout for the decision workspace. Safety sits left, the plan right;
+   they stack on narrow screens with safety first. */
+
+.decision-workspace {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.decision-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-16);
+  align-items: start;
+}
+
+.decision-panel {
+  min-width: 0;
+}
+
+@media (max-width: 880px) {
+  .decision-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

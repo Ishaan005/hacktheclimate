@@ -8,24 +8,34 @@ npm ci
 npm run dev
 ```
 
-The screen is one input field. The operator describes the situation, reviews
-the extracted facts, and the workspace shows the returned scenario: binding
-condition, recommended action when one is evidence-supported, baseline vs
-post-action outcome and guardrails.
+## Decision workspace (main screen)
 
-Live mode uses the existing UI as the contract:
+The main screen follows the [UI brief](../docs/UI_BRIEF_2026-09-29.md). It has
+a top bar (national or site view, source badge), a search bar limited to the
+locked T1–T4, H1–H4 and SNSP scope, the situation table, safety checks (left),
+the proposed plan (right), a four-column comparison and an evidence drawer.
+The code is in `src/decision/` (types, display rules, locked scope, fixture,
+API) and `src/components/decision/`.
 
-- `POST /v1/intake` extracts only operator-stated facts (Azure OpenAI with rule
-  fallback) into the current fact-review case. The checked demo facts remain
-  stable if the model disagrees or is unavailable.
-- `POST /v1/workspace/evaluate` accepts that reviewed case, runs the configured
-  decision/network/action backend, and returns the existing `WorkspaceScenario`
-  shape.
+The screen shows a backend assessment from `POST /v1/decision/assess`. That
+route does not exist yet, so live mode shows "No assessment available" (the
+API returns 405). Use `VITE_API_MODE=fixture npm run dev` to see the
+demonstration assessment. `src/decision/rules.ts` only makes the display more
+cautious. For example, a stale, unvalidated or unknown result is never shown
+as Actionable. It never creates a safety result.
 
-Missing planning files, unresolved scenario detail, unsupported safety checks,
-or unvalidated avoided-energy estimates return a live workspace with no
-recommended action and explicit reasons. Direct dispatch-down/chat questions
-keep their existing routes.
+## Grid assistant (second tab)
+
+The screen is one input field. The operator describes the situation and the
+workspace shows the returned scenario: binding condition, recommended action,
+baseline vs post-action outcome and guardrails. The recommended action carries
+`steps`: the ordered actions the operator takes, shown in a dropdown list. An
+LLM scenario solver will supply that scenario; until it is linked, live mode says the solver is not
+connected. Connect it in `solveSituation` in `src/api.ts`, which must return a
+`SolverResult` (see `src/types.ts`) or `null` for no match. A result is either a
+`scenario` or a `dispatch_down_risk` view for a UTC half-hour; the latter shows
+the next-hour card and day chart from `/v1/dispatch-down/forecast` and
+`/v1/dispatch-down/forecast/day` (historical January 2026 replay).
 
 For layout work without backend inputs, use the offline fixture explicitly:
 

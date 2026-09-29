@@ -130,22 +130,6 @@
   font-size: var(--font-size-12);
 }
 
-.button-ghost {
-  padding: var(--space-4) var(--space-8);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--color-accent);
-  font: inherit;
-  font-size: var(--font-size-14);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-}
-
-.button-ghost:hover {
-  background: var(--color-accent-soft);
-}
-
 .clarify-progress {
   margin: 0;
   color: var(--color-text-muted);

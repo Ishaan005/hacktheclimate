@@ -236,6 +236,23 @@ thead th {
 
 /* ---- Shared primitives: chips, cards, field lists, metrics ---- */
 
+/* Quiet text button for secondary actions such as Edit and Cancel. */
+.button-ghost {
+  padding: var(--space-4) var(--space-8);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.button-ghost:hover {
+  background: var(--color-accent-soft);
+}
+
 .chip {
   display: inline-block;
   padding: var(--space-2) var(--space-8);
