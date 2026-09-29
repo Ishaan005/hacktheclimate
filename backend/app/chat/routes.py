@@ -20,9 +20,17 @@ class ChatRequest(BaseModel):
     selected_target: str | None = None
 
 
+class TraceTool(BaseModel):
+    name: str
+    args: dict | None = None
+    ok: bool | None = None
+
+
 class TraceStep(BaseModel):
     node: str
     detail: str
+    duration_ms: int = 0
+    tools: list[TraceTool] = []
 
 
 class ChatResponse(BaseModel):

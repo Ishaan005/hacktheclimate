@@ -80,7 +80,7 @@ export const WORKSPACE_COPY = {
   assistantToolsUsed: 'Data used',
   assistantNoTools: 'No tools called',
   assistantRecommended: 'Recommended action',
-  assistantNote: 'Historical replay of January 2026 data, not a live forecast. Check the recommendation before acting.',
+  assistantNote: 'Answers come only from the tools listed. Historical replays and experimental forecasts are labelled; check before acting.',
   clarifyTitle: 'The solver needs more detail',
   clarifyRound: 'Round',
   clarifyDescribed: 'You described',
@@ -111,14 +111,9 @@ export const WORKSPACE_COPY = {
   baseline: 'Baseline',
   postAction: 'Post-action',
   guardrailTitle: 'Guardrails',
-  assistantTitle: 'Grid assistant',
-  assistantRecommended: 'Recommended action',
-  assistantToolsUsed: 'Data used',
-  assistantNoTools: 'No tools called',
-  assistantNote: 'Answers come only from the tools listed. Historical replays and experimental forecasts are labelled; check before acting.',
-  traceTitle: 'How the assistant answered',
-  traceSummary: 'Path through the LangGraph for this reply',
-  traceSkipped: 'Not used this time',
+  traceStepsTitle: 'Every step, in order',
+  traceToolOk: 'returned data',
+  traceToolError: 'returned an error',
 } as const;
 
 export const GUARDRAIL_STATUS_LABEL = {

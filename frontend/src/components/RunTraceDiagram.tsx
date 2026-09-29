@@ -1,5 +1,5 @@
 import { WORKSPACE_COPY } from '../copy';
-import type { TraceStep } from '../types';
+import type { TraceStep, TraceTool } from '../types';
 import './RunTraceDiagram.css';
 
 // Fixed layout of the chat graph (backend/app/chat/graph.py). The trace from
@@ -45,6 +45,87 @@ function edgePath(from: string, to: string): string {
   return `M ${a.x} ${a.y + H / 2} L ${b.x} ${b.y - H / 2}`;
 }
 
+const STEP_LABELS: Record<string, string> = {
+  load_actions: 'Load candidate actions',
+  agent: 'Model reasoning',
+  tools: 'Run tools',
+  select_action: 'Final reply',
+};
+
+function formatMs(ms?: number): string | null {
+  if (ms === undefined) return null;
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`;
+}
+
+function formatArgs(args?: TraceTool['args']): string {
+  if (!args) return '';
+  return Object.entries(args).map(([key, value]) => `${key}=${String(value)}`).join(', ');
+}
+
+// Every step this reply took, as a vertical flow. Tool steps fan out into one
+// chip per tool so parallel calls and failures are visible at a glance.
+export function RunTimeline({ steps, skipped }: { steps: TraceStep[]; skipped: string[] }) {
+  const total = steps.reduce((sum, step) => sum + (step.durationMs ?? 0), 0);
+  const toolCalls = steps.filter((step) => step.node === 'tools').reduce((n, step) => n + (step.tools?.length ?? 1), 0);
+  return (
+    <div className="run-timeline">
+      <p className="run-timeline-head">
+        {WORKSPACE_COPY.traceStepsTitle}
+        <span className="run-timeline-meta">
+          {steps.length} steps · {toolCalls} tool {toolCalls === 1 ? 'call' : 'calls'}{total ? ` · ${formatMs(total)}` : ''}
+        </span>
+      </p>
+      <ol className="run-timeline-steps">
+        <li className="rt-step rt-terminal"><span className="rt-dot" />start</li>
+        {steps.map((step, index) => {
+          const tools = step.tools ?? [];
+          const failed = step.node === 'tools' && tools.some((tool) => tool.ok === false);
+          const share = total && step.durationMs ? Math.max(4, Math.round((step.durationMs / total) * 100)) : 0;
+          return (
+            <li key={index} className={`rt-step rt-${step.node}${failed ? ' rt-failed' : ''}`}>
+              <span className="rt-dot">{index + 1}</span>
+              <div className="rt-card">
+                <div className="rt-card-head">
+                  <span className="rt-title">{STEP_LABELS[step.node] ?? step.node}</span>
+                  <span className="mono rt-node">{step.node}</span>
+                  {formatMs(step.durationMs) && <span className="rt-time">{formatMs(step.durationMs)}</span>}
+                </div>
+                {share > 0 && <div className="rt-bar"><span style={{ width: `${share}%` }} /></div>}
+                {step.node === 'agent' && tools.length > 0 ? (
+                  <ul className="rt-chips">
+                    {tools.map((tool, i) => (
+                      <li key={i} className="rt-chip rt-chip-request" title={formatArgs(tool.args)}>
+                        <span className="mono">{tool.name}</span>
+                        {formatArgs(tool.args) && <span className="rt-args mono">{formatArgs(tool.args)}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                ) : step.node === 'tools' && tools.length > 0 ? (
+                  <ul className="rt-chips">
+                    {tools.map((tool, i) => (
+                      <li key={i} className={`rt-chip ${tool.ok === false ? 'rt-chip-error' : 'rt-chip-ok'}`}>
+                        <span aria-hidden="true">{tool.ok === false ? '✕' : '✓'}</span>
+                        <span className="mono">{tool.name}</span>
+                        <span className="rt-args">{tool.ok === false ? WORKSPACE_COPY.traceToolError : WORKSPACE_COPY.traceToolOk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  step.detail && <p className="rt-detail">{step.detail}</p>
+                )}
+              </div>
+            </li>
+          );
+        })}
+        <li className="rt-step rt-terminal"><span className="rt-dot" />end</li>
+      </ol>
+      {skipped.length > 0 && (
+        <p className="run-trace-skipped">{WORKSPACE_COPY.traceSkipped}: <span className="mono">{skipped.join(', ')}</span></p>
+      )}
+    </div>
+  );
+}
+
 // The graph with this reply's path drawn on it, then the steps in order.
 function RunTraceDiagram({ trace }: { trace: TraceStep[] }) {
   const visited = new Set(trace.map((step) => step.node));
@@ -82,17 +163,7 @@ function RunTraceDiagram({ trace }: { trace: TraceStep[] }) {
             </g>
           ))}
         </svg>
-        <ol className="run-trace-steps">
-          {steps.map((step, index) => (
-            <li key={index}>
-              <span className="mono">{step.node}</span>
-              {step.detail && <span className="run-trace-detail"> — {step.detail}</span>}
-            </li>
-          ))}
-          {skipped.length > 0 && (
-            <li className="run-trace-skipped">{WORKSPACE_COPY.traceSkipped}: <span className="mono">{skipped.join(', ')}</span></li>
-          )}
-        </ol>
+        <RunTimeline steps={steps} skipped={skipped} />
       </div>
     </details>
   );
