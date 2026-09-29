@@ -3,7 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
+from backend.app import intake, workspace
 from backend.app.demo_cases import (
     evaluate_west_outage_demo,
     matches_west_outage_demo,
@@ -91,3 +94,37 @@ def test_t4_variant_refuses_when_further_loss_islands_demo_area():
     assert result["postAction"] is None
     assert "further-contingency" in result["noActionReason"]
     assert "islands" in result["noActionReason"]
+
+
+def test_hero_prompt_runs_intake_to_workspace_end_to_end():
+    app = FastAPI()
+    app.include_router(intake.router)
+    app.include_router(workspace.router)
+    client = TestClient(app)
+
+    intake_response = client.post("/v1/intake", json={
+        "description": (
+            "Planned outage in the west is causing a line overload. "
+            "High wind around Ballylickey is constrained for the next 2 hours. "
+            "What can we do to reduce dispatch-down?"
+        ),
+        "created_at": "2026-09-29T13:36:00Z",
+    })
+    assert intake_response.status_code == 200
+    body = intake_response.json()
+    assert body["extraction"] == "rules"
+    reviewed_case = body["case"]
+    assert reviewed_case["facts"]["affected_area"]["value"] == "West"
+    assert reviewed_case["facts"]["event_window"]["value"] == "next 2 hours"
+
+    evaluation_response = client.post(
+        "/v1/workspace/evaluate",
+        json={"case": reviewed_case},
+    )
+    assert evaluation_response.status_code == 200
+    scenario = evaluation_response.json()["scenario"]
+    assert scenario["source"] == "demo"
+    assert scenario["actionPresentation"] == "modeled_candidate"
+    assert scenario["action"] is not None
+    assert scenario["baseline"]["dispatchDownWasteMwh"] == pytest.approx(40.0)
+    assert scenario["postAction"]["dispatchDownWasteMwh"] == pytest.approx(20.0)
