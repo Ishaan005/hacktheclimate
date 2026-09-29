@@ -34,6 +34,9 @@ def _evidenced_candidate() -> dict:
         "capability_mw": 10.0,
         "side_effects_review_status": "reviewed",
         "evidence_reference": "synthetic operator evidence",
+        "available_at": "2026-09-28T23:40:00Z",
+        "max_age_seconds": 3600,
+        "valid_until": "2026-09-29T01:00:00Z",
     }
     return candidate
 
@@ -90,4 +93,6 @@ def test_bundle_requires_every_action_to_pass_operational_gates():
     assert result.asset_capability.status == "PASS"
     assert result.timing.status == "FAIL"
     assert result.overall == "FAIL"
-    assert result.timing_verified is False
+    # Permission failure blocks execution, but physical response timing itself
+    # is still fast enough for the transmission time-to-relief check.
+    assert result.relief_timing_verified is True
