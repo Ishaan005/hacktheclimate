@@ -2,12 +2,7 @@
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-=======
 import time
-
-from pathlib import Path
->>>>>>> 1123245 (Show every step of a chat run: per-step timing, tool requests with args, and tool results)
 from typing import Annotated, Sequence, TypedDict
 
 from langchain_core.language_models import BaseChatModel
