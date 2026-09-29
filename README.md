@@ -43,6 +43,7 @@ The UI calls `/v1/operator/view` by default. Without its reviewed network inputs
 | `GET /v1/forecast/constraint` | Future intervals from the latest checked experimental GFS forecast; 503 when unavailable or expired |
 | `GET /v1/network/forecast` | Input-gated planning-network scenarios |
 | `GET /v1/operator/view` | Network scenarios, conservative safety checks and action gaps |
+| `POST /v1/decision/preview` | Read-only case evidence, baseline, policy and missing-data preview |
 
 The January replay uses measured historical inputs and does not establish live forecasting or avoided-energy impact. The GFS model is a national constraint forecast; its August expected-MWh error did **not** beat a zero forecast. Network routes require a re-imported TYTFS case, reviewed generator crosswalk and current upstream forecasts. They do not infer a safe action from the GFS result alone.
 
