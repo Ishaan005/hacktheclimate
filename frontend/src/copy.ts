@@ -119,6 +119,9 @@ export const WORKSPACE_COPY = {
   traceTitle: 'How the assistant answered',
   traceSummary: 'Path through the LangGraph for this reply',
   traceSkipped: 'Not used this time',
+  traceStepsTitle: 'Every step, in order',
+  traceToolOk: 'returned data',
+  traceToolError: 'returned an error',
 } as const;
 
 export const GUARDRAIL_STATUS_LABEL = {

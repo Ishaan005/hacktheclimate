@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+<<<<<<< HEAD
+=======
+import time
+
+from pathlib import Path
+>>>>>>> 1123245 (Show every step of a chat run: per-step timing, tool requests with args, and tool results)
 from typing import Annotated, Sequence, TypedDict
 
 from langchain_core.language_models import BaseChatModel
@@ -82,11 +88,38 @@ def _step_detail(node: str, update: dict) -> str:
     return ""
 
 
+def _step_tools(node: str, update: dict) -> list[dict]:
+    """Per-tool detail for a step: what the agent asked for, or how each tool came back."""
+    messages = update.get("messages") or []
+    if node == "agent":
+        return [{"name": c["name"], "args": c.get("args") or {}} for m in messages for c in (getattr(m, "tool_calls", None) or [])]
+    if node == "tools":
+        out = []
+        for m in messages:
+            if not getattr(m, "name", None):
+                continue
+            text = str(m.content)
+            out.append({"name": m.name, "ok": getattr(m, "status", "success") != "error" and '"error"' not in text[:200]})
+        return out
+    return []
+
+
 def run_with_trace(graph, inputs: dict, config: dict) -> tuple[dict, list[dict]]:
-    """Run one turn and record every node that actually executed, in order."""
-    trace = [{"node": "__start__", "detail": ""}]
+    """Run one turn and record every node that actually executed, in order.
+
+    The compiled graph has conditional edges (agent -> tools or select_action),
+    so the path differs per question. Streaming node updates gives the real
+    path: START, then each node as it ran, then END. Updates arrive as each
+    node finishes, so the gap between them is that node's run time.
+    """
+    trace = [{"node": "__start__", "detail": "", "duration_ms": 0, "tools": []}]
+    last = time.perf_counter()
     for chunk in graph.stream(inputs, config, stream_mode="updates"):
+        now = time.perf_counter()
         for node, update in chunk.items():
-            trace.append({"node": node, "detail": _step_detail(node, update or {})})
-    trace.append({"node": "__end__", "detail": ""})
+            update = update or {}
+            trace.append({"node": node, "detail": _step_detail(node, update),
+                          "duration_ms": round((now - last) * 1000), "tools": _step_tools(node, update)})
+        last = now
+    trace.append({"node": "__end__", "detail": "", "duration_ms": 0, "tools": []})
     return graph.get_state(config).values, trace

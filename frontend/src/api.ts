@@ -97,7 +97,8 @@ export class SolverUnavailableError extends Error {}
 // assistant used one, the real forecast view is shown beside its reply.
 const DISPATCH_DOWN_TOOLS = new Set(['get_dispatch_down_forecast', 'get_dispatch_down_day']);
 
-type ChatResponse = { thread_id: string; reply: string; tools_used: string[]; model: string; trace?: TraceStep[] };
+type ChatResponse = { thread_id: string; reply: string; tools_used: string[]; model: string; trace?: ApiTraceStep[] };
+type ApiTraceStep = { node: string; detail: string; duration_ms?: number; tools?: TraceStep['tools'] };
 
 // The chat route takes one message per turn. Follow-up answers are sent as a
 // short labelled list on the same thread; the first turn is the description.
@@ -158,7 +159,7 @@ export async function solveSituation(request: SolverRequest, signal?: AbortSigna
     || resolveDispatchDownQuestion(request.description) !== null;
   return {
     kind: 'assistant_reply',
-    reply: { threadId: body.thread_id, text: body.reply, toolsUsed: body.tools_used, model: body.model, trace: body.trace ?? [] },
+    reply: { threadId: body.thread_id, text: body.reply, toolsUsed: body.tools_used, model: body.model, trace: (body.trace ?? []).map(({ duration_ms, ...step }) => (duration_ms === undefined ? step : { ...step, durationMs: duration_ms })) },
     target: aboutDispatchDown ? selectedTarget ?? DEFAULT_TARGET : null,
   };
 }
