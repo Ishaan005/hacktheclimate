@@ -70,7 +70,7 @@ export const WORKSPACE_COPY = {
   noMatchTitle: 'No scenario found for this description',
   noMatchConsequence: 'No action is shown. Add the area, asset or limit and try again.',
   solverUnavailableTitle: 'Scenario solver not connected',
-  solverUnavailableConsequence: 'No action can be returned yet. Use fixture mode to preview the workspace layout.',
+  solverUnavailableConsequence: 'No action can be returned yet. Questions about dispatch-down risk still work. Use fixture mode to preview the workspace layout.',
   solverErrorTitle: 'Scenario solver did not respond',
   solverErrorConsequence: 'No action is shown. Try again.',
   clarifyTitle: 'The solver needs more detail',

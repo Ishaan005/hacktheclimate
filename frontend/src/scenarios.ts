@@ -87,22 +87,27 @@ export function resolveSituation(description: string, scenarios: WorkspaceScenar
 const DISPATCH_DOWN_PATTERN = /\b(dispatch[\s-]*down|dispatch|dd|risk|forecast|graph|chart|next[\s-]*hour)\b/i;
 const TARGET_PATTERN = /(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/;
 
+// Questions about dispatch-down risk go to the replay view, at the time named
+// in the description when it is a valid replay half-hour. Used in both modes:
+// live mode sends these to the dispatch-down API until the LLM solver exists.
+export function resolveDispatchDownQuestion(description: string): SolverResult | null {
+  if (!DISPATCH_DOWN_PATTERN.test(description)) return null;
+  const match = description.match(TARGET_PATTERN);
+  const named = match ? `${match[1]}T${match[2]}` : null;
+  return { kind: 'dispatch_down_risk', target: named && !validateTarget(named) ? named : DEFAULT_TARGET };
+}
+
 // Descriptions that name no limit, area or asset. The offline solver asks
 // follow-up questions for these instead of guessing.
 const VAGUE_PATTERN = /\b(problem|issue|help|alarm|alert|something|not sure|unsure)\b/i;
 
-// Offline fixture only: questions about dispatch-down risk get the replay
-// view, at the time named in the description when it is a valid replay
-// half-hour. A vague first description gets the illustrative follow-up
+// Offline fixture only: dispatch-down questions as above. A vague first description gets the illustrative follow-up
 // questions; answers are appended to the description and matched against the
 // illustrative scenarios.
 export function resolveFixtureSolver(request: SolverRequest, scenarios: WorkspaceScenario[]): SolverResult | null {
   const { description, answers } = request;
-  if (DISPATCH_DOWN_PATTERN.test(description)) {
-    const match = description.match(TARGET_PATTERN);
-    const named = match ? `${match[1]}T${match[2]}` : null;
-    return { kind: 'dispatch_down_risk', target: named && !validateTarget(named) ? named : DEFAULT_TARGET };
-  }
+  const dispatchDown = resolveDispatchDownQuestion(description);
+  if (dispatchDown) return dispatchDown;
   if (!answers.length && VAGUE_PATTERN.test(description)) {
     return { kind: 'clarification', threadId: null, clarification: illustrativeClarification };
   }
