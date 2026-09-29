@@ -283,3 +283,277 @@ def screen_actions(
             "No fully PASS action with a validated locational avoided-constraint estimate is available."
         ),
     }
+
+
+def _scale_allocations(
+    allocations: dict[str, float],
+    candidates: dict[str, Mapping[str, Any]],
+    limits: dict[Any, float],
+    key_fn,
+) -> None:
+    """Scale allocations in-place so actions sharing one resource do not double count it."""
+    grouped: dict[Any, list[str]] = {}
+    for action_id, amount in allocations.items():
+        if amount <= 0:
+            continue
+        grouped.setdefault(key_fn(candidates[action_id]), []).append(action_id)
+    for key, action_ids in grouped.items():
+        limit = max(0.0, float(limits.get(key, 0.0)))
+        total = sum(allocations[action_id] for action_id in action_ids)
+        if total > limit + 1e-9 and total > 0:
+            scale = limit / total
+            for action_id in action_ids:
+                allocations[action_id] *= scale
+
+
+def screen_action_bundles(
+    case: NetworkCase,
+    forecast_rows: list[dict[str, Any]],
+    reviewed_crosswalk: list[dict[str, Any]],
+    candidates: list[dict[str, Any]],
+    bundles: list[Mapping[str, Any]],
+    *,
+    planned_outage: Asset = DEFAULT_PLANNED_OUTAGE,
+    selected_contingency: Asset | None = None,
+) -> dict[str, Any]:
+    """Simulate compatible flexible-load action bundles on one shared grid state.
+
+    The current executable action family is paired renewable output + flexible
+    demand. Bundle allocation shares recoverable renewable MW, renewable-bus MEC
+    headroom, and national expected constraint opportunity so the same energy
+    cannot be counted twice across actions.
+    """
+    validate_forecast_rows(forecast_rows)
+    if len(candidates) > MAX_CANDIDATES:
+        raise ValueError(f"at most {MAX_CANDIDATES} controlled actions are supported")
+    for candidate in candidates:
+        _candidate_fields(candidate)
+    candidate_by_id = {str(candidate["action_id"]): candidate for candidate in candidates}
+    if len(candidate_by_id) != len(candidates):
+        raise ValueError("action IDs must be unique")
+
+    active_buses = {int(bus["bus_id"]) for bus in case.buses if bus["in_service"]}
+    shares = normalized_load_shares(case)
+    groups, mapping_confidence = reviewed_generation_groups(case, reviewed_crosswalk)
+
+    outage_assets = (
+        case.branches if planned_outage.asset_type == "branch"
+        else case.transformers if planned_outage.asset_type == "transformer"
+        else None
+    )
+    outage_id_field = "asset_id" if planned_outage.asset_type == "branch" else "transformer_id"
+    if outage_assets is None or not any(
+        item[outage_id_field] == planned_outage.asset_id and item["in_service"]
+        for item in outage_assets
+    ):
+        raise ValueError("planned outage must identify an in-service case asset")
+    disabled = (
+        {"disabled_branches": [planned_outage.asset_id]}
+        if planned_outage.asset_type == "branch"
+        else {"disabled_transformers": [planned_outage.asset_id]}
+    )
+    n1_disabled = dict(disabled)
+    if selected_contingency is not None:
+        if selected_contingency == planned_outage:
+            raise ValueError("selected contingency must differ from the planned outage")
+        if selected_contingency.asset_type == "branch":
+            n1_disabled["disabled_branches"] = [
+                *n1_disabled.get("disabled_branches", []), selected_contingency.asset_id,
+            ]
+        elif selected_contingency.asset_type == "transformer":
+            n1_disabled["disabled_transformers"] = [
+                *n1_disabled.get("disabled_transformers", []), selected_contingency.asset_id,
+            ]
+        else:
+            raise ValueError("selected contingency asset type is unsupported")
+
+    # Validate physical references once. Shared resources are enforced per interval below.
+    candidate_bus_mec: dict[str, float] = {}
+    for action_id, candidate in candidate_by_id.items():
+        load_bus = int(candidate["load_bus_id"])
+        renewable_bus = int(candidate["renewable_bus_id"])
+        if load_bus not in active_buses or renewable_bus not in active_buses or load_bus == renewable_bus:
+            raise ValueError("action buses must be distinct active buses")
+        region = str(candidate["allocation_region"]).strip()
+        kind = str(candidate["generation_type"])
+        sites = groups.get((region, kind), [])
+        bus_mec = sum(site["mec_mw"] for site in sites if site["bus_id"] == renewable_bus)
+        if bus_mec <= 0:
+            raise ValueError("action renewable bus lacks a reviewed region/technology match")
+        candidate_bus_mec[action_id] = bus_mec
+
+    evaluations = []
+    for bundle in bundles:
+        bundle_id = str(bundle["bundle_id"])
+        action_ids = [str(item) for item in bundle.get("action_instance_ids", [])]
+        if not action_ids:
+            raise ValueError("network bundle screen accepts non-baseline bundles only")
+        unknown_ids = sorted(set(action_ids) - set(candidate_by_id))
+        if unknown_ids:
+            raise ValueError(f"bundle references unknown action IDs: {unknown_ids}")
+        if len(action_ids) != len(set(action_ids)):
+            raise ValueError("bundle action IDs must be unique")
+
+        bundle_candidates = {action_id: candidate_by_id[action_id] for action_id in action_ids}
+        intervals = []
+        for row in forecast_rows:
+            valid = _parse_time(str(row["valid_time"]))
+            injections, dc_overrides, _ = future_injection_adapter(
+                case, row, load_shares=shares, generation_groups=groups,
+            )
+            base_renewable, _ = allocate_regional_generation(
+                row.get("regional_generation_mw", {}), groups,
+            )
+
+            allocations: dict[str, float] = {}
+            bus_limits: dict[int, float] = {}
+            region_limits: dict[tuple[str, str], float] = {}
+            for action_id, candidate in bundle_candidates.items():
+                start = _parse_time(str(candidate["available_from"]))
+                end = _parse_time(str(candidate["available_until"]))
+                if not start <= valid < end:
+                    allocations[action_id] = 0.0
+                    continue
+                renewable_bus = int(candidate["renewable_bus_id"])
+                region = str(candidate["allocation_region"]).strip()
+                kind = str(candidate["generation_type"])
+                bus_limits[renewable_bus] = max(
+                    0.0,
+                    candidate_bus_mec[action_id] - base_renewable.get(renewable_bus, 0.0),
+                )
+                region_limits[(region, kind)] = _recoverable_mw(row, region, kind)
+                allocations[action_id] = float(candidate["power_mw"])
+
+            # One renewable bus, region/technology opportunity, and national
+            # expected-constraint opportunity are shared budgets for the bundle.
+            _scale_allocations(
+                allocations, bundle_candidates, bus_limits,
+                lambda candidate: int(candidate["renewable_bus_id"]),
+            )
+            _scale_allocations(
+                allocations, bundle_candidates, region_limits,
+                lambda candidate: (
+                    str(candidate["allocation_region"]).strip(),
+                    str(candidate["generation_type"]),
+                ),
+            )
+            total = sum(allocations.values())
+            national_cap_mw = max(0.0, float(row["expected_constraint_mwh"]) / 0.5)
+            if total > national_cap_mw + 1e-9 and total > 0:
+                scale = national_cap_mw / total
+                allocations = {action_id: amount * scale for action_id, amount in allocations.items()}
+                total = national_cap_mw
+
+            if total <= 1e-8:
+                intervals.append({
+                    "valid_time": row["valid_time"],
+                    "applied_mw": 0.0,
+                    "modeled_capture_upper_bound_mwh": 0.0,
+                    "action_allocations_mw": allocations,
+                    "safety": None,
+                    "reason": "No shared recoverable renewable or constraint opportunity is available.",
+                })
+                continue
+
+            changed = dict(injections)
+            for action_id, amount in allocations.items():
+                if amount <= 0:
+                    continue
+                candidate = bundle_candidates[action_id]
+                changed[int(candidate["renewable_bus_id"])] += amount
+                changed[int(candidate["load_bus_id"])] -= amount
+
+            base_solve = solve_dc_case(
+                case, injection_overrides_mw=injections,
+                dc_transfer_overrides_mw=dc_overrides, **disabled,
+            )
+            solve = solve_dc_case(
+                case, injection_overrides_mw=changed,
+                dc_transfer_overrides_mw=dc_overrides, **disabled,
+            )
+            n1_base = n1_action = None
+            if selected_contingency is not None:
+                n1_base = solve_dc_case(
+                    case, injection_overrides_mw=injections,
+                    dc_transfer_overrides_mw=dc_overrides, **n1_disabled,
+                )
+                n1_action = solve_dc_case(
+                    case, injection_overrides_mw=changed,
+                    dc_transfer_overrides_mw=dc_overrides, **n1_disabled,
+                )
+
+            planned_safety = evaluate_safety(solve).to_dict()
+            n1_safety = evaluate_safety(n1_action).to_dict() if n1_action is not None else None
+            has_assumption = any(
+                candidate["review_status"] == "scenario_assumption"
+                for candidate in bundle_candidates.values()
+            )
+            overall = combine_checks({
+                "planned_outage": CheckResult(planned_safety["overall"], "scenario result"),
+                **({"selected_n_minus_one": CheckResult(n1_safety["overall"], "scenario result")}
+                   if n1_safety is not None else {}),
+                **({"action_location": CheckResult("UNKNOWN", "One or more action locations are scenario assumptions")}
+                   if has_assumption else {}),
+            })
+            intervals.append({
+                "valid_time": row["valid_time"],
+                "applied_mw": total,
+                "modeled_capture_upper_bound_mwh": total * 0.5,
+                "action_allocations_mw": allocations,
+                "safety": {
+                    "overall": overall,
+                    "planned_outage": planned_safety,
+                    "selected_n_minus_one": n1_safety,
+                },
+                "network_effect": {
+                    "planned_outage": {
+                        "asset_id": planned_outage.asset_id,
+                        "base": _network_features(base_solve),
+                        "with_action": _network_features(solve),
+                        "flow_changes": _flow_changes(base_solve, solve),
+                    },
+                    "selected_n_minus_one": (
+                        {
+                            "asset_id": selected_contingency.asset_id,
+                            "base": _network_features(n1_base),
+                            "with_action": _network_features(n1_action),
+                            "flow_changes": _flow_changes(n1_base, n1_action),
+                        }
+                        if n1_base is not None and n1_action is not None else None
+                    ),
+                },
+            })
+
+        checked = [item for item in intervals if item["safety"] is not None]
+        overall = (
+            combine_checks({
+                str(index): CheckResult(item["safety"]["overall"], "interval result")
+                for index, item in enumerate(checked)
+            })
+            if checked else "UNKNOWN"
+        )
+        evaluations.append({
+            "bundle_id": bundle_id,
+            "action_instance_ids": action_ids,
+            "safety_overall": overall,
+            "modeled_capture_upper_bound_mwh": sum(
+                item["modeled_capture_upper_bound_mwh"] for item in intervals
+            ),
+            "expected_avoided_dispatch_down_mwh": None,
+            "renewable_mapping_confidence": mapping_confidence,
+            "intervals": intervals,
+        })
+
+    ranked = sorted(
+        (row for row in evaluations if row["safety_overall"] == "PASS"),
+        key=lambda row: (-row["modeled_capture_upper_bound_mwh"], row["bundle_id"]),
+    )
+    return {
+        "evaluated": evaluations,
+        "ranked_screening_pass_bundles": [row["bundle_id"] for row in ranked],
+        "best_screening_pass_bundle": ranked[0]["bundle_id"] if ranked else None,
+        "recommendation": None,
+        "recommendation_reason": (
+            "Bundle ranking is a modeled capture screen only; expected avoided dispatch-down is not validated."
+        ),
+    }
