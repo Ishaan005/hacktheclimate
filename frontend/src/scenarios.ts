@@ -4,12 +4,25 @@
 
 import { formatTime } from './format';
 import { DEFAULT_TARGET, validateTarget } from './dispatchDown';
-import type { RecommendedAction, SolverResult, WorkspaceScenario } from './types';
+import { answerLabel } from './clarification';
+import { illustrativeClarification } from './fixtures/illustrativeClarification';
+import type { Executability, RecommendedAction, SolverRequest, SolverResult, WorkspaceScenario } from './types';
 
 // Reads like a dispatch instruction, e.g.
 // "Issued 14:55 — Generator A to 100 MW by 15:10, effective until 16:30."
+// An interconnector change is a request to a counterparty, so it says so.
 export function instructionText(action: RecommendedAction): string {
-  return `Issued ${formatTime(action.issueTime)} — ${action.assetName} to ${action.targetState} by ${formatTime(action.targetTime)}, effective until ${formatTime(action.effectiveUntil)}.`;
+  const verb = action.family === 'interconnector_request' ? 'Requested' : 'Issued';
+  return `${verb} ${formatTime(action.issueTime)} — ${action.assetName} to ${action.targetState} by ${formatTime(action.targetTime)}, effective until ${formatTime(action.effectiveUntil)}.`;
+}
+
+// An interconnector request is never shown as executable until the
+// counterparty confirms it, whatever the solver reported.
+export function effectiveExecutability(action: RecommendedAction): Executability {
+  if (action.family === 'interconnector_request' && action.details.coordinationStatus !== 'confirmed') {
+    return 'unconfirmed';
+  }
+  return action.executability;
 }
 
 // Avoided waste needs both states. Null when either is unknown.
@@ -74,15 +87,34 @@ export function resolveSituation(description: string, scenarios: WorkspaceScenar
 const DISPATCH_DOWN_PATTERN = /\b(dispatch[\s-]*down|dispatch|dd|risk|forecast|graph|chart|next[\s-]*hour)\b/i;
 const TARGET_PATTERN = /(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/;
 
-// Offline fixture only: questions about dispatch-down risk get the replay
-// view, at the time named in the description when it is a valid replay
-// half-hour. Anything else is matched against the illustrative scenarios.
-export function resolveFixtureSolver(description: string, scenarios: WorkspaceScenario[]): SolverResult | null {
-  if (DISPATCH_DOWN_PATTERN.test(description)) {
-    const match = description.match(TARGET_PATTERN);
-    const named = match ? `${match[1]}T${match[2]}` : null;
-    return { kind: 'dispatch_down_risk', target: named && !validateTarget(named) ? named : DEFAULT_TARGET };
+// Questions about dispatch-down risk go to the replay view, at the time named
+// in the description when it is a valid replay half-hour. Used in both modes:
+// live mode sends these to the dispatch-down API until the LLM solver exists.
+export function resolveDispatchDownQuestion(description: string): SolverResult | null {
+  if (!DISPATCH_DOWN_PATTERN.test(description)) return null;
+  const match = description.match(TARGET_PATTERN);
+  const named = match ? `${match[1]}T${match[2]}` : null;
+  return { kind: 'dispatch_down_risk', target: named && !validateTarget(named) ? named : DEFAULT_TARGET };
+}
+
+// Descriptions that name no limit, area or asset. The offline solver asks
+// follow-up questions for these instead of guessing.
+const VAGUE_PATTERN = /\b(problem|issue|help|alarm|alert|something|not sure|unsure)\b/i;
+
+// Offline fixture only: dispatch-down questions as above. A vague first description gets the illustrative follow-up
+// questions; answers are appended to the description and matched against the
+// illustrative scenarios.
+export function resolveFixtureSolver(request: SolverRequest, scenarios: WorkspaceScenario[]): SolverResult | null {
+  const { description, answers } = request;
+  const dispatchDown = resolveDispatchDownQuestion(description);
+  if (dispatchDown) return dispatchDown;
+  if (!answers.length && VAGUE_PATTERN.test(description)) {
+    return { kind: 'clarification', threadId: null, clarification: illustrativeClarification };
   }
-  const scenario = resolveSituation(description, scenarios);
+  const answered = answers.map((answer) => {
+    const question = illustrativeClarification.questions.find((item) => item.id === answer.questionId);
+    return question ? answerLabel(question, answer.value) : null;
+  });
+  const scenario = resolveSituation([description, ...answered].filter(Boolean).join(' '), scenarios);
   return scenario ? { kind: 'scenario', scenario } : null;
 }

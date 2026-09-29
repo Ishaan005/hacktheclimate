@@ -1,14 +1,16 @@
 import { ACTION_FAMILY_LABEL, EXECUTABILITY_LABEL, WORKSPACE_COPY } from '../copy';
 import { formatTime } from '../format';
-import { instructionText } from '../scenarios';
+import { effectiveExecutability, instructionText } from '../scenarios';
 import type { RecommendedAction } from '../types';
+import ActionDetails from './ActionDetails';
 
 type Props = {
   action: RecommendedAction | null;
   noActionReason: string | null;
 };
 
-// Shared shell. Phase 2 renders family-specific detail inside it.
+// Shared shell: the complete instruction first, family-specific detail on
+// expansion.
 function RecommendedActionCard({ action, noActionReason }: Props) {
   if (!action) {
     return (
@@ -19,15 +21,21 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
       </section>
     );
   }
-  const executableTone = action.executability === 'executable' ? 'chip-neutral' : 'chip-unknown';
+  const executability = effectiveExecutability(action);
+  const executableTone = executability === 'executable' ? 'chip-neutral' : 'chip-unknown';
+  const unconfirmedRequest = action.family === 'interconnector_request' && executability === 'unconfirmed';
   return (
-    <section className="card card-action" aria-labelledby="action-heading">
+    <section
+      className={`card card-action${unconfirmedRequest ? ' card-action-conditional' : ''}`}
+      aria-labelledby="action-heading"
+    >
       <h3 id="action-heading" className="card-kicker">
         {WORKSPACE_COPY.actionTitle}
         <span className="chip chip-neutral">{ACTION_FAMILY_LABEL[action.family]}</span>
-        <span className={`chip ${executableTone}`}>{EXECUTABILITY_LABEL[action.executability]}</span>
+        <span className={`chip ${executableTone}`}>{EXECUTABILITY_LABEL[executability]}</span>
       </h3>
       <p className="instruction">{instructionText(action)}</p>
+      {unconfirmedRequest && <p className="action-warning">{WORKSPACE_COPY.interconnectorNotConfirmed}</p>}
       <dl className="fields fields-action">
         <div><dt>Asset</dt><dd>{action.assetName}</dd></div>
         <div><dt>Location</dt><dd>{action.location}</dd></div>
@@ -42,6 +50,10 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
           <dd className="mono">{action.earliestExecution ? formatTime(action.earliestExecution) : 'Unknown'}</dd>
         </div>
       </dl>
+      <details className="action-details">
+        <summary>{WORKSPACE_COPY.actionDetailsSummary}: {ACTION_FAMILY_LABEL[action.family]}</summary>
+        <ActionDetails action={action} />
+      </details>
     </section>
   );
 }

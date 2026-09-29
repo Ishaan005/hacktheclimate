@@ -9,6 +9,10 @@ import { dispatchDownReductionPct, resolveFixtureSolver, resolveSituation } from
 
 const [thermal, voltage, snsp] = illustrativeScenarios;
 
+function request(description: string) {
+  return { description, threadId: null, answers: [] };
+}
+
 function expectNoForbiddenCopy() {
   const text = document.body.textContent?.toLowerCase() ?? '';
   for (const phrase of FORBIDDEN_PHRASES) expect(text).not.toContain(phrase);
@@ -94,14 +98,14 @@ describe('situation matcher', () => {
   });
 
   it('routes dispatch-down questions to the replay view at a valid named time', () => {
-    expect(resolveFixtureSolver('dispatch-down risk at 2026-01-20 14:30', illustrativeScenarios))
+    expect(resolveFixtureSolver(request('dispatch-down risk at 2026-01-20 14:30'), illustrativeScenarios))
       .toEqual({ kind: 'dispatch_down_risk', target: '2026-01-20T14:30' });
     // Outside the January replay: fall back to the default time.
-    expect(resolveFixtureSolver('dispatch down 2026-03-01 10:00', illustrativeScenarios))
+    expect(resolveFixtureSolver(request('dispatch down 2026-03-01 10:00'), illustrativeScenarios))
       .toEqual({ kind: 'dispatch_down_risk', target: DEFAULT_TARGET });
-    expect(resolveFixtureSolver('overload in the west', illustrativeScenarios)?.kind).toBe('scenario');
+    expect(resolveFixtureSolver(request('overload in the west'), illustrativeScenarios)?.kind).toBe('scenario');
     for (const phrase of ['DD next hour', 'show the graph', 'dispatch down', 'risk?', 'Dispatchdown forecast']) {
-      expect(resolveFixtureSolver(phrase, illustrativeScenarios)?.kind).toBe('dispatch_down_risk');
+      expect(resolveFixtureSolver(request(phrase), illustrativeScenarios)?.kind).toBe('dispatch_down_risk');
     }
   });
 });

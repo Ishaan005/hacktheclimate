@@ -1,7 +1,7 @@
 import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
 import { fixtureOperatorView, fixtureOutages, fixtureScenario } from './fixtures/operatorView';
-import { resolveFixtureSolver } from './scenarios';
-import type { NetworkDecision, OperatorView, ReviewedOutageOption, SolverResult } from './types';
+import { resolveDispatchDownQuestion, resolveFixtureSolver } from './scenarios';
+import type { NetworkDecision, OperatorView, ReviewedOutageOption, SolverRequest, SolverResult } from './types';
 
 import { USE_FIXTURE } from './mode';
 
@@ -88,12 +88,17 @@ export async function fetchReviewedOutages(signal?: AbortSignal): Promise<Review
 // instead of showing a generic error.
 export class SolverUnavailableError extends Error {}
 
-// Turns an operator's situation description into one solver result: a
-// workspace scenario or a dispatch-down risk view. Null means no match.
-// Fixture mode matches keywords; live mode waits for the LLM solver endpoint,
-// which is not linked yet.
-export async function solveSituation(description: string, signal?: AbortSignal): Promise<SolverResult | null> {
-  if (USE_FIXTURE) return resolveFixtureSolver(description, illustrativeScenarios);
+// Turns an operator's situation description, plus any answers to earlier
+// follow-up questions, into one solver result: a workspace scenario, a
+// dispatch-down risk view or more questions. Null means no match.
+// Fixture mode matches keywords. Live mode has no LLM solver yet, so only
+// dispatch-down questions get an answer: they open the dispatch-down view,
+// which calls the real /v1/dispatch-down API. useSituationSolver shape-checks
+// any follow-up questions before they render.
+export async function solveSituation(request: SolverRequest, signal?: AbortSignal): Promise<SolverResult | null> {
+  if (USE_FIXTURE) return resolveFixtureSolver(request, illustrativeScenarios);
   void signal;
+  const dispatchDown = resolveDispatchDownQuestion(request.description);
+  if (dispatchDown) return dispatchDown;
   throw new SolverUnavailableError('The scenario solver is not connected yet.');
 }

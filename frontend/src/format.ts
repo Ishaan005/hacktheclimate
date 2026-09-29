@@ -34,6 +34,18 @@ export function formatNumber(value: number | null, unit: string, digits = 0): st
   return `${value.toFixed(digits)} ${unit}`;
 }
 
+// Explicit sign for changes and reactive power, e.g. "+40 Mvar".
+export function formatSigned(value: number | null, unit: string, digits = 0): string {
+  if (value === null || !Number.isFinite(value)) return COPY.notAvailable;
+  const sign = value > 0 ? '+' : value < 0 ? '−' : '';
+  return `${sign}${Math.abs(value).toFixed(digits)} ${unit}`;
+}
+
+export function formatList(values: string[] | null): string {
+  if (values === null) return COPY.notAvailable;
+  return values.length ? values.join(', ') : 'None';
+}
+
 export function formatPercent(value: number | null, digits = 0): string {
   if (value === null || !Number.isFinite(value)) return COPY.notAvailable;
   return `${value.toFixed(digits)}%`;
