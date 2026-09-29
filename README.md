@@ -137,4 +137,6 @@ Request fields:
 | `thread_id` | No | Continues an earlier conversation; omit it to start a new one |
 | `selected_target` | No | The UTC time selected in the UI, so "this time" refers to it |
 
+The UI's situation box uses the same route. With the API and `npm run dev` running (not fixture mode), type a question such as `What is the dispatch-down risk at 2026-01-24 01:00, and what should I do?`. The reply card shows the answer, the recommended action and the tools used; when a dispatch-down tool was called for a named time, the real forecast view appears below it. If chat is not configured, dispatch-down questions still open the forecast view.
+
 Candidate actions come from `config/operator_actions.txt`. To switch model, change `AZURE_OPENAI_DEPLOYMENT` in `.env` (`gpt-4.1`, `gpt-4.1-mini` or `gpt-4o`) and restart the API. A `429` response means the shared Azure endpoint is rate-limited; wait and retry.

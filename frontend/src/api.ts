@@ -1,7 +1,7 @@
 import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
 import { fixtureOperatorView, fixtureOutages, fixtureScenario } from './fixtures/operatorView';
-import { resolveDispatchDownQuestion, resolveFixtureSolver } from './scenarios';
-import type { NetworkDecision, OperatorView, ReviewedOutageOption, SolverRequest, SolverResult } from './types';
+import { namedTarget, resolveDispatchDownQuestion, resolveFixtureSolver } from './scenarios';
+import type { ClarificationAnswer, NetworkDecision, OperatorView, ReviewedOutageOption, SolverRequest, SolverResult } from './types';
 
 import { USE_FIXTURE } from './mode';
 
@@ -84,21 +84,72 @@ export async function fetchReviewedOutages(signal?: AbortSignal): Promise<Review
   return [];
 }
 
-// Thrown while the LLM scenario solver is not connected, so the UI can say so
-// instead of showing a generic error.
+// Thrown while the LLM solver is not reachable (chat not configured, or the
+// API is down), so the UI can say so instead of showing a generic error.
 export class SolverUnavailableError extends Error {}
 
-// Turns an operator's situation description, plus any answers to earlier
-// follow-up questions, into one solver result: a workspace scenario, a
-// dispatch-down risk view or more questions. Null means no match.
-// Fixture mode matches keywords. Live mode has no LLM solver yet, so only
-// dispatch-down questions get an answer: they open the dispatch-down view,
-// which calls the real /v1/dispatch-down API. useSituationSolver shape-checks
-// any follow-up questions before they render.
+// Tools whose result is the national dispatch-down forecast. When the
+// assistant used one, the real forecast view is shown beside its reply.
+const DISPATCH_DOWN_TOOLS = new Set(['get_dispatch_down_forecast', 'get_dispatch_down_day']);
+
+type ChatResponse = { thread_id: string; reply: string; tools_used: string[]; model: string };
+
+// The chat route takes one message per turn. Follow-up answers are sent as a
+// short labelled list on the same thread; the first turn is the description.
+export function chatMessage(request: SolverRequest): string {
+  if (!request.answers.length) return request.description;
+  const lines = request.answers.map((answer: ClarificationAnswer) => {
+    const value = answer.value === null ? '(left blank)' : Array.isArray(answer.value) ? answer.value.join(', ') : String(answer.value);
+    return `- round ${answer.round}, ${answer.questionId}: ${value}`;
+  });
+  return [`Answers to your follow-up questions about: ${request.description}`, ...lines].join('\n');
+}
+
+async function errorDetail(response: Response): Promise<string> {
+  try {
+    const body = await response.json();
+    if (typeof body?.detail === 'string') return body.detail;
+  } catch {
+    // Not JSON; fall through to the status line.
+  }
+  return `/v1/chat returned HTTP ${response.status}`;
+}
+
+// Turns an operator's situation description into one solver result.
+// Fixture mode matches keywords against illustrative data. Live mode sends
+// the description to the LangGraph assistant (POST /v1/chat), which calls the
+// real forecast tools and ends with its select_action recommendation. If the
+// assistant is not configured (503) or the API cannot be reached,
+// dispatch-down questions still open the real dispatch-down view.
 export async function solveSituation(request: SolverRequest, signal?: AbortSignal): Promise<SolverResult | null> {
   if (USE_FIXTURE) return resolveFixtureSolver(request, illustrativeScenarios);
-  void signal;
-  const dispatchDown = resolveDispatchDownQuestion(request.description);
-  if (dispatchDown) return dispatchDown;
-  throw new SolverUnavailableError('The scenario solver is not connected yet.');
+  const selectedTarget = namedTarget(request.description);
+  let response: Response;
+  try {
+    response = await fetch('/v1/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: chatMessage(request), thread_id: request.threadId, selected_target: selectedTarget }),
+      signal,
+    });
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    const fallback = resolveDispatchDownQuestion(request.description);
+    if (fallback) return fallback;
+    throw new SolverUnavailableError('The API server could not be reached.');
+  }
+  if (response.status === 503 || response.status === 404) {
+    // 503: Azure OpenAI not configured. 404: chat extras not installed.
+    const fallback = resolveDispatchDownQuestion(request.description);
+    if (fallback) return fallback;
+    throw new SolverUnavailableError(await errorDetail(response));
+  }
+  if (!response.ok) throw new Error(await errorDetail(response));
+  const body = (await response.json()) as ChatResponse;
+  const usedForecast = body.tools_used.some((name) => DISPATCH_DOWN_TOOLS.has(name));
+  return {
+    kind: 'assistant_reply',
+    reply: { threadId: body.thread_id, text: body.reply, toolsUsed: body.tools_used, model: body.model },
+    target: usedForecast ? selectedTarget : null,
+  };
 }
