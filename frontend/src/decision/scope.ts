@@ -3,7 +3,7 @@
 // text; T1–T4 and H1–H4 stay internal IDs. Nothing outside this list can be
 // suggested.
 
-import type { Jurisdiction, ScenarioFamily, ScenarioId, SnspDriver, TransmissionReach } from './types';
+import type { BindingCondition, CauseUnknown, Jurisdiction, ScenarioFamily, ScenarioId, SnspDriver, TransmissionReach } from './types';
 
 export type Suggestion = {
   // Stable key, stored as BindingCondition.situationKey.
@@ -128,4 +128,30 @@ export const JURISDICTION_KEY: Record<Jurisdiction, string> = {
 export function jurisdictionOf(key: string): Jurisdiction | null {
   const match = (Object.keys(JURISDICTION_KEY) as Jurisdiction[]).find((item) => JURISDICTION_KEY[item] === key);
   return match ?? null;
+}
+
+// A condition carries only what the matched situation says. Route, outage,
+// timing and the other details come from connected feeds.
+export function conditionFrom(suggestion: Suggestion): BindingCondition {
+  return {
+    scenarioId: suggestion.scenarioId,
+    situationKey: suggestion.key,
+    reach: null,
+    limitingAsset: null,
+    outageType: null,
+    timeSetting: null,
+    snspDrivers: [],
+    jurisdiction: jurisdictionOf(suggestion.key),
+    confirmedByOperator: false,
+  };
+}
+
+// Scenario hints read from free text. The assessment decides what binds;
+// these only tell it which locked families to check.
+export function hintsFor(text: string): { conditions: BindingCondition[]; causeUnknown: CauseUnknown | null } {
+  const result = matchDescription(text);
+  if (result.kind === 'cause_unknown') {
+    return { conditions: [], causeUnknown: { reason: result.reason, factsNeeded: result.factsNeeded } };
+  }
+  return { conditions: result.suggestions.map(conditionFrom), causeUnknown: null };
 }

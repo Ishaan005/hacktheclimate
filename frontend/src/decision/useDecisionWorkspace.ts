@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { assessDecision } from './api';
+import { hintsFor } from './scope';
 import type { AssessmentRequest } from './api';
 import type { Assessment, BindingCondition, OperatorEdit, Plan, PlanStep, SituationFact, ViewMode } from './types';
 
@@ -61,14 +62,15 @@ export function useDecisionWorkspace() {
     return { description, view, siteId, conditions, facts, edits, alternative, ...overrides };
   }
 
-  // The operator reviewed the matched limiting problems; assess them.
-  function assess(nextDescription: string, reviewed: BindingCondition[]) {
+  // The operator's own words go to the assessment as typed. Scenario hints
+  // read from the text only tell it which locked families to check.
+  function assess(nextDescription: string) {
     setDescription(nextDescription);
-    const confirmed = reviewed.map((condition) => ({ ...condition, confirmedByOperator: true }));
-    setConditions(confirmed);
+    const { conditions: hinted } = hintsFor(nextDescription);
+    setConditions(hinted);
     setEdits([]);
     setAlternative(null);
-    void run(request({ description: nextDescription, conditions: confirmed, facts: [], edits: [], alternative: null }), revision);
+    void run(request({ description: nextDescription, conditions: hinted, facts: [], edits: [], alternative: null }), revision);
   }
 
   function rerun() {

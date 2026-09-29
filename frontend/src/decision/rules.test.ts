@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fixtureAssessment } from './fixture';
 import { canClaimBenefit, combineResults, displayOverall, planLabel, windowMismatches } from './rules';
-import { matchDescription, SUGGESTIONS } from './scope';
+import { hintsFor, matchDescription, SUGGESTIONS } from './scope';
 import type { Assessment, Plan, SafetyCheck } from './types';
 
 function passing(check: SafetyCheck): SafetyCheck {
@@ -142,5 +142,20 @@ describe('overall display', () => {
   it('shows fail when a required check fails, whatever the backend overall says', () => {
     const assessment = { ...fixtureAssessment, familyChecks: [{ ...fixtureAssessment.familyChecks[0], result: 'fail' as const }] };
     expect(displayOverall(assessment, false).result).toBe('fail');
+  });
+});
+
+describe('hintsFor', () => {
+  it('turns free text into locked scenario hints with no typed details', () => {
+    const { conditions, causeUnknown } = hintsFor('route overloaded during an outage and SNSP near the limit');
+    expect(causeUnknown).toBeNull();
+    expect(conditions.map((item) => item.scenarioId)).toEqual(['T3', 'SNSP']);
+    expect(conditions.every((item) => item.limitingAsset === null && item.timeSetting === null)).toBe(true);
+  });
+
+  it('returns cause unknown with the facts needed when nothing in scope matches', () => {
+    const { conditions, causeUnknown } = hintsFor('something odd is happening');
+    expect(conditions).toEqual([]);
+    expect(causeUnknown?.factsNeeded.length).toBeGreaterThan(0);
   });
 });

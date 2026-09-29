@@ -323,7 +323,12 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
       currentTime: raw.decision_time, windowStart: raw.window.starts_at, windowEnd: raw.window.ends_at,
       sourceKind: raw.source_status === 'historical_demonstration' ? 'historical_demo' : raw.source_status,
       dataStatus },
-    conditions: request.conditions, causeUnknown: null, facts,
+    conditions: request.conditions,
+    causeUnknown: raw.bindings.length ? null : {
+      reason: selected.checks.find((check) => check.family === 'intake')?.reason ?? 'The assessment could not name a limiting cause in the locked scope.',
+      factsNeeded: ['Limiting route or requirement', 'Measured or forecast value against its limit', 'Now or forecast, and the time window'],
+    },
+    facts,
     activeInstructions: raw.active_instructions.map((item) => ({ id: item.instruction_id,
       text: item.instruction_id, asset: 'Unspecified asset', issuedAt: item.starts_at,
       effectiveUntil: item.ends_at, source: item.evidence_reference })),

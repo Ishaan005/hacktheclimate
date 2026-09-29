@@ -1,6 +1,7 @@
 import { USE_FIXTURE } from '../mode';
 import { fromBackendAssessment, isBackendAssessment, toBackendRequest } from './backend';
 import { fixtureAssessment } from './fixture';
+import { hintsFor } from './scope';
 import type { Assessment, BindingCondition, OperatorEdit, Plan, SituationFact, ViewMode } from './types';
 
 export type AssessmentRequest = {
@@ -25,6 +26,12 @@ const ENDPOINT = '/v1/workspace/assess';
 // evaluates it.
 function fixtureResponse(request: AssessmentRequest): AssessmentResponse {
   const base = fixtureAssessment;
+  // No locked scenario in the text: the fixture has nothing to show but the
+  // intake state.
+  if (!request.conditions.length) {
+    const { causeUnknown } = hintsFor(request.description);
+    return { status: 'ok', assessment: { ...base, conditions: [], causeUnknown, proposed: null, alternative: null, edits: [] } };
+  }
   const facts = request.facts.length ? request.facts : base.facts;
   return {
     status: 'ok',
@@ -37,7 +44,7 @@ function fixtureResponse(request: AssessmentRequest): AssessmentResponse {
         location: request.view === 'site' ? 'Wind Farm A (demonstration site)' : 'All-island',
         siteConnection: request.view === 'site' ? 'Cashla 110 kV busbar' : null,
       },
-      conditions: request.conditions.length ? request.conditions : base.conditions,
+      conditions: request.conditions,
       facts,
       edits: request.edits,
       alternative: request.alternative

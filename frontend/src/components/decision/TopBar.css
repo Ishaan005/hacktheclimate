@@ -113,6 +113,8 @@
 
 .source-badge {
   border: 1px solid transparent;
+  /* Long labels such as "Historical demonstration" wrap inside the column. */
+  white-space: normal;
 }
 
 .source-badge-live {

@@ -1,3 +1,4 @@
+import { SEARCH_COPY } from '../../decision/copy/search';
 import { DECISION_COPY } from '../../decision/copy/workspace';
 import { displayOverall } from '../../decision/rules';
 import { useDecisionWorkspace } from '../../decision/useDecisionWorkspace';
@@ -36,6 +37,16 @@ function DecisionWorkspace() {
         consequence={DECISION_COPY.errorConsequence}
         detail={state.reason}
         onRetry={workspace.rerun}
+      />
+    );
+  } else if (assessment?.causeUnknown) {
+    // Intake state, not a scenario: nothing is assessed until the cause is known.
+    body = (
+      <StatusMessage
+        tone="unavailable"
+        title={SEARCH_COPY.causeUnknownHeading}
+        consequence={`${assessment.causeUnknown.reason} ${SEARCH_COPY.causeUnknownNext}`}
+        items={assessment.causeUnknown.factsNeeded}
       />
     );
   } else if (assessment && overall) {

@@ -6,15 +6,14 @@ import { SEARCH_COPY } from './decision/copy/search';
 import { STALE_NOTE } from './decision/copy/shared';
 import { DECISION_COPY } from './decision/copy/workspace';
 
-function describeSituation(text: string) {
+function assessSituation(text: string) {
   fireEvent.change(screen.getByLabelText(SEARCH_COPY.label), { target: { value: text } });
-  fireEvent.click(screen.getByRole('button', { name: SEARCH_COPY.find }));
+  fireEvent.click(screen.getByRole('button', { name: SEARCH_COPY.assess }));
 }
 
 async function assessOutageAndSnsp() {
   render(<App />);
-  describeSituation('route overloaded during an outage and SNSP near the limit');
-  fireEvent.click(screen.getByRole('button', { name: SEARCH_COPY.assess }));
+  assessSituation('route overloaded during an outage and SNSP near the limit');
   return screen.findByRole('region', { name: DECISION_COPY.safetyRegion });
 }
 
@@ -61,11 +60,13 @@ describe('decision workspace end to end (fixture)', () => {
     expect(within(safety).getAllByText(/All-island limits that affect this decision/)[0]).toBeVisible();
   });
 
-  it('keeps a forecast surplus in intake and assesses nothing', () => {
+  it('keeps a forecast surplus in intake and shows no safety result or plan', async () => {
     render(<App />);
-    describeSituation('forecast surplus tonight, frequency normal');
-    expect(screen.getByText(SEARCH_COPY.causeUnknownHeading)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: SEARCH_COPY.assess })).not.toBeInTheDocument();
+    assessSituation('forecast surplus tonight, frequency normal');
+    expect(await screen.findByText(SEARCH_COPY.causeUnknownHeading)).toBeInTheDocument();
+    expect(screen.getByText('Measured frequency and time')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: DECISION_COPY.safetyRegion })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: DECISION_COPY.planRegion })).not.toBeInTheDocument();
   });
 
   it('offers no control that sends an instruction', async () => {
