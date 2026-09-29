@@ -96,7 +96,7 @@ function App() {
     <div className="app">
       <header className="masthead">
         <div className="masthead-inner">
-          <span className="masthead-title">{COPY.teamName}</span>
+          <img className="masthead-logo" src="/BREEZY.svg" alt="Breezy" width="88" height="18" />
           <span className="masthead-org">{COPY.eventName}</span>
         </div>
       </header>

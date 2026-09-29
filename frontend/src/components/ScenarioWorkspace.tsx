@@ -7,8 +7,8 @@ import RecommendedActionCard from './RecommendedActionCard';
 import ScenarioHeader from './ScenarioHeader';
 import './ScenarioWorkspace.css';
 
-// Scenario → Binding condition → Recommended action → New outcome, then the
-// lower-ranked alternatives last so the recommendation leads.
+// Scenario → Binding condition → Recommended action → lower-ranked
+// alternatives → New outcome.
 function ScenarioWorkspace({ scenario }: { scenario: WorkspaceScenario }) {
   return (
     <section className="workspace" aria-labelledby="workspace-heading">
@@ -22,9 +22,9 @@ function ScenarioWorkspace({ scenario }: { scenario: WorkspaceScenario }) {
           alternativeCount={scenario.alternatives.length}
         />
       </div>
+      <AlternativeActionsPanel alternatives={scenario.alternatives} hasRecommendation={scenario.action !== null} />
       <OutcomeComparisonPanel scenario={scenario} />
       <GuardrailStrip guardrails={scenario.guardrails} />
-      <AlternativeActionsPanel alternatives={scenario.alternatives} hasRecommendation={scenario.action !== null} />
     </section>
   );
 }
