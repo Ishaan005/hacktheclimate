@@ -397,6 +397,15 @@ def screen_action_bundles(
         for generator in case.generators
         if generator.get("in_service")
     }
+    generator_pmax_by_bus: dict[int, float] = {}
+    for generator in case.generators:
+        if not generator.get("in_service"):
+            continue
+        bus_id = int(generator["bus_id"])
+        generator_pmax_by_bus[bus_id] = (
+            generator_pmax_by_bus.get(bus_id, 0.0)
+            + max(0.0, float(generator.get("pmax_mw", generator.get("pg_mw", 0.0))))
+        )
     shares = normalized_load_shares(case)
     groups, mapping_confidence = reviewed_generation_groups(case, reviewed_crosswalk)
 
@@ -506,12 +515,34 @@ def screen_action_bundles(
                     region_limits[(region, kind)] = _recoverable_mw(row, region, kind)
                     flex_allocations[action_id] = float(candidate["power_mw"])
                 else:
+                    source_bus = int(candidate["source_bus_id"])
+                    replacement_bus = int(candidate["replacement_bus_id"])
+                    demand_mw = float(row["demand_mw"])
+                    source_generation = max(
+                        0.0,
+                        injections[source_bus]
+                        + demand_mw * float(shares.get(source_bus, 0.0))
+                        - base_renewable.get(source_bus, 0.0),
+                    )
+                    replacement_generation = max(
+                        0.0,
+                        injections[replacement_bus]
+                        + demand_mw * float(shares.get(replacement_bus, 0.0))
+                        - base_renewable.get(replacement_bus, 0.0),
+                    )
+                    modeled_replacement_headroom = max(
+                        0.0,
+                        generator_pmax_by_bus.get(replacement_bus, 0.0)
+                        - replacement_generation,
+                    )
                     redispatch_allocations[action_id] = min(
                         float(candidate["power_mw"]),
                         float(candidate["source_down_headroom_mw"]),
                         float(candidate["replacement_up_headroom_mw"]),
                         float(candidate["source_ramp_limit_mw"]),
                         float(candidate["replacement_ramp_limit_mw"]),
+                        source_generation,
+                        modeled_replacement_headroom,
                     )
 
             # Renewable recovery actions share the same physical opportunity.
