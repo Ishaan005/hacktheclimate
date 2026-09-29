@@ -107,3 +107,42 @@ def build_azure_llm(settings) -> BaseChatModel:
     if not settings.is_reasoning_model:
         kwargs["temperature"] = 0
     return AzureChatOpenAI(**kwargs)
+
+
+def _step_detail(node: str, update: dict) -> str:
+    """One short line on what a node did in this run."""
+    messages = update.get("messages") or []
+    if node == "load_actions":
+        text = update.get("available_actions") or ""
+        count = len([line for line in text.splitlines() if line.strip()])
+        return f"loaded {count} candidate actions" if count else "no action list found"
+    if node == "agent":
+        calls = [call["name"] for m in messages for call in (getattr(m, "tool_calls", None) or [])]
+        return f"requested {', '.join(calls)}" if calls else "drafted an answer"
+    if node == "tools":
+        names = [m.name for m in messages if getattr(m, "name", None)]
+        return f"ran {', '.join(names)}" if names else "ran tools"
+    if node == "select_action":
+        if not messages:
+            return "no action list; kept the draft"
+        text = str(messages[-1].content)
+        for line in text.splitlines():
+            if "recommended action:" in line.lower():
+                return line.split(":", 1)[1].strip(" *") or "picked an action"
+        return "no action recommended; kept the draft"
+    return ""
+
+
+def run_with_trace(graph, inputs: dict, config: dict) -> tuple[dict, list[dict]]:
+    """Run one turn and record every node that actually executed, in order.
+
+    The compiled graph has conditional edges (agent -> tools or select_action),
+    so the path differs per question. Streaming node updates gives the real
+    path: START, then each node as it ran, then END.
+    """
+    trace = [{"node": "__start__", "detail": ""}]
+    for chunk in graph.stream(inputs, config, stream_mode="updates"):
+        for node, update in chunk.items():
+            trace.append({"node": node, "detail": _step_detail(node, update or {})})
+    trace.append({"node": "__end__", "detail": ""})
+    return graph.get_state(config).values, trace

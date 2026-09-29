@@ -32,7 +32,7 @@ describe('live solver through the LangGraph chat route', () => {
     });
     expect(result).toEqual({
       kind: 'assistant_reply',
-      reply: { threadId: 't1', text: 'High risk.\nRecommended action: A2 - flexible demand', toolsUsed: ['get_dispatch_down_forecast'], model: 'gpt-4.1' },
+      reply: { threadId: 't1', text: 'High risk.\nRecommended action: A2 - flexible demand', toolsUsed: ['get_dispatch_down_forecast'], model: 'gpt-4.1', trace: [] },
       target: '2026-01-24T01:00',
     });
   });
@@ -98,5 +98,34 @@ describe('splitReply', () => {
       recommendation: 'A2 - Dispatch change',
     });
     expect(splitReply('Just an answer.')).toEqual({ body: ['Just an answer.'], recommendation: null });
+  });
+});
+
+describe('run trace', () => {
+  it('passes the graph path through and counts loop edges', async () => {
+    const trace = [
+      { node: '__start__', detail: '' },
+      { node: 'load_actions', detail: 'loaded 6 candidate actions' },
+      { node: 'agent', detail: 'requested get_dispatch_down_forecast' },
+      { node: 'tools', detail: 'ran get_dispatch_down_forecast' },
+      { node: 'agent', detail: 'requested get_dispatch_down_day' },
+      { node: 'tools', detail: 'ran get_dispatch_down_day' },
+      { node: 'agent', detail: 'drafted an answer' },
+      { node: 'select_action', detail: 'A2 - Dispatch change' },
+      { node: '__end__', detail: '' },
+    ];
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ thread_id: 't1', reply: 'x', tools_used: [], model: 'm', trace }));
+    const result = await solveSituation(request('hello'));
+    expect(result).toMatchObject({ reply: { trace } });
+    const { edgeCounts } = await import('./components/RunTraceDiagram');
+    const counts = edgeCounts(trace);
+    expect(counts.get('agent->tools')).toBe(2);
+    expect(counts.get('tools->agent')).toBe(2);
+    expect(counts.get('agent->select_action')).toBe(1);
+  });
+
+  it('defaults to an empty trace from an older API', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ thread_id: 't1', reply: 'x', tools_used: [], model: 'm' }));
+    await expect(solveSituation(request('hello'))).resolves.toMatchObject({ reply: { trace: [] } });
   });
 });

@@ -9,7 +9,7 @@ from langchain_core.tools import tool
 
 from pathlib import Path
 
-from backend.app.chat.graph import build_graph, load_action_text
+from backend.app.chat.graph import build_graph, load_action_text, run_with_trace
 
 
 class ScriptedModel(BaseChatModel):
@@ -64,3 +64,41 @@ def test_action_list_loads_and_skips_comments():
     text = load_action_text()
     assert text.startswith("A1 |") and "#" not in text
     assert load_action_text(Path("/nonexistent")) == ""
+
+
+def test_trace_records_the_path_that_actually_ran():
+    llm = ScriptedModel(replies=[
+        AIMessage("", tool_calls=[{"name": "get_dispatch_down_forecast", "args": {"target_timestamp": "2026-01-24T01:00:00Z"}, "id": "c1"}]),
+        AIMessage("High risk (historical replay)."),
+        AIMessage("High risk (historical replay).\nRecommended action: A2 - Dispatch change"),
+        AIMessage("Hello."),
+        AIMessage("Hello."),
+    ], seen=[])
+    graph = build_graph(llm, [get_dispatch_down_forecast])
+    config = {"configurable": {"thread_id": "trace"}}
+
+    _, trace = run_with_trace(graph, {"messages": [HumanMessage("Risk?")], "selected_target": None}, config)
+    assert [step["node"] for step in trace] == ["__start__", "load_actions", "agent", "tools", "agent", "select_action", "__end__"]
+    assert trace[2]["detail"] == "requested get_dispatch_down_forecast"
+    assert trace[3]["detail"] == "ran get_dispatch_down_forecast"
+    assert trace[5]["detail"] == "A2 - Dispatch change"
+
+    # No tool call: the conditional edge skips tools entirely.
+    _, trace = run_with_trace(graph, {"messages": [HumanMessage("Hi")], "selected_target": None}, config)
+    assert [step["node"] for step in trace] == ["__start__", "load_actions", "agent", "select_action", "__end__"]
+    assert trace[4 - 1]["detail"] == "no action recommended; kept the draft"
+
+
+def test_chat_route_returns_the_trace(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from backend.app.chat import routes
+
+    llm = ScriptedModel(replies=[AIMessage("Hello."), AIMessage("Hello.")], seen=[])
+    monkeypatch.setattr(routes, "get_chat_graph", lambda: build_graph(llm, [get_dispatch_down_forecast]))
+    app = FastAPI()
+    app.include_router(routes.router)
+    body = TestClient(app).post("/v1/chat", json={"message": "Hi"}).json()
+    assert body["reply"] == "Hello."
+    assert [step["node"] for step in body["trace"]] == ["__start__", "load_actions", "agent", "select_action", "__end__"]

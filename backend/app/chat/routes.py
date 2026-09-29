@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from pydantic import BaseModel, Field
 
 from .config import get_settings
-from .graph import build_azure_llm, build_graph
+from .graph import build_azure_llm, build_graph, run_with_trace
 from .tools import FORECAST_TOOLS
 
 router = APIRouter(prefix="/v1/chat", tags=["chat assistant"])
@@ -20,11 +20,18 @@ class ChatRequest(BaseModel):
     selected_target: str | None = None
 
 
+class TraceStep(BaseModel):
+    node: str
+    detail: str
+
+
 class ChatResponse(BaseModel):
     thread_id: str
     reply: str
     tools_used: list[str]
     model: str
+    # Nodes that actually ran this turn, in order, from __start__ to __end__.
+    trace: list[TraceStep] = []
 
 
 @lru_cache(maxsize=1)
@@ -52,7 +59,8 @@ def chat(request: ChatRequest) -> ChatResponse:
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 12}
     try:
         before = len(graph.get_state(config).values.get("messages", []))
-        result = graph.invoke(
+        result, trace = run_with_trace(
+            graph,
             {"messages": [HumanMessage(request.message)], "selected_target": request.selected_target},
             config,
         )
@@ -69,4 +77,4 @@ def chat(request: ChatRequest) -> ChatResponse:
     new_messages = result["messages"][before:]
     tools_used = [m.name for m in new_messages if isinstance(m, ToolMessage) and m.name]
     reply = next((m.content for m in reversed(new_messages) if isinstance(m, AIMessage) and m.content), "")
-    return ChatResponse(thread_id=thread_id, reply=str(reply), tools_used=tools_used, model=get_settings().deployment)
+    return ChatResponse(thread_id=thread_id, reply=str(reply), tools_used=tools_used, model=get_settings().deployment, trace=trace)

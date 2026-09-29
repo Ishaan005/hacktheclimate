@@ -1,0 +1,84 @@
+.run-trace {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 0.75rem;
+}
+
+.run-trace summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.run-trace-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-top: 0.75rem;
+}
+
+.run-trace-graph {
+  width: 300px;
+  max-width: 100%;
+  color: #1e3a8a;
+}
+
+.trace-node rect {
+  fill: #f3f4f6;
+  stroke: #9ca3af;
+  stroke-width: 1;
+}
+
+.trace-node text {
+  font-size: 12px;
+  fill: #6b7280;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.trace-node-used rect {
+  fill: #dbeafe;
+  stroke: #1d4ed8;
+  stroke-width: 2;
+}
+
+.trace-node-used text {
+  fill: #1e3a8a;
+  font-weight: 600;
+}
+
+.trace-edge path {
+  stroke: #d1d5db;
+  stroke-width: 1.5;
+  color: #d1d5db;
+}
+
+.trace-edge-used path {
+  stroke: #1d4ed8;
+  stroke-width: 2.5;
+  color: #1d4ed8;
+}
+
+.trace-count {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #1d4ed8;
+}
+
+.run-trace-steps {
+  flex: 1;
+  min-width: 220px;
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.7;
+}
+
+.run-trace-detail {
+  color: #4b5563;
+}
+
+.run-trace-skipped {
+  list-style: none;
+  margin-left: -1.25rem;
+  margin-top: 0.5rem;
+  color: #6b7280;
+}
