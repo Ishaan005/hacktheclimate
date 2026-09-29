@@ -57,7 +57,11 @@ def test_evaluation_joins_current_plan_network_effect_and_blocks_ranking():
     assert action["intervals"][0]["network_effect"]["planned_outage"]["base"] != action["intervals"][0]["network_effect"]["planned_outage"]["with_action"]
     assert action["contract_action_id"] == "FLEX_LOAD"
     assert "network_loading" in action["required_safety_rules"]
-    assert any(item["action_id"] == "FLEX_LOAD" for item in result["eligible_actions"])
+    assert action["required_safety_families"] == ["transmission"]
+    flex_resolution = next(
+        item for item in result["eligible_actions"] if item["action_id"] == "FLEX_LOAD"
+    )
+    assert flex_resolution["required_safety_families"] == ["transmission"]
     assert any(item["action_id"] == "NETWORK_SWITCHING" for item in result["unavailable_actions"])
     assert result["ranked_modeled_capture_bounds"][0]["action_id"] == action["action_id"]
     assert result["ranked_expected_avoided_dispatch_down"] == []
@@ -109,6 +113,8 @@ def test_evaluation_includes_baseline_and_shared_budget_bundles():
     assert pair["modeled_capture_upper_bound_mwh"] == pytest.approx(10.0)
     assert pair["expected_avoided_dispatch_down_mwh"] is None
     assert "asset_capability" in pair["missing_required_safety_rules"]
+    assert pair["required_safety_families"] == ["transmission"]
+    assert pair["missing_required_safety_families"] == []
     # A modeled breach wins over unresolved contract checks: FAIL must not be
     # softened to UNKNOWN just because asset capability/timing are also missing.
     assert pair["safety_overall"] == "FAIL"
