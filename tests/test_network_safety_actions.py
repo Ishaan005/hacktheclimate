@@ -94,7 +94,7 @@ def test_action_safety_includes_selected_n_minus_one():
         selected_contingency=Asset("branch", "2:4:1"),
     )
     interval = screened["evaluated"][0]["intervals"][0]
-    assert interval["safety"]["selected_n_minus_one"] is not None
+    assert interval["safety"]["selected_n_minus_one"] is not None\n    transmission = interval["safety"]["families"]["transmission"]\n    assert transmission["family_id"] == "transmission"\n    assert transmission["checks"]["worst_credible_failure_margin"]["status"] in {"PASS", "FAIL", "UNKNOWN"}\n    assert transmission["checks"]["time_to_relief"]["status"] == "UNKNOWN"
     assert interval["network_effect"]["selected_n_minus_one"]["asset_id"] == "2:4:1"
     assert interval["safety"]["overall"] != "PASS"
 
