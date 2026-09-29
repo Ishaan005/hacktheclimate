@@ -399,7 +399,7 @@ export type ActionImpact = {
   estimatedAvoidedEmissionsTco2e: number | null;
 };
 
-export type ScenarioSource = 'illustrative' | 'live';
+export type ScenarioSource = 'illustrative' | 'live' | 'demo';
 // placeholder workspace scenario
 export type WorkspaceScenario = {
   id: string;
@@ -413,6 +413,9 @@ export type WorkspaceScenario = {
   keywords: string[];
   binding: BindingCondition | null;
   action: RecommendedAction | null;
+  // Demo cases can show the strongest modeled candidate without claiming it
+  // is a validated operational recommendation.
+  actionPresentation?: 'recommended' | 'modeled_candidate';
   noActionReason: string | null;
   baseline: OutcomeState;
   postAction: OutcomeState | null;
@@ -492,10 +495,10 @@ export type SolverRequest = {
   description: string;
   threadId: string | null;
   answers: ClarificationAnswer[];
-  // The reviewed case as text (description plus confirmed facts and their
-  // sources). Set once the operator has checked the facts; the live solver
-  // reads it instead of the bare description.
+  // The reviewed case as text, retained for chat/audit surfaces.
   caseSummary?: string;
+  // Exact reviewed case object used by the structured workspace evaluator.
+  operatorCase?: unknown;
 };
 
 // What the situation solver can return. The LLM chooses the output type from

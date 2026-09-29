@@ -78,6 +78,9 @@ export function resolveSituation(description: string, scenarios: WorkspaceScenar
 
 // Loose on purpose: operators say "DD", "risk next hour" or "show the graph".
 const DISPATCH_DOWN_PATTERN = /\b(dispatch[\s-]*down|dispatch|dd|risk|forecast|graph|chart|next[\s-]*hour)\b/i;
+// A described grid event needs fact review even when the operator asks how to
+// reduce dispatch-down. The replay shortcut is for standalone risk questions.
+const GRID_EVENT_PATTERN = /\b(outage|overload\w*|constrain\w*|congest\w*|curtail\w*|line|transformer|circuit|snsp|inertia)\b/i;
 const TARGET_PATTERN = /(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/;
 
 // Questions about dispatch-down risk go to the replay view, at the time named
@@ -91,7 +94,7 @@ export function namedTarget(description: string): string | null {
 }
 
 export function resolveDispatchDownQuestion(description: string): SolverResult | null {
-  if (!DISPATCH_DOWN_PATTERN.test(description)) return null;
+  if (!DISPATCH_DOWN_PATTERN.test(description) || GRID_EVENT_PATTERN.test(description)) return null;
   return { kind: 'dispatch_down_risk', target: namedTarget(description) ?? DEFAULT_TARGET };
 }
 

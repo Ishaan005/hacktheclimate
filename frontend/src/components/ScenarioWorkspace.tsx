@@ -13,7 +13,11 @@ function ScenarioWorkspace({ scenario }: { scenario: WorkspaceScenario }) {
       <ScenarioHeader scenario={scenario} />
       <div className="workspace-flow">
         <BindingConditionCard binding={scenario.binding} />
-        <RecommendedActionCard action={scenario.action} noActionReason={scenario.noActionReason} />
+        <RecommendedActionCard
+          action={scenario.action}
+          noActionReason={scenario.noActionReason}
+          presentation={scenario.actionPresentation}
+        />
       </div>
       <OutcomeComparisonPanel scenario={scenario} />
       <GuardrailStrip guardrails={scenario.guardrails} />

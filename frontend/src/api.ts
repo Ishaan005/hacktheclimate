@@ -122,13 +122,37 @@ async function errorDetail(response: Response): Promise<string> {
 }
 
 // Turns an operator's situation description into one solver result.
-// Fixture mode matches keywords against illustrative data. Live mode sends
-// the description to the LangGraph assistant (POST /v1/chat), which calls the
-// real forecast tools and ends with its select_action recommendation. If the
-// assistant is not configured (503) or the API cannot be reached,
-// dispatch-down questions still open the real dispatch-down view.
+// Fixture mode matches illustrative data. Reviewed live cases use the
+// workspace evaluator; direct questions use the LangGraph chat route. If chat
+// is unavailable, dispatch-down questions still open the historical replay.
 export async function solveSituation(request: SolverRequest, signal?: AbortSignal): Promise<SolverResult | null> {
   if (USE_FIXTURE) return resolveFixtureSolver(request, illustrativeScenarios);
+
+  // A reviewed operator case goes through the deterministic decision backend
+  // and returns the WorkspaceScenario shape the existing UI already renders.
+  if (request.operatorCase) {
+    let workspaceResponse: Response;
+    try {
+      workspaceResponse = await fetch('/v1/workspace/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ case: request.operatorCase }),
+        signal,
+      });
+    } catch (err) {
+      if (signal?.aborted) throw err;
+      throw new SolverUnavailableError('The structured decision API could not be reached.');
+    }
+    if (!workspaceResponse.ok) {
+      throw new Error(`/v1/workspace/evaluate returned HTTP ${workspaceResponse.status}`);
+    }
+    const workspaceResult = (await workspaceResponse.json()) as SolverResult;
+    if (workspaceResult.kind !== 'scenario' && workspaceResult.kind !== 'clarification') {
+      throw new Error('/v1/workspace/evaluate returned a result the workspace cannot render');
+    }
+    return workspaceResult;
+  }
+
   const selectedTarget = namedTarget(request.description);
   let response: Response;
   try {
