@@ -25,10 +25,20 @@ export type CaseActionFamily = ActionFamily;
 // decision time; 'modelled' is a demo calculation, never a measurement.
 export type FactSource = 'operator' | 'measured' | 'forecast' | 'modelled' | 'asset_register' | 'publication';
 
-// supplied: the operator said it. verified: a trusted source confirmed it.
-// corrected: the operator overrode an earlier value. stale: the source is
-// older than its freshness rule. unknown: nobody supplied it.
-export type FactStatus = 'supplied' | 'verified' | 'corrected' | 'stale' | 'unknown';
+// operator_supplied: the operator said it. system_inferred: the system read
+// or derived it (e.g. from the description or a model) and nobody has checked
+// it. forecast: a forecast value for a future time. verified: a trusted
+// source confirmed it. corrected: the operator overrode an earlier value.
+// stale: the source is older than its freshness rule. unknown: nobody
+// supplied it.
+export type FactStatus =
+  | 'operator_supplied'
+  | 'system_inferred'
+  | 'forecast'
+  | 'verified'
+  | 'corrected'
+  | 'stale'
+  | 'unknown';
 
 export type FactValue = number | string | boolean | null;
 
@@ -82,6 +92,9 @@ export type OperatorCase = {
   createdAt: string;
   // More than one family may be active at once.
   scenarios: ScenarioFamily[];
+  // Set once the operator picks the scenario. Until then it was read from the
+  // description, so it is shown as system inferred.
+  scenariosSetAt?: string;
   facts: Record<string, Fact>;
   proposedAction: CaseAction | null;
   comparison: CaseComparison | null;
@@ -274,7 +287,7 @@ function recordFact(facts: Record<string, Fact>, key: string, value: FactValue, 
     return existing.value === value ? facts : { ...facts, [key]: correctFact(existing, value, asOf) };
   }
   const supplied: Fact = {
-    key, value, unit, status: 'supplied', source: 'operator', sourceName: 'Operator answer', asOf, history: existing?.history ?? [],
+    key, value, unit, status: 'operator_supplied', source: 'operator', sourceName: 'Operator answer', asOf, history: existing?.history ?? [],
   };
   return { ...facts, [key]: supplied };
 }
@@ -283,7 +296,7 @@ const SCENARIO_FAMILIES: ScenarioFamily[] = ['local_network_constraint', 'system
 
 function recordSituationFact(situation: OperatorCase, key: string, value: FactValue, unit: string | null, asOf: string): OperatorCase {
   if (key === SCENARIO_DEFINITION.key && SCENARIO_FAMILIES.includes(value as ScenarioFamily)) {
-    return { ...situation, scenarios: [value as ScenarioFamily] };
+    return { ...situation, scenarios: [value as ScenarioFamily], scenariosSetAt: asOf };
   }
   const facts = recordFact(situation.facts, key, value, unit, asOf);
   return facts === situation.facts ? situation : { ...situation, facts };
@@ -380,7 +393,11 @@ function situationRows(scope: MissingFact['scope'], situation: OperatorCase): Re
     ? {
       key: SCENARIO_DEFINITION.key,
       value: situation.scenarios.map((family) => SCENARIO_LABEL[family]).join(', '),
-      unit: null, status: 'supplied', source: 'operator', sourceName: 'Operator description', asOf: situation.createdAt, history: [],
+      unit: null,
+      ...(situation.scenariosSetAt
+        ? { status: 'operator_supplied' as const, source: 'operator' as const, sourceName: 'Operator answer', asOf: situation.scenariosSetAt }
+        : { status: 'system_inferred' as const, source: 'operator' as const, sourceName: 'Read from the operator description', asOf: situation.createdAt }),
+      history: [],
     }
     : null;
   return [

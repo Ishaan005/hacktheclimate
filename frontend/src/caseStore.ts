@@ -12,7 +12,9 @@ export const STORAGE_KEY = 'eirgrid-mvp.case.v1';
 
 // Bump when a saved shape changes, so an older session is dropped instead of
 // rendering stale fields. 2: guardrail names and action steps changed.
-export const SESSION_VERSION = 2;
+// 3: fact status 'supplied' split into operator_supplied, system_inferred
+// and forecast.
+export const SESSION_VERSION = 3;
 
 // Only settled states are saved. A request in flight is saved as the request
 // itself and runs again on reload.

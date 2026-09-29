@@ -16,13 +16,28 @@ type Props = {
   onCancel: () => void;
 };
 
+// Only verified is green. Inferred and forecast values are not checked, so
+// they must not look confirmed.
 const STATUS_TONE: Record<FactStatus, string> = {
-  supplied: 'chip-neutral',
+  operator_supplied: 'chip-neutral',
+  system_inferred: 'chip-advisory',
+  forecast: 'chip-advisory',
   verified: 'chip-within_modelled_limit',
   corrected: 'chip-neutral',
   stale: 'chip-unknown',
   unknown: 'chip-unknown',
 };
+
+// Source and time sit on one line under the value to keep the table narrow.
+function provenanceText(fact: Fact | null): string | null {
+  if (!fact) return null;
+  const parts = [
+    fact.source ? FACT_SOURCE_LABEL[fact.source] : null,
+    fact.sourceName,
+    fact.asOf ? formatDateTime(fact.asOf) : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : null;
+}
 
 function valueText(fact: Fact | null): string {
   if (!fact || fact.value === null) return REVIEW_COPY.unknownValue;
@@ -92,8 +107,6 @@ function FactTable({ section, onCorrect }: { section: ReviewSection; onCorrect: 
           <tr>
             <th scope="col">{REVIEW_COPY.fact}</th>
             <th scope="col">{REVIEW_COPY.value}</th>
-            <th scope="col">{REVIEW_COPY.source}</th>
-            <th scope="col">{REVIEW_COPY.time}</th>
             <th scope="col">{REVIEW_COPY.status}</th>
             <th scope="col"><span className="visually-hidden">{REVIEW_COPY.edit}</span></th>
           </tr>
@@ -102,6 +115,7 @@ function FactTable({ section, onCorrect }: { section: ReviewSection; onCorrect: 
           {section.rows.map((row) => {
             const { fact, definition } = row;
             const status: FactStatus = fact ? fact.status : 'unknown';
+            const provenance = provenanceText(fact);
             const missingRow = isMissing(fact ?? undefined);
             const action = missingRow ? REVIEW_COPY.add : REVIEW_COPY.edit;
             return (
@@ -121,14 +135,12 @@ function FactTable({ section, onCorrect }: { section: ReviewSection; onCorrect: 
                       onCancel={() => setEditing(null)}
                     />
                   ) : (
-                    <span className="mono">{valueText(fact)}</span>
+                    <div>
+                      <span className="mono">{valueText(fact)}</span>
+                      {provenance && <span className="cell-note">{provenance}</span>}
+                    </div>
                   )}
                 </td>
-                <td data-label={REVIEW_COPY.source}>
-                  {fact?.source ? FACT_SOURCE_LABEL[fact.source] : '—'}
-                  {fact?.sourceName && <span className="cell-note">{fact.sourceName}</span>}
-                </td>
-                <td data-label={REVIEW_COPY.time} className="mono">{fact?.asOf ? formatDateTime(fact.asOf) : '—'}</td>
                 <td data-label={REVIEW_COPY.status}><span className={`chip ${STATUS_TONE[status]}`}>{FACT_STATUS_LABEL[status]}</span></td>
                 <td>
                   {editing !== row.id && (

@@ -199,7 +199,7 @@ describe('solver follow-up questions', () => {
     await screen.findByRole('region', { name: illustrativeScenarios[1].title });
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) as string);
     expect(saved.operatorCase.originalText).toBe('there is a problem');
-    expect(saved.operatorCase.facts.limit).toMatchObject({ value: 'low_voltage', status: 'supplied', source: 'operator' });
+    expect(saved.operatorCase.facts.limit).toMatchObject({ value: 'low_voltage', status: 'operator_supplied', source: 'operator' });
     expect(saved.operatorCase.facts.area.value).toBe('north_west');
     expect(saved.operatorCase.facts.lead_time).toBeUndefined();
     expect(saved.state.status).toBe('solved');
