@@ -415,7 +415,7 @@ def _evaluate_live_case(case_payload: dict[str, Any]) -> dict[str, Any]:
     # Explicit golden-path demo: only Ballylickey + outage descriptions
     # use the packaged synthetic network. All normal cases continue to the
     # configured planning inputs below.
-    if matches_west_outage_demo(case_payload):
+    if matches_west_outage_demo(case_payload) and set(scenario_ids) <= {"T3", "T4"}:
         try:
             return evaluate_west_outage_demo(case_payload, scenario_ids)
         except Exception:
