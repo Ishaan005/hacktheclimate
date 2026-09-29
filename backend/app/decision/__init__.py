@@ -1,6 +1,11 @@
 """Typed, evidence-gated services for the advisory decision demo."""
 
 from .actions import load_action_catalogue
+from .action_safety import (
+    ActionOperationalEvidence,
+    evaluate_action_bundle_operational_safety,
+    evaluate_action_operational_safety,
+)
 from .action_resolver import resolve_action_ids, resolve_case_actions
 from .baseline import best_case_metrics, calculate_current_plan
 from .bundles import ActionBundle, generate_action_bundles
@@ -14,7 +19,9 @@ from .service import evaluate_case
 from .sources import load_checked_constraint
 
 __all__ = [
-    "ActionBundle", "DecisionCase", "EvidenceValue", "ExistingInstruction", "PastCase",
+    "ActionBundle", "ActionOperationalEvidence", "DecisionCase", "EvidenceValue",
+    "ExistingInstruction", "PastCase",
+    "evaluate_action_bundle_operational_safety", "evaluate_action_operational_safety",
     "generate_action_bundles", "load_action_catalogue", "resolve_action_ids", "resolve_case_actions",
     "append_case", "best_case_metrics", "calculate_current_plan",
     "evaluate_case", "evaluate_policy", "evidence_from_gfs_snapshot", "load_cases",
