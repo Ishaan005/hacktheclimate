@@ -108,7 +108,9 @@ def test_evaluation_includes_baseline_and_shared_budget_bundles():
     assert pair["modeled_capture_upper_bound_mwh"] == pytest.approx(10.0)
     assert pair["expected_avoided_dispatch_down_mwh"] is None
     assert "asset_capability" in pair["missing_required_safety_rules"]
-    assert pair["safety_overall"] == "UNKNOWN"
+    # A modeled breach wins over unresolved contract checks: FAIL must not be
+    # softened to UNKNOWN just because asset capability/timing are also missing.
+    assert pair["safety_overall"] == "FAIL"
     assert result["best_screening_pass_bundle"] is None
     assert result["recommendation"] is None
 
