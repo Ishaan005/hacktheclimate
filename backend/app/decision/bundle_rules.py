@@ -37,4 +37,24 @@ def bundle_conflicts(candidates: list[dict[str, Any]]) -> list[str]:
             reasons.append(
                 f"Actions {', '.join(sorted(action_ids))} share exclusive_group {group}"
             )
+
+    # Multiple redispatch instructions touching the same generator would need a
+    # joint setpoint/capability calculation. Reject that interaction rather than
+    # double-counting one generator's headroom in the prototype optimizer.
+    redispatch_assets: dict[str, str] = {}
+    for candidate in candidates:
+        family = str(candidate.get("contract_action_id") or "FLEX_LOAD")
+        if family != "GENERATOR_REDISPATCH":
+            continue
+        action_id = str(candidate.get("action_id", ""))
+        for field in ("source_asset_id", "replacement_asset_id"):
+            asset_id = str(candidate.get(field, "")).strip()
+            if not asset_id:
+                continue
+            prior = redispatch_assets.get(asset_id)
+            if prior is not None and prior != action_id:
+                reasons.append(
+                    f"Redispatch actions {prior} and {action_id} share generator asset {asset_id}"
+                )
+            redispatch_assets[asset_id] = action_id
     return sorted(set(reasons))
