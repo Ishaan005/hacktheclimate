@@ -46,8 +46,10 @@ describe('situation input and workspace', () => {
     expect(within(region).getByText(WORKSPACE_COPY.illustrativeNote)).toBeInTheDocument();
     expect(within(region).getByText('Advisory')).toBeInTheDocument();
 
-    const text = region.textContent ?? '';
-    expect(text.indexOf('Security result')).toBeLessThan(text.indexOf('Net financial value'));
+    const text = (region.textContent ?? '').toLowerCase();
+    const security = text.indexOf('security result');
+    expect(security).toBeGreaterThanOrEqual(0);
+    expect(security).toBeLessThan(text.indexOf('net financial value'));
     expect(within(region).getByText('30 MWh')).toBeInTheDocument();
     expect(within(region).getByText('71%')).toBeInTheDocument();
     expectNoForbiddenCopy();

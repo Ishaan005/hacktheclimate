@@ -10,7 +10,12 @@ import ActionTimeline from './ActionTimeline';
 type Props = {
   action: RecommendedAction | null;
   noActionReason: string | null;
+  reasons?: string[];
+  // Number of other evaluated actions shown in the alternatives panel.
+  alternativeCount?: number;
 };
+
+const ALTERNATIVES_ANCHOR = '#alternative-actions';
 
 type Slide = {
   label: string;
@@ -65,13 +70,18 @@ function ActionCarousel({ slides }: { slides: Slide[] }) {
 // Shared shell: the complete instruction and any conditional warning stay
 // fixed at the top. The state change, schedule and family detail sit in a
 // carousel below.
-function RecommendedActionCard({ action, noActionReason }: Props) {
+function RecommendedActionCard({ action, noActionReason, reasons = [], alternativeCount = 0 }: Props) {
   if (!action) {
     return (
       <section className="card card-action card-action-none" aria-labelledby="action-heading">
         <h3 id="action-heading" className="card-kicker">{WORKSPACE_COPY.actionTitle}</h3>
         <p className="card-headline">{WORKSPACE_COPY.actionNone}</p>
         {noActionReason && <p>{noActionReason}</p>}
+        {alternativeCount > 0 && (
+          <a className="action-alternatives-link" href={ALTERNATIVES_ANCHOR}>
+            {WORKSPACE_COPY.actionNoneConsidered(alternativeCount)}
+          </a>
+        )}
       </section>
     );
   }
@@ -85,9 +95,17 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
         {WORKSPACE_COPY.actionTitle}
         <span className="chip chip-neutral">{ACTION_FAMILY_LABEL[action.family]}</span>
         <span className={`chip ${conditional ? 'chip-unknown' : 'chip-neutral'}`}>{EXECUTABILITY_LABEL[action.executability]}</span>
+        {alternativeCount > 0 && (
+          <a className="chip chip-rank" href={ALTERNATIVES_ANCHOR}>{WORKSPACE_COPY.actionRank(alternativeCount + 1)}</a>
+        )}
       </h3>
       <p className="instruction">{instructionText(action)}</p>
       {conditional && <p className="action-warning">{WORKSPACE_COPY.actionConditional}</p>}
+      {reasons.length > 0 && (
+        <ul className="action-reasons" aria-label={WORKSPACE_COPY.actionWhyTitle}>
+          {reasons.map((reason) => <li key={reason}>{reason}</li>)}
+        </ul>
+      )}
       <ActionCarousel
         slides={[
           {

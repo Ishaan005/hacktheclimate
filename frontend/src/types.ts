@@ -389,6 +389,17 @@ export type ActionImpact = {
   estimatedAvoidedEmissionsTco2e: number | null;
 };
 
+// Another action the solver evaluated and ranked below the recommendation.
+// Each one carries its own post-action outcome so the operator can see what
+// it would have achieved.
+export type AlternativeAction = {
+  action: RecommendedAction;
+  postAction: OutcomeState;
+  netFinancialValueEur: number | null;
+  // Short plain-language reasons it ranks lower, e.g. "Breach after action".
+  lowerRankReasons: string[];
+};
+
 export type ScenarioSource = 'illustrative' | 'live';
 // placeholder workspace scenario
 export type WorkspaceScenario = {
@@ -403,6 +414,11 @@ export type WorkspaceScenario = {
   keywords: string[];
   binding: BindingCondition | null;
   action: RecommendedAction | null;
+  // Why the solver chose `action`. Empty when there is no recommendation.
+  recommendationReasons: string[];
+  // Other evaluated actions, best first. Present even when no action is
+  // recommended, so the operator can see what was rejected and why.
+  alternatives: AlternativeAction[];
   noActionReason: string | null;
   baseline: OutcomeState;
   postAction: OutcomeState | null;

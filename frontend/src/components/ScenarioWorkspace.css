@@ -200,6 +200,106 @@
   color: var(--color-accent-strong);
 }
 
+.chip-rank {
+  background: var(--color-accent);
+  color: var(--color-surface);
+  text-decoration: none;
+}
+
+.chip-rank:hover {
+  background: var(--color-accent-hover);
+}
+
+/* Why this action: short reasons, each with a check mark. */
+.action-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-16);
+  margin: 0 0 var(--space-8);
+  padding: 0;
+  list-style: none;
+  color: var(--color-text);
+  font-size: var(--font-size-13);
+}
+
+.action-reasons li::before {
+  content: '✓';
+  margin-right: var(--space-4);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+.action-alternatives-link {
+  color: var(--color-accent);
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ---- Alternative actions ---- */
+
+.card-alternatives {
+  background: var(--color-surface-muted);
+  box-shadow: none;
+}
+
+.alternatives-count {
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+}
+
+.alternatives-table {
+  font-size: var(--font-size-13);
+}
+
+.alternatives-table th,
+.alternatives-table td {
+  padding: var(--space-8);
+}
+
+.alternatives-table thead th {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.alternatives-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.alternatives-table .num {
+  white-space: nowrap;
+}
+
+.alternatives-rank {
+  color: var(--color-text-muted);
+}
+
+.alternatives-table th[scope='row'] {
+  min-width: 260px;
+  font-weight: var(--font-weight-regular);
+}
+
+.alternatives-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.alternatives-instruction {
+  display: block;
+  color: var(--color-text);
+}
+
+.alternatives-reasons {
+  margin: 0;
+  padding-left: var(--space-16);
+  color: var(--color-text-muted);
+}
+
 .card-action-none {
   border-color: var(--color-border-strong);
   border-style: dashed;
@@ -433,8 +533,9 @@
 
 .outcome-column {
   display: flex;
-  flex: 0 0 160px;
+  flex: none;
   flex-direction: column;
+  width: 160px;
   align-items: center;
   gap: var(--space-8);
 }
@@ -490,7 +591,7 @@
    metric sits on its own row under a rule so no cell is left orphaned. */
 .outcome-body {
   display: grid;
-  grid-template-columns: auto minmax(0, 640px);
+  grid-template-columns: max-content minmax(0, 640px);
   gap: var(--space-24) var(--space-32);
   align-items: center;
   justify-content: start;
@@ -511,7 +612,9 @@
   border-top: 1px solid var(--color-border);
 }
 
-@media (max-width: 720px) {
+/* Stack when the workspace is too narrow for the chart plus a readable
+   metric grid, so the two never overlap. */
+@container (max-width: 820px) {
   .outcome-body {
     grid-template-columns: minmax(0, 1fr);
   }
