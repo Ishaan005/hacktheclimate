@@ -153,11 +153,12 @@ type Props = {
   outcomes: OutcomeState[];
   benefits: Benefits;
   view: ViewMode;
+  demo?: boolean;
 };
 
 // Four plan states over one window. Safety rows come first; benefits
 // follow and cannot be claimed unless the proposed plan passes safety.
-function ComparisonPanel({ outcomes, benefits, view }: Props) {
+function ComparisonPanel({ outcomes, benefits, view, demo = false }: Props) {
   const columns = COLUMN_ORDER.map((column) => outcomeFor(outcomes, column));
   const reference = columns.find((outcome) => outcome?.available);
   const mismatched = windowMismatches(outcomes);
@@ -179,6 +180,40 @@ function ComparisonPanel({ outcomes, benefits, view }: Props) {
   const collapsed = !claimable && noneEstablished;
   // Only cards with a number are greyed; a missing value has nothing to grey.
   const greyed = (...values: Established[]) => !claimable && values.some(hasValue);
+
+  if (demo) {
+    const available = columns.filter((item): item is OutcomeState => item !== undefined && item.available);
+    const rows = [...SAFETY_ROWS, ...DISPATCH_DOWN_ROWS].filter((row) =>
+      row.value && available.some((item) => hasValue(row.value!(item))));
+    const metrics = [
+      [BENEFIT_COPY.avoided, benefits.avoidedDispatchDownMwh],
+      [BENEFIT_COPY.systemCost, benefits.netSystemResourceCostEur],
+      [BENEFIT_COPY.marketOpportunity, benefits.grossMarketOpportunityEur],
+      [BENEFIT_COPY.financialValue, benefits.netFinancialValueEur],
+      [BENEFIT_COPY.carbon, benefits.carbonEffectTco2e],
+    ] as const;
+    const knownMetrics = metrics.filter((entry): entry is readonly [string, Established & { value: number }] => hasValue(entry[1]));
+    if (!rows.length && !knownMetrics.length) return null;
+    return (
+      <section className="card comparison-panel" aria-labelledby="comparison-heading">
+        <div className="panel-header"><h2 id="comparison-heading" className="panel-title">{COMPARISON_COPY.title}</h2></div>
+        {rows.length > 0 && <div className="table-scroll"><table className="comparison-table">
+          <thead><tr><th scope="col">{COMPARISON_COPY.measure}</th>{available.map((item) =>
+            <th scope="col" key={item.column}>{COLUMN_LABEL[item.column]}</th>)}</tr></thead>
+          <tbody>{rows.map((row) => <tr key={row.label}>
+            <th scope="row">{row.label}</th>
+            {available.map((item) => <td key={item.column}>{row.value && hasValue(row.value(item))
+              ? formatWithUnit(row.value(item).value!, row.value(item).unit) : '—'}</td>)}
+          </tr>)}</tbody>
+        </table></div>}
+        {knownMetrics.length > 0 && <dl className="metrics comparison-benefits">
+          {knownMetrics.map(([name, value]) => <div className="metric established-card" key={name}>
+            <dt className="metric-label">{name}</dt><dd className="established-value">{formatWithUnit(value.value, value.unit)}</dd>
+          </div>)}
+        </dl>}
+      </section>
+    );
+  }
 
   const cards = (
     <dl className="metrics comparison-benefits">

@@ -18,7 +18,7 @@ export const PLAN_LABEL: Record<PlanLabel, string> = {
 export const SOURCE_KIND_LABEL: Record<DataSourceKind, string> = {
   live: 'Live',
   historical_demo: 'Historical demonstration',
-  planning_case: 'Planning case',
+  planning_case: 'Synthetic planning demo',
   no_live_connection: 'No live connection',
 };
 
@@ -27,6 +27,7 @@ export const DATA_STATUS_LABEL: Record<DataStatus, string> = {
   stale: 'Stale',
   missing: 'Missing',
   conflicting: 'Conflicting',
+  modeled: 'Modeled',
 };
 
 export const ORIGIN_LABEL: Record<FactOrigin, string> = {
@@ -34,6 +35,7 @@ export const ORIGIN_LABEL: Record<FactOrigin, string> = {
   forecast: 'Forecast',
   inferred: 'Inferred',
   operator: 'Entered by operator',
+  planning: 'Planning model',
 };
 
 export const NOT_ESTABLISHED = 'Not established';

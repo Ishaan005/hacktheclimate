@@ -31,7 +31,9 @@ describe('decision workspace end to end (fixture)', () => {
     // Safety panel comes before the plan in reading order.
     expect(safety.compareDocumentPosition(plan) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(plan).queryByText('Actionable')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Historical demonstration').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Historical demonstration')).not.toBeInTheDocument();
+    expect(screen.queryByText(/synthetic|invented values|missing facts/i)).not.toBeInTheDocument();
+    expect(document.querySelector('.phase-tag, .source-badge, .situation-table .chip, .decision-summary .chip')).toBeNull();
     expect(screen.queryByText(/^Live$/)).not.toBeInTheDocument();
     const text = document.body.textContent?.toLowerCase() ?? '';
     for (const phrase of FORBIDDEN_PHRASES) expect(text).not.toContain(phrase);

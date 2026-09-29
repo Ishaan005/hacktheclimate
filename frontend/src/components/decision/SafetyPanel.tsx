@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { ACTION_KIND_LABEL } from '../../decision/actionLabels';
 import { SAFETY_COPY } from '../../decision/copy/safety';
+import { RESULT_LABEL } from '../../decision/copy/shared';
 import { checksForPlan, combineResults } from '../../decision/rules';
 import { FAMILY_LABEL, familyOf } from '../../decision/scope';
 import type { Assessment, OverallSafety, Plan, SafetyCheck, SafetyResult, ScenarioFamily, ViewMode } from '../../decision/types';
@@ -14,6 +15,7 @@ type SafetyPanelProps = {
   overall: OverallSafety;
   plan: Plan | null;
   view: ViewMode;
+  demo?: boolean;
 };
 
 // Action checks carry goNoGo; other checks do not.
@@ -73,7 +75,7 @@ function Fields({ fields, className, mono }: { fields: Field[]; className: strin
   );
 }
 
-function CheckRow({ check, showReason }: { check: Check; showReason: boolean }) {
+function CheckRow({ check, showReason, demo = false }: { check: Check; showReason: boolean; demo?: boolean }) {
   const figures = present([
     field('value', FIELDS.value, check.value),
     field('limit', FIELDS.limit, check.limit),
@@ -83,7 +85,7 @@ function CheckRow({ check, showReason }: { check: Check; showReason: boolean }) 
     field('worstTime', FIELDS.worstTime, check.worstTime && formatDateTime(check.worstTime)),
     // Worst credible failure applies to transmission only.
     check.family === 'transmission' ? field('worstFailure', FIELDS.worstFailure, check.worstFailure) : null,
-    field('source', FIELDS.source, check.source),
+    demo ? null : field('source', FIELDS.source, check.source),
   ]);
   return (
     <li className="safety-check" data-check-id={check.id} data-result={check.result}>
@@ -92,18 +94,21 @@ function CheckRow({ check, showReason }: { check: Check; showReason: boolean }) 
         {check.label}
       </span>
       <span className="safety-check-result">
-        <ResultChip result={check.result} prefix={check.label} />
+        {demo ? RESULT_LABEL[check.result] : <ResultChip result={check.result} prefix={check.label} />}
       </span>
       <Fields fields={figures} className="safety-check-figures" mono />
       <Fields fields={meta} className="safety-check-meta" />
-      {showReason && check.reason && <p className="safety-check-reason">{check.reason}</p>}
+      {!demo && showReason && check.reason && <p className="safety-check-reason">{check.reason}</p>}
     </li>
   );
 }
 
 // Unknown checks that share a reason are grouped so it is read once. Every
 // check still gets its own row and chip.
-function CheckList({ checks, sort = true }: { checks: Check[]; sort?: boolean }) {
+function CheckList({ checks, sort = true, demo = false }: { checks: Check[]; sort?: boolean; demo?: boolean }) {
+  if (demo) return <ul className="safety-checks">{(sort ? byResult(checks) : checks)
+    .filter((check) => check.value !== null || check.result === 'fail')
+    .map((check) => <CheckRow key={check.id} check={check} showReason={false} demo />)}</ul>;
   const ordered = sort ? byResult(checks) : checks;
   const counts = new Map<string, number>();
   for (const check of ordered) {
@@ -155,7 +160,7 @@ function resultSummary(checks: Check[]): string {
 
 // One family's checks at a time, chosen from a menu. It opens on the first
 // family with a failed check, so the worst result is on screen first.
-function FamilyChecks({ assessment, families }: { assessment: Assessment; families: ScenarioFamily[] }) {
+function FamilyChecks({ assessment, families, demo = false }: { assessment: Assessment; families: ScenarioFamily[]; demo?: boolean }) {
   const id = useId();
   const checksFor = (family: ScenarioFamily) => assessment.familyChecks.filter((check) => check.family === family);
   const worstFirst = families.find((family) => checksFor(family).some((check) => check.result === 'fail')) ?? families[0];
@@ -183,18 +188,18 @@ function FamilyChecks({ assessment, families }: { assessment: Assessment; famili
           onChange={(event) => setChosen(event.target.value as ScenarioFamily)}
         >
           {families.map((item) => (
-            <option key={item} value={item}>{`${FAMILY_LABEL[item]} (${resultSummary(checksFor(item))})`}</option>
+            <option key={item} value={item}>{demo ? FAMILY_LABEL[item] : `${FAMILY_LABEL[item]} (${resultSummary(checksFor(item))})`}</option>
           ))}
         </select>
       </div>
       {checks.length
-        ? <CheckList checks={checks} />
-        : <p className="safety-empty">{SAFETY_COPY.noFamilyChecks}</p>}
+        ? <CheckList checks={checks} demo={demo} />
+        : !demo && <p className="safety-empty">{SAFETY_COPY.noFamilyChecks}</p>}
     </section>
   );
 }
 
-function SafetyPanel({ assessment, overall, plan, view }: SafetyPanelProps) {
+function SafetyPanel({ assessment, overall, plan, view, demo = false }: SafetyPanelProps) {
   const id = useId();
   const families = familyOrder(assessment);
   const planChecks = plan ? checksForPlan(plan, assessment.actionChecks) : [];
@@ -203,27 +208,27 @@ function SafetyPanel({ assessment, overall, plan, view }: SafetyPanelProps) {
     <section className="card safety-panel" aria-labelledby={`${id}-title`}>
       <div className="panel-header">
         <h2 id={`${id}-title`} className="panel-title">{SAFETY_COPY.title}</h2>
-        <span className="safety-overall-chip">
+        {!demo && <span className="safety-overall-chip">
           <ResultChip result={overall.result} prefix={SAFETY_COPY.overallLabel} />
-        </span>
+        </span>}
       </div>
-      <p className="safety-overall-reason">{overall.reason}</p>
+      {!demo && <p className="safety-overall-reason">{overall.reason}</p>}
 
-      <FamilyChecks assessment={assessment} families={families} />
+      <FamilyChecks assessment={assessment} families={families} demo={demo} />
 
       {/* Site view keeps the all-island limits in plain sight. */}
       {view === 'site' && (
         <section aria-labelledby={`${id}-island`}>
           <h3 id={`${id}-island`} className="panel-section-title">{SAFETY_COPY.allIslandTitle}</h3>
           {assessment.allIslandChecks.length
-            ? <CheckList checks={assessment.allIslandChecks} />
-            : <p className="safety-empty">{SAFETY_COPY.noAllIslandChecks}</p>}
+            ? <CheckList checks={assessment.allIslandChecks} demo={demo} />
+            : !demo && <p className="safety-empty">{SAFETY_COPY.noAllIslandChecks}</p>}
         </section>
       )}
 
       <section aria-labelledby={`${id}-action`}>
         <h3 id={`${id}-action`} className="panel-section-title">{SAFETY_COPY.actionChecksTitle}</h3>
-        <p className="safety-hint">{plan ? SAFETY_COPY.actionChecksNote : SAFETY_COPY.noPlan}</p>
+        {!demo && <p className="safety-hint">{plan ? SAFETY_COPY.actionChecksNote : SAFETY_COPY.noPlan}</p>}
         {plan?.steps.map((step, index) => {
           // Go/no-go first, then the rest in backend order.
           const checks = planChecks
@@ -240,13 +245,13 @@ function SafetyPanel({ assessment, overall, plan, view }: SafetyPanelProps) {
                   <span className="safety-step-instruction">{step.instruction}</span>
                 </span>
                 <span className="safety-check-result">
-                  <ResultChip result={worst} prefix={`${SAFETY_COPY.step} ${index + 1}`} />
+                  {demo ? RESULT_LABEL[worst] : <ResultChip result={worst} prefix={`${SAFETY_COPY.step} ${index + 1}`} />}
                 </span>
               </summary>
               <div className="safety-step-body">
                 {checks.length
-                  ? <CheckList checks={checks} sort={false} />
-                  : <p className="safety-empty">{SAFETY_COPY.noStepChecks}</p>}
+                  ? <CheckList checks={checks} sort={false} demo={demo} />
+                  : !demo && <p className="safety-empty">{SAFETY_COPY.noStepChecks}</p>}
               </div>
             </details>
           );

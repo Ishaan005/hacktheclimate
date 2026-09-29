@@ -27,9 +27,11 @@ describe('top bar', () => {
     expect(onViewChange).toHaveBeenLastCalledWith('national', null);
   });
 
-  it('shows placeholders before an assessment', () => {
+  it('omits assessment fields before an assessment', () => {
     render(<TopBar context={null} view="national" siteId={null} validated={false} onViewChange={vi.fn()} />);
-    expect(screen.getAllByText(TOP_BAR_COPY.noAssessment)).toHaveLength(4);
+    expect(screen.queryByText(TOP_BAR_COPY.noAssessment)).not.toBeInTheDocument();
+    expect(screen.queryByText(TOP_BAR_COPY.currentTime)).not.toBeInTheDocument();
+    expect(screen.queryByText(TOP_BAR_COPY.window)).not.toBeInTheDocument();
     expect(screen.getByText(TOP_BAR_COPY.allIsland)).toBeInTheDocument();
   });
 
@@ -54,7 +56,7 @@ describe('top bar', () => {
     expect(screen.getByRole('radio', { name: TOP_BAR_COPY.viewLabel.national })).toHaveAccessibleDescription(TOP_BAR_COPY.viewHint.national);
   });
 
-  it('labels the fixture as a historical demonstration, never live', () => {
+  it('keeps the demonstration header focused on location and time', () => {
     const { container } = render(
       <TopBar
         context={fixtureAssessment.context}
@@ -64,10 +66,11 @@ describe('top bar', () => {
         onViewChange={vi.fn()}
       />,
     );
-    const badge = container.querySelector('.source-badge');
-    expect(badge).toHaveTextContent(SOURCE_KIND_LABEL.historical_demo);
-    expect(badge?.textContent).not.toMatch(/live/i);
+    expect(container.querySelector('.source-badge')).toBeNull();
+    expect(within(container).queryByText(SOURCE_KIND_LABEL.historical_demo)).toBeNull();
     expect(within(container).queryByText(/^Live/)).toBeNull();
+    expect(within(container).queryByText(TOP_BAR_COPY.dataStatus)).not.toBeInTheDocument();
+    expect(within(container).getByText('Assessment time')).toBeInTheDocument();
   });
 });
 

@@ -202,6 +202,13 @@ def _baseline_peak(
             "features": features,
             "safety": safety,
         }
+        worst_flow = next(
+            (flow for flow in solve["flows"] if flow["asset_id"] == features["worst_asset"]),
+            None,
+        )
+        if worst_flow is not None:
+            candidate["worst_flow_mw"] = abs(float(worst_flow["flow_mw"]))
+            candidate["worst_rate_a_mva"] = worst_flow["rating_mva"]
         if peak is None or (
             features["max_dc_loading_proxy_pct"] or -1.0
         ) > (peak["features"]["max_dc_loading_proxy_pct"] or -1.0):
@@ -253,6 +260,16 @@ def _workspace_result(
     issue, start, target, end = _fallback_action_times(rows)
     baseline_loading = float(baseline_peak["features"]["max_dc_loading_proxy_pct"])
     baseline_asset = str(baseline_peak["features"]["worst_asset"])
+    planning_facts = {
+        "limiting_equipment": baseline_asset,
+        "equipment_type": "Synthetic branch circuit",
+        "affected_renewable_units_or_groups": "West Demo wind group",
+        "reach": "local_area",
+        "what_changed": f"Synthetic outage of branch {DEMO_PLANNED_OUTAGE.asset_id}",
+        "outage_equipment": DEMO_PLANNED_OUTAGE.asset_id,
+        "normal_flow_mw": baseline_peak.get("worst_flow_mw"),
+        "planning_rate_a_mva": baseline_peak.get("worst_rate_a_mva"),
+    }
     baseline_status = (
         "breach"
         if baseline_peak["safety"]["thermal"]["status"] == "FAIL"
@@ -282,6 +299,7 @@ def _workspace_result(
             "intervalStart": start,
             "intervalEnd": end,
             "source": "demo",
+            "planningFacts": planning_facts,
             "modelRunAt": issue,
             "summary": (
                 "Synthetic operating case evaluated by the real DC network and bundle "
@@ -310,6 +328,12 @@ def _workspace_result(
                     "baseline": baseline_status,
                     "postAction": "unknown",
                     "margin": "-5.0 MW",
+                    "baseline_margin": "-5.0 MW",
+                    "post_action_margin": None,
+                    "baseline_note": f"Synthetic DC baseline: {baseline_asset} reaches {baseline_loading:.1f}% of rate A.",
+                    "baseline_value": f"{baseline_loading:.1f}% of rate A",
+                    "post_action_value": None,
+                    "effective_limit": "100% of rate A",
                     "timestamp": str(baseline_peak["valid_time"]),
                     "note": "Computed on the synthetic DC planning network.",
                 },
@@ -326,6 +350,11 @@ def _workspace_result(
                     "baseline": "within_modelled_limit",
                     "postAction": "unknown",
                     "margin": "15 pp",
+                    "baseline_margin": "15 pp",
+                    "post_action_margin": None,
+                    "baseline_value": "60%",
+                    "post_action_value": None,
+                    "effective_limit": "75%",
                     "timestamp": str(baseline_peak["valid_time"]),
                     "note": "60% synthetic baseline versus the 75% demo threshold; action SNSP is not recalculated.",
                 },
@@ -373,6 +402,7 @@ def _workspace_result(
         "intervalStart": start,
         "intervalEnd": end,
         "source": "demo",
+        "planningFacts": planning_facts,
         "modelRunAt": issue,
         "summary": (
             "Synthetic operating conditions; the DC network effect and action-bundle "
@@ -469,6 +499,12 @@ def _workspace_result(
                 "baseline": "breach",
                 "postAction": "within_modelled_limit",
                 "margin": f"{55.0 - 45.0:+.1f} MW",
+                "baseline_margin": "-5.0 MW",
+                "post_action_margin": f"{55.0 - 45.0:+.1f} MW",
+                "baseline_note": f"Synthetic DC baseline: {baseline_asset} reaches {baseline_loading:.1f}% of rate A.",
+                "baseline_value": f"{baseline_loading:.1f}% of rate A",
+                "post_action_value": f"{post_loading:.1f}% of rate A",
+                "effective_limit": "100% of rate A",
                 "timestamp": str(peak_post["valid_time"]),
                 "note": (
                     f"Synthetic DC result: {baseline_asset} falls from "
@@ -488,6 +524,11 @@ def _workspace_result(
                 "baseline": "within_modelled_limit",
                 "postAction": "unknown",
                 "margin": "15 pp",
+                "baseline_margin": "15 pp",
+                "post_action_margin": None,
+                "baseline_value": "60%",
+                "post_action_value": None,
+                "effective_limit": "75%",
                 "timestamp": str(peak_post["valid_time"]),
                 "note": "Action-level SNSP is intentionally left unknown.",
             },
@@ -587,6 +628,8 @@ def fallback_west_outage_demo(
     rows = demo_forecast_rows(now)
     baseline_peak = {
         "valid_time": rows[0]["valid_time"],
+        "worst_flow_mw": 60.0,
+        "worst_rate_a_mva": 55.0,
         "features": {
             "max_dc_loading_proxy_pct": 109.0909090909,
             "worst_asset": "3:4:1",

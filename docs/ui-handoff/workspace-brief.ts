@@ -1,5 +1,5 @@
 // POST /v1/workspace/assess. UTC timestamps are ISO 8601 strings.
-export type WorkspaceFactState = 'current' | 'stale' | 'missing' | 'conflicting';
+export type WorkspaceFactState = 'current' | 'stale' | 'missing' | 'conflicting' | 'modeled';
 export type WorkspaceCheckState = 'PASS' | 'FAIL' | 'UNKNOWN';
 export type WorkspacePlanLabel = 'Actionable' | 'Conditional' | 'Unsafe' | 'Insufficient evidence';
 export type WorkspaceView = 'national' | 'site';
@@ -82,7 +82,7 @@ export interface WorkspaceCheck {
   value: number | string | boolean | null;
   unit: string | null;
   effective_limit: number | string | boolean | null;
-  margin: number | null;
+  margin: number | string | null;
   worst_time: string | null;
   worst_failure: string | null;
   source: string | null;
@@ -134,6 +134,7 @@ export interface WorkspaceAssessment {
     missing_fields: string[];
   }>;
   facts: WorkspaceFact[];
+  national_constraint_context: string | null;
   active_instructions: WorkspaceComparison['active_instructions'];
   comparisons: Record<WorkspaceComparison['state'], WorkspaceComparison>;
   evidence: {

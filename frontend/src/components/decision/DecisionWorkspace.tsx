@@ -1,6 +1,7 @@
 import { SEARCH_COPY } from '../../decision/copy/search';
 import { DECISION_COPY } from '../../decision/copy/workspace';
 import { displayOverall } from '../../decision/rules';
+import { isDemoSource } from '../../decision/source';
 import { useDecisionWorkspace } from '../../decision/useDecisionWorkspace';
 import StatusMessage from '../StatusMessage';
 import ComparisonPanel from './ComparisonPanel';
@@ -21,6 +22,7 @@ function DecisionWorkspace() {
   const { state, stale, view, siteId, facts, edits, alternative } = workspace;
   const assessment = state.status === 'ready' ? { ...state.assessment, facts, edits, alternative } : null;
   const overall = assessment ? displayOverall(assessment, stale) : null;
+  const demo = assessment ? isDemoSource(assessment.context.sourceKind) : false;
 
   let body = null;
   if (state.status === 'idle') {
@@ -62,23 +64,24 @@ function DecisionWorkspace() {
             <button type="button" className="button-primary" onClick={workspace.rerun}>{DECISION_COPY.rerun}</button>
           </div>
         )}
-        <DecisionSummary assessment={assessment} overall={overall} plan={plan} stale={stale} />
+        <DecisionSummary assessment={assessment} overall={overall} plan={plan} stale={stale} demo={demo} />
         <div className="decision-panels">
           <div className="decision-panel decision-panel-safety">
-            <SafetyPanel assessment={assessment} overall={overall} plan={plan} view={view} />
+            <SafetyPanel assessment={assessment} overall={overall} plan={plan} view={view} demo={demo} />
           </div>
           <div className="decision-panel decision-panel-plan">
             <PlanPanel
               assessment={assessment}
               alternative={alternative}
               stale={stale}
+              demo={demo}
               onEditStep={workspace.editAlternativeStep}
               onSetAlternative={workspace.setAlternativePlan}
             />
           </div>
         </div>
-        <ComparisonPanel outcomes={assessment.outcomes} benefits={assessment.benefits} view={view} />
-        <EvidenceDrawer evidence={assessment.evidence} edits={edits} validated={assessment.validated} sourceKind={assessment.context.sourceKind} />
+        <ComparisonPanel outcomes={assessment.outcomes} benefits={assessment.benefits} view={view} demo={demo} />
+        {!demo && <EvidenceDrawer evidence={assessment.evidence} edits={edits} validated={assessment.validated} sourceKind={assessment.context.sourceKind} />}
       </>
     );
   }

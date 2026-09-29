@@ -10,7 +10,7 @@ type Page = 'decision' | 'assistant';
 
 function bannerText(page: Page): string {
   if (page === 'assistant') return USE_FIXTURE ? COPY.fixtureBanner : WORKSPACE_COPY.advisoryNote;
-  return USE_FIXTURE ? DECISION_COPY.fixtureNote : DECISION_COPY.advisoryNote;
+  return DECISION_COPY.advisoryNote;
 }
 
 // The decision workspace is the main screen. The earlier grid assistant
@@ -40,7 +40,7 @@ function App() {
       </header>
       <div className="phase-banner">
         <p className="phase-inner">
-          <span className="phase-tag">{COPY.appPhase}</span>
+          {page === 'assistant' && <span className="phase-tag">{COPY.appPhase}</span>}
           <span>{bannerText(page)}</span>
         </p>
       </div>

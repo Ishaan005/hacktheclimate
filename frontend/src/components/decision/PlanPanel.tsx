@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { ACTION_KIND_LABEL } from '../../decision/actionLabels';
 import { PERMISSION_STATE_LABEL, PLAN_COPY, ROLE_LABEL, permissionText } from '../../decision/copy/plan';
-import { RESULT_LABEL } from '../../decision/copy/shared';
+import { PLAN_LABEL, RESULT_LABEL } from '../../decision/copy/shared';
 import { planLabel } from '../../decision/rules';
 import { copyAsAlternative } from '../../decision/useDecisionWorkspace';
 import type { ActionKind, Assessment, PermissionState, Plan, PlanStep, SafetyCheck } from '../../decision/types';
@@ -13,6 +13,7 @@ type Props = {
   assessment: Assessment;
   alternative: Plan | null;
   stale: boolean;
+  demo?: boolean;
   onEditStep: (stepId: string, changes: Partial<PlanStep>) => void;
   onSetAlternative: (plan: Plan | null) => void;
 };
@@ -38,10 +39,16 @@ function time(iso: string | null): string {
 // What still blocks a step: listed checks by label, plus any clearance or
 // acceptance that is not yet confirmed.
 function blockers(step: PlanStep, checks: Map<string, SafetyCheck>): string[] {
-  const items = step.blockingCheckIds.map((id) => {
+  const unknown: string[] = [];
+  const items = step.blockingCheckIds.flatMap((id) => {
     const check = checks.get(id);
-    return check ? `${check.label} (${RESULT_LABEL[check.result]})` : `${PLAN_COPY.unknownCheck}: ${id}`;
+    if (!check || check.result === 'unknown') {
+      unknown.push(id);
+      return [];
+    }
+    return [`${check.label} (${RESULT_LABEL[check.result]})`];
   });
+  if (unknown.length) items.push(`${unknown.length} safety ${unknown.length === 1 ? 'check needs' : 'checks need'} evidence`);
   if (step.permissionRoute !== 'direct' && step.permissionState !== 'confirmed') {
     items.push(PLAN_COPY.permissionPending(step.permissionParty ?? step.executor, step.permissionState));
   }
@@ -72,10 +79,10 @@ const PERMISSION_CHIP: Record<PermissionTone, string> = {
   refused: 'chip chip-breach',
 };
 
-function PermissionChip({ step }: { step: PlanStep }) {
+function PermissionChip({ step, demo = false }: { step: PlanStep; demo?: boolean }) {
   const state = step.permissionRoute === 'direct' ? '' : ` · ${PERMISSION_STATE_LABEL[step.permissionState]}`;
   return (
-    <span className={`${PERMISSION_CHIP[permissionTone(step)]} plan-permission-chip`}>
+    <span className={demo ? undefined : `${PERMISSION_CHIP[permissionTone(step)]} plan-permission-chip`}>
       {permissionText(step.permissionRoute, step.permissionParty)}{state}
     </span>
   );
@@ -83,13 +90,13 @@ function PermissionChip({ step }: { step: PlanStep }) {
 
 // Who, permission, timing and MW, then blockers and dependencies. Edited
 // steps show only the fields that are not already inputs.
-function StepFacts({ step, plan, checks, readOnlyCore }: { step: PlanStep; plan: Plan; checks: Map<string, SafetyCheck>; readOnlyCore: boolean }) {
+function StepFacts({ step, plan, checks, readOnlyCore, demo = false }: { step: PlanStep; plan: Plan; checks: Map<string, SafetyCheck>; readOnlyCore: boolean; demo?: boolean }) {
   const blocking = blockers(step, checks);
   const after = dependencies(step, plan);
   return (
     <>
       <dl className="fields plan-step-fields">
-        {readOnlyCore && (
+        {readOnlyCore && (!demo || step.executor) && (
           <div>
             <dt>{PLAN_COPY.fields.executor}</dt>
             <dd>{step.executor || PLAN_COPY.notAvailable}</dd>
@@ -97,32 +104,32 @@ function StepFacts({ step, plan, checks, readOnlyCore }: { step: PlanStep; plan:
         )}
         <div className="plan-field-permission">
           <dt>{PLAN_COPY.fields.permission}</dt>
-          <dd><PermissionChip step={step} /></dd>
+          <dd><PermissionChip step={step} demo={demo} /></dd>
         </div>
-        {readOnlyCore && (
+        {readOnlyCore && (!demo || step.startTime) && (
           <div>
             <dt>{PLAN_COPY.fields.startTime}</dt>
             <dd>{time(step.startTime)}</dd>
           </div>
         )}
-        <div>
+        {(!demo || step.effectTime) && <div>
           <dt>{PLAN_COPY.fields.effectTime}</dt>
           <dd>{time(step.effectTime)}</dd>
-        </div>
+        </div>}
         {readOnlyCore && (
           <>
-            <div>
+            {(!demo || step.durationMinutes !== null) && <div>
               <dt>{PLAN_COPY.fields.duration}</dt>
               <dd>{formatNumber(step.durationMinutes, 'min')}</dd>
-            </div>
-            <div>
+            </div>}
+            {(!demo || step.mwEffect !== null) && <div>
               <dt>{PLAN_COPY.fields.mwEffect}</dt>
               <dd title={PLAN_COPY.mwHint}>{formatSigned(step.mwEffect, 'MW')}</dd>
-            </div>
+            </div>}
           </>
         )}
       </dl>
-      <div className="plan-step-links">
+      {!demo && <div className="plan-step-links">
         <p className={blocking.length ? 'plan-blocking' : undefined}>
           <strong>{PLAN_COPY.fields.blocking}: </strong>
           {blocking.length ? blocking.join('; ') : PLAN_COPY.none}
@@ -130,21 +137,21 @@ function StepFacts({ step, plan, checks, readOnlyCore }: { step: PlanStep; plan:
         {after.map((text, i) => (
           <p key={i} className="plan-dependency">{PLAN_COPY.fields.dependsOn}: {text}</p>
         ))}
-      </div>
+      </div>}
     </>
   );
 }
 
 // Read-only step: the instruction first, as the operator would say it.
-function StepCard({ step, index, plan, checks }: { step: PlanStep; index: number; plan: Plan; checks: Map<string, SafetyCheck> }) {
+function StepCard({ step, index, plan, checks, demo = false }: { step: PlanStep; index: number; plan: Plan; checks: Map<string, SafetyCheck>; demo?: boolean }) {
   const headingId = `${plan.id}-${step.id}-heading`;
   return (
     <li className={`plan-step plan-step-${permissionTone(step)}`} aria-labelledby={headingId}>
       <div>
         <h4 id={headingId} className="plan-step-instruction">{step.instruction || PLAN_COPY.notAvailable}</h4>
-        <p className="plan-step-meta">{stepHeading(step, index)}</p>
+        {!demo && <p className="plan-step-meta">{stepHeading(step, index)}</p>}
       </div>
-      <StepFacts step={step} plan={plan} checks={checks} readOnlyCore />
+      <StepFacts step={step} plan={plan} checks={checks} readOnlyCore demo={demo} />
     </li>
   );
 }
@@ -287,7 +294,7 @@ function ActionKindSelect({ id, value, hintId, onChange }: { id: string; value: 
 
 // Right panel: the proposed plan, read-only, and an optional operator
 // alternative beside it. Nothing here sends an instruction.
-function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternative }: Props) {
+function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternative, demo = false }: Props) {
   const proposed = assessment.proposed;
   const checks = allChecks(assessment);
   const [newKind, setNewKind] = useState<ActionKind>('local_storage_or_demand');
@@ -321,12 +328,12 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
       <header className="panel-header plan-panel-header">
         <div>
           <h2 id="plan-panel-heading" className="panel-title">{PLAN_COPY.title}</h2>
-          <p className="panel-meta plan-no-send">{PLAN_COPY.noSendNote}</p>
+          {!demo && <p className="panel-meta plan-no-send">{PLAN_COPY.noSendNote}</p>}
         </div>
-        {proposedLabel && (
+        {proposedLabel && !demo && (
           <span>
             <span className="visually-hidden">{PLAN_COPY.labelTitle}: </span>
-            <PlanLabelChip label={proposedLabel.label} />
+            {demo ? PLAN_LABEL[proposedLabel.label] : <PlanLabelChip label={proposedLabel.label} />}
           </span>
         )}
       </header>
@@ -339,13 +346,13 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
         {proposed && proposedLabel ? (
           <>
             <div>
-              <p className="plan-name">{proposed.name}</p>
-              <p className="plan-label-reason">{proposedLabel.reason}</p>
+              {!demo && <p className="plan-name">{proposed.name}</p>}
+              {!demo && <p className="plan-label-reason">{proposedLabel.reason}</p>}
             </div>
             {proposed.steps.length ? (
               <ol className="plan-steps">
                 {sortSteps(proposed.steps).map((step, index) => (
-                  <StepCard key={step.id} step={step} index={index} plan={proposed} checks={checks} />
+                  <StepCard key={step.id} step={step} index={index} plan={proposed} checks={checks} demo={demo} />
                 ))}
               </ol>
             ) : (
@@ -356,7 +363,7 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
                 <button type="button" className="button-secondary" onClick={() => onSetAlternative(copyAsAlternative(proposed))}>
                   {PLAN_COPY.editAsAlternative}
                 </button>
-                <p className="field-hint">{PLAN_COPY.editNote}</p>
+                {!demo && <p className="field-hint">{PLAN_COPY.editNote}</p>}
               </div>
             )}
           </>

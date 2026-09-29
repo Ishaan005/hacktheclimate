@@ -49,7 +49,7 @@ export type ViewMode = 'national' | 'site';
 // Never show a demonstration as live.
 export type DataSourceKind = 'live' | 'historical_demo' | 'planning_case' | 'no_live_connection';
 
-export type DataStatus = 'current' | 'stale' | 'missing' | 'conflicting';
+export type DataStatus = 'current' | 'stale' | 'missing' | 'conflicting' | 'modeled';
 
 export type WorkspaceContext = {
   view: ViewMode;
@@ -68,7 +68,7 @@ export type WorkspaceContext = {
 
 // ---- Situation table ----
 
-export type FactOrigin = 'measured' | 'forecast' | 'inferred' | 'operator';
+export type FactOrigin = 'measured' | 'forecast' | 'inferred' | 'operator' | 'planning';
 
 export type SituationFact = {
   id: string;
@@ -84,6 +84,7 @@ export type SituationFact = {
   family: ScenarioFamily | 'general';
   // Conflicting rows name the other value.
   conflictNote: string | null;
+  missingReason?: string | null;
   // Rows that come from a reliable current feed are not asked of the operator.
   editable: boolean;
   // Previous value when the operator edited it.

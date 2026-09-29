@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
+import re
 from typing import Any, Literal, Mapping
 
 from fastapi import APIRouter, HTTPException
@@ -16,11 +17,12 @@ from pydantic import Field, model_validator
 
 from .decision.contracts import Contract, DecisionCase, EvidenceValue, utc
 from .decision.scenarios import SCENARIO_IDS, load_scenario_catalogue
+from .decision.sources import load_checked_constraint
 from .workspace import _evaluate_live_case
 
 router = APIRouter(prefix="/v1/workspace", tags=["operator workspace"])
 
-FactState = Literal["current", "stale", "missing", "conflicting"]
+FactState = Literal["current", "stale", "missing", "conflicting", "modeled"]
 CheckState = Literal["PASS", "FAIL", "UNKNOWN"]
 
 FAMILY_CHECKS = {
@@ -64,6 +66,25 @@ def _field_unit(field: str) -> str | None:
     if field.endswith("_count"):
         return "units"
     return None
+
+
+def _missing_reason(field: str) -> str:
+    specific = {
+        "active_instructions": "No connected instruction log; an empty request does not confirm that none are active",
+        "limiting_equipment": "No named limiting equipment or reviewed asset mapping supplied",
+        "outage_equipment": "No confirmed out-of-service equipment supplied",
+        "expected_return_time": "No current outage schedule or confirmed return time supplied",
+        "affected_renewable_units_or_groups": "No reviewed affected-unit or generator crosswalk supplied",
+        "reach": "No reviewed network reach or affected-area mapping supplied",
+        "what_changed": "No dated event or change record supplied",
+    }
+    if field in specific:
+        return specific[field]
+    if field in {"normal_flow_mw", "post_failure_flow_mw", "measured_frequency_hz", "snsp_ratio_pct"}:
+        return "No decision-time operational measurement or reviewed forecast supplied"
+    if field.endswith("_limit_mw") or field.endswith("_limit_hz") or field.endswith("_limit_pct") or field in {"effective_policy", "required_qualified_unit_count", "reserve_requirement_mw"}:
+        return "No effective, reviewed limit or policy supplied"
+    return "No source supplied for this case"
 
 
 class ConditionContext(Contract):
@@ -143,7 +164,7 @@ class WorkspaceAssessmentRequest(Contract):
         return self
 
 
-def _fact_rows(request: WorkspaceAssessmentRequest) -> tuple[list[dict[str, Any]], dict[str, FactState]]:
+def _fact_rows(request: WorkspaceAssessmentRequest, planning_scenario: Mapping[str, Any] | None) -> tuple[list[dict[str, Any]], dict[str, FactState]]:
     by_field: dict[str, list[EvidenceValue]] = {}
     for item in request.evidence:
         by_field.setdefault(item.field, []).append(item)
@@ -158,19 +179,66 @@ def _fact_rows(request: WorkspaceAssessmentRequest) -> tuple[list[dict[str, Any]
     selected_definitions = [definition for definition in catalogue.definitions if definition.scenario_id in request.decision_case.scenario_ids]
     wanted = {field for definition in selected_definitions for field in definition.intake_fields}
     field_families = {field: definition.family for definition in selected_definitions for field in definition.intake_fields}
+    field_families["planning_rate_a_mva"] = "transmission"
     wanted.add("active_instructions")
+    decision_time = utc(request.decision_case.as_of)
+
+    def add_case_fact(field: str, value: str | None, source: str) -> None:
+        if value and field in wanted and field not in by_field:
+            by_field[field] = [EvidenceValue(
+                field=field, value=value, unit="", source_type="operator",
+                source=source, source_version="workspace-case-v1",
+                available_at=decision_time, max_age_seconds=24 * 3600,
+                limitation="Case context only; not independently verified against an operational feed",
+            )]
+
+    for condition in request.conditions:
+        add_case_fact("limiting_equipment", condition.limiting_asset, "Case condition context")
+        add_case_fact("reach", condition.reach, "Case condition context")
+        add_case_fact("outage_type", condition.outage_type, "Case condition context")
+        add_case_fact("now_or_forecast", condition.time_setting, "Case condition context")
+        add_case_fact("jurisdiction", condition.jurisdiction, "Case condition context")
+    description = request.description.lower()
+    if re.search(r"\bplanned\s+outage\b", description):
+        add_case_fact("outage_type", "planned", "Operator description")
+    elif re.search(r"\bforced\s+outage\b", description):
+        add_case_fact("outage_type", "forced", "Operator description")
+    duration = re.search(r"\bnext\s+(\d{1,2})\s+hours?\b", description)
+    if duration and 0 < int(duration.group(1)) <= 24:
+        add_case_fact("relevant_time_window", f"Next {int(duration.group(1))} hours from decision time", "Operator description")
+    add_case_fact("now_or_forecast", "forecast", "Future assessment window")
+    if planning_scenario and planning_scenario.get("source") == "demo":
+        planning_facts = planning_scenario.get("planningFacts")
+        if isinstance(planning_facts, Mapping):
+            available = datetime.fromisoformat(str(planning_scenario["modelRunAt"]).replace("Z", "+00:00"))
+            valid = datetime.fromisoformat(str(planning_scenario["intervalStart"]).replace("Z", "+00:00"))
+            for field, value in planning_facts.items():
+                if (value is None or field in by_field or utc(available) > decision_time
+                        or utc(valid) != utc(request.decision_case.starts_at)):
+                    continue
+                by_field[field] = [EvidenceValue(
+                    field=field, value=value,
+                    unit="MVA" if field == "planning_rate_a_mva" else "MW" if field == "normal_flow_mw" else "",
+                    source_type="planning_model", source="Synthetic West outage planning case (not live)",
+                    source_version="synthetic-golden-path-v1", available_at=available,
+                    valid_at=valid, max_age_seconds=24 * 3600,
+                    limitation="Synthetic four-bus DC planning case; not a measured flow, operating limit, or safety verdict",
+                )]
     rows: list[dict[str, Any]] = []
     states: dict[str, FactState] = {}
-    decision_time = utc(request.decision_case.as_of)
     for field in sorted(wanted | by_field.keys()):
         values = by_field.get(field, [])
-        current = [item for item in values if item.value is not None and item.available_at is not None
+        current = [item for item in values if item.source_type != "planning_model" and item.value is not None and item.available_at is not None
                    and utc(item.available_at) <= decision_time
                    and (decision_time - utc(item.available_at)).total_seconds() <= (item.max_age_seconds or 0)]
         distinct = {(json.dumps(item.value, sort_keys=True), item.unit) for item in current}
+        modeled = [item for item in values if item.source_type == "planning_model" and item.value is not None
+                   and item.available_at is not None and utc(item.available_at) <= decision_time
+                   and (decision_time - utc(item.available_at)).total_seconds() <= (item.max_age_seconds or 0)]
         state: FactState = ("conflicting" if len(distinct) > 1 else "current" if current else
+                            "modeled" if modeled else
                             "stale" if any(item.value is not None for item in values) else "missing")
-        selected = current[-1] if current else values[-1] if values else None
+        selected = current[-1] if current else modeled[-1] if modeled else values[-1] if values else None
         rows.append({"field": field, "family": field_families.get(field, "general"),
                      "value": selected.value if selected and state != "conflicting" else None,
                      "unit": selected.unit if selected else _field_unit(field),
@@ -184,11 +252,33 @@ def _fact_rows(request: WorkspaceAssessmentRequest) -> tuple[list[dict[str, Any]
                      "state": state,
                      "reason": "Current sources disagree" if state == "conflicting" else
                      "Evidence is older than its freshness limit or postdates the decision" if state == "stale" else
-                     "No evidence supplied" if state == "missing" else None,
+                     _missing_reason(field) if state == "missing" else
+                     "Synthetic planning value; not operational evidence" if state == "modeled" else None,
                      "observations": [item.model_dump(mode="json") for item in values],
                      "operator_edit": bool(selected and selected.source_type == "operator")})
         states[field] = state
     return rows, states
+
+
+def _national_context(case: DecisionCase) -> str | None:
+    """Give the checked national forecast as context, never as a site outcome."""
+    source = load_checked_constraint(case.as_of)
+    if source.status != "available":
+        return None
+    target = utc(case.starts_at)
+    row = next((item for item in source.values if item.valid_at and utc(item.valid_at) == target), None)
+    if row is None or not isinstance(row.value, (int, float)):
+        return None
+    bounds = (
+        f" (90% model interval {row.lower_bound:.1f}–{row.upper_bound:.1f})"
+        if row.lower_bound is not None and row.upper_bound is not None else ""
+    )
+    return (
+        f"Experimental national constraint forecast for {target.isoformat()}: "
+        f"{row.value:.1f} MWh per half-hour{bounds}. "
+        f"Issued {utc(row.issued_at).isoformat()}; source: {row.source}. "
+        "National context only; no site, safety, curtailment or action effect is established."
+    )
 
 
 def _check(check_id: str, family: str, reason: str, *, action_step_id: str | None = None,
@@ -302,14 +392,14 @@ def _planner_check(item: Mapping[str, Any], phase: str) -> dict[str, Any]:
         "family": family,
         "action_step_id": None,
         "status": status,
-        "value": None,
+        "value": item.get("baseline_value" if phase == "baseline" else "post_action_value"),
         "unit": None,
-        "effective_limit": None,
-        "margin": item.get("margin"),
+        "effective_limit": item.get("effective_limit"),
+        "margin": item.get("baseline_margin" if phase == "baseline" else "post_action_margin", item.get("margin")),
         "worst_time": item.get("timestamp"),
         "worst_failure": None,
-        "source": "existing planning evaluator",
-        "reason": str(item.get("note") or "Planning evaluator result"),
+        "source": "synthetic DC planning case" if item.get("baseline_value") is not None else "existing planning evaluator",
+        "reason": str(item.get("baseline_note") if phase == "baseline" and item.get("baseline_note") else item.get("note") or "Planning evaluator result"),
     }
 
 
@@ -348,8 +438,21 @@ def _apply_planning_preview(states_out: dict[str, dict[str, Any]], scenario: Map
         )
         _refresh_state_safety(states_out["proposed_plan"])
 
+    # The generic evaluator's dispatchDownWasteMwh combines causes; it cannot
+    # be placed in the constraint row. Only the packaged demo explicitly
+    # defines its scenario energy as constraint dispatch-down.
+    if scenario.get("source") != "demo":
+        return
     baseline = scenario.get("baseline") if isinstance(scenario.get("baseline"), Mapping) else {}
     post = scenario.get("postAction") if isinstance(scenario.get("postAction"), Mapping) else {}
+    for key, source_value in (("current_plan", baseline), ("no_new_instruction", baseline), ("proposed_plan", post)):
+        curtailment = source_value.get("curtailmentMwh")
+        if isinstance(curtailment, (int, float)) and not isinstance(curtailment, bool):
+            states_out[key]["benefits"]["curtailment_mwh"] = {
+                "value": float(curtailment), "unit": "MWh",
+                "method": "Synthetic demo scenario assumption; no action-level curtailment model",
+                "uncertainty": None, "source": "demo_forecast_rows", "reason": None,
+            }
     baseline_mwh = baseline.get("dispatchDownWasteMwh")
     post_mwh = post.get("dispatchDownWasteMwh")
     if isinstance(baseline_mwh, (int, float)) and not isinstance(baseline_mwh, bool):
@@ -451,7 +554,8 @@ def assess_workspace(request: WorkspaceAssessmentRequest) -> dict[str, Any]:
     case = request.decision_case
     if utc(case.as_of) > datetime.now(timezone.utc) + timedelta(minutes=1):
         raise HTTPException(422, "case decision time cannot be in the future")
-    facts, states = _fact_rows(request)
+    planning_scenario = _evaluate_live_case(_legacy_case(request)) if request.description.strip() else None
+    facts, states = _fact_rows(request, planning_scenario)
     catalogue = load_scenario_catalogue()
     selected = [definition for definition in catalogue.definitions if definition.scenario_id in case.scenario_ids]
     bindings = [{"scenario_id": definition.scenario_id, "name": definition.name,
@@ -467,7 +571,6 @@ def assess_workspace(request: WorkspaceAssessmentRequest) -> dict[str, Any]:
         checks = [_check("limiting_cause", "intake", "Cause unknown; select a locked scenario after reviewing facts")]
     window = {"starts_at": case.starts_at.isoformat(), "ends_at": case.ends_at.isoformat()}
     active_instructions = [item.model_dump(mode="json") for item in case.existing_instructions]
-    planning_scenario = _evaluate_live_case(_legacy_case(request)) if request.description.strip() else None
     proposed_plan = request.proposed_plan
     if planning_scenario and not proposed_plan.steps:
         proposed_plan = _planning_plan(planning_scenario)
@@ -493,6 +596,7 @@ def assess_workspace(request: WorkspaceAssessmentRequest) -> dict[str, Any]:
                 else "no_live_connection"
             ), "data_status": "incomplete",
             "bindings": bindings, "facts": facts,
+            "national_constraint_context": _national_context(case),
             "active_instructions": active_instructions,
             "comparisons": states_out,
             "evidence": {"scenario_catalogue_source": catalogue.source,

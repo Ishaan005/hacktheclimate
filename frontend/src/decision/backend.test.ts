@@ -98,9 +98,20 @@ describe('backend workspace adapter', () => {
   });
 
   it('renders server safety and unavailable outcomes without claiming live validation', () => {
-    const assessment = fromBackendAssessment(backendResponse(), request());
+    const raw = backendResponse();
+    raw.national_constraint_context = 'Experimental national constraint forecast: 12.5 MWh per half-hour.';
+    raw.facts.push({ field: 'planning_rate_a_mva', family: 'transmission', value: 55, unit: 'MVA',
+      source: 'Synthetic planning case (not live)', source_type: 'planning_model',
+      available_at: '2026-09-29T15:00:00Z', observed_at: null, issued_at: null,
+      valid_at: '2026-09-29T15:30:00Z', state: 'modeled', reason: 'Synthetic planning value',
+      observations: [{ value: 55, source: 'Synthetic planning case (not live)' }], operator_edit: false });
+    const assessment = fromBackendAssessment(raw, request());
     expect(assessment.context.sourceKind).toBe('no_live_connection');
     expect(assessment.validated).toBe(false);
+    expect(assessment.benefits.nationalContext).toContain('12.5 MWh per half-hour');
+    expect(assessment.facts.find((fact) => fact.id === 'planning_rate_a_mva')).toMatchObject({
+      label: 'Rate A (MVA proxy)', value: 55, origin: 'planning', state: 'modeled',
+    });
     expect(assessment.overall.result).toBe('fail');
     expect(assessment.alternative?.label).toBe('unsafe');
     expect(assessment.alternative?.steps[0]).toMatchObject({
@@ -121,7 +132,7 @@ describe('operator-facing text', () => {
     expect(label('wind_generation_mw')).toBe('Wind generation (MW)');
     expect(label('all_island_snsp')).toBe('All-island SNSP');
     expect(label('rocof_and_stability')).toBe('RoCoF and stability');
-    expect(label('planning_min_generation')).toBe('Planning case: minimum generation');
+    expect(label('planning_min_generation')).toBe('Minimum generation');
     expect(label('snsp_ratio_pct')).toBe('All-island SNSP');
   });
 

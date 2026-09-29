@@ -1,6 +1,7 @@
 import { DATA_STATUS_LABEL } from '../../decision/copy/shared';
 import { TOP_BAR_COPY } from '../../decision/copy/topBar';
 import { DEMO_SITES, siteById } from '../../decision/sites';
+import { isDemoSource } from '../../decision/source';
 import type { DataStatus, ViewMode, WorkspaceContext } from '../../decision/types';
 import { formatDateTime, formatWindow } from '../../format';
 import SourceBadge from './SourceBadge';
@@ -22,11 +23,13 @@ const STATUS_TONE: Record<DataStatus, string> = {
   stale: 'chip chip-unknown',
   missing: 'chip chip-unknown',
   conflicting: 'chip chip-unknown',
+  modeled: 'chip chip-unknown',
 };
 
 // Section 1 of the brief: choose the view, then see where, when and from
 // which source the assessment comes. Both views show the same status fields.
 function TopBar({ context, view, siteId, validated, onViewChange }: Props) {
+  const demo = context !== null && isDemoSource(context.sourceKind);
   const site = view === 'site' ? siteById(siteId) : undefined;
   // Use the assessment's site details only when they are for this site.
   const contextForSite = context && context.view === 'site' && context.siteId === siteId ? context : null;
@@ -98,36 +101,28 @@ function TopBar({ context, view, siteId, validated, onViewChange }: Props) {
               </div>
             </>
           )}
-          <div>
-            <dt>{TOP_BAR_COPY.currentTime}</dt>
-            <dd className="top-bar-time">{context ? formatDateTime(context.currentTime) : <Placeholder />}</dd>
-          </div>
-          <div className="top-bar-field-window">
+          {context && <div>
+            <dt>{demo ? 'Assessment time' : TOP_BAR_COPY.currentTime}</dt>
+            <dd className="top-bar-time">{formatDateTime(context.currentTime)}</dd>
+          </div>}
+          {context && <div className="top-bar-field-window">
             <dt>{TOP_BAR_COPY.window}</dt>
-            <dd className="top-bar-time">{context ? formatWindow(context.windowStart, context.windowEnd) : <Placeholder />}</dd>
-          </div>
-          <div>
+            <dd className="top-bar-time">{formatWindow(context.windowStart, context.windowEnd)}</dd>
+          </div>}
+          {!demo && context && <div>
             <dt>{TOP_BAR_COPY.dataStatus}</dt>
-            <dd>
-              {context
-                ? <span className={STATUS_TONE[context.dataStatus]}>{DATA_STATUS_LABEL[context.dataStatus]}</span>
-                : <Placeholder />}
-            </dd>
-          </div>
-          <div>
+            <dd><span className={STATUS_TONE[context.dataStatus]}>{DATA_STATUS_LABEL[context.dataStatus]}</span></dd>
+          </div>}
+          {!demo && context && <div>
             <dt>{TOP_BAR_COPY.source}</dt>
-            <dd>{context ? <SourceBadge kind={context.sourceKind} validated={validated} /> : <Placeholder />}</dd>
-          </div>
+            <dd><SourceBadge kind={context.sourceKind} validated={validated} /></dd>
+          </div>}
         </dl>
       </div>
 
       {view === 'site' && <p className="field-hint top-bar-note">{TOP_BAR_COPY.siteAllIslandNote}</p>}
     </header>
   );
-}
-
-function Placeholder() {
-  return <span className="top-bar-placeholder">{TOP_BAR_COPY.noAssessment}</span>;
 }
 
 export default TopBar;

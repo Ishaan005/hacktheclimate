@@ -33,6 +33,6 @@ describe('EvidenceDrawer', () => {
     expect(screen.getByText('SCADA', { exact: false }).closest('li')).toHaveTextContent('Missing');
     expect(screen.getByText('Historical demonstration')).toBeInTheDocument();
     expect(screen.queryByText(/validated/i)).toBeNull();
-    expect(screen.getByText('No operator edits.')).toBeInTheDocument();
+    expect(screen.queryByText('No operator edits.')).not.toBeInTheDocument();
   });
 });
