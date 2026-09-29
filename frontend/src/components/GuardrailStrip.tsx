@@ -1,32 +1,55 @@
-import { GUARDRAIL_LABEL, WORKSPACE_COPY } from '../copy';
+import { GUARDRAIL_LABEL, GUARDRAIL_STATUS_LABEL, WORKSPACE_COPY } from '../copy';
 import { formatTime } from '../format';
-import type { Guardrail } from '../types';
+import type { Guardrail, GuardrailStatus } from '../types';
 import StatusChip from './StatusChip';
 
+const STATUS_ORDER: GuardrailStatus[] = ['breach', 'unknown', 'within_modelled_limit'];
+
+// One row per guardrail so baseline and post-action read down in columns.
+// Rows whose status changes are highlighted; the rest are context.
 function GuardrailStrip({ guardrails }: { guardrails: Guardrail[] }) {
+  const counts = STATUS_ORDER.map((status) => ({
+    status,
+    count: guardrails.filter((item) => item.postAction === status).length,
+  })).filter((item) => item.count > 0);
   return (
     <section className="card card-guardrails" aria-labelledby="guardrail-heading">
-      <h3 id="guardrail-heading" className="card-kicker">{WORKSPACE_COPY.guardrailTitle}</h3>
-      <ul className="guardrails">
-        {guardrails.map((item) => {
-          const label = GUARDRAIL_LABEL[item.name];
-          return (
-            <li key={item.name} className="guardrail" aria-label={label}>
-              <span className="guardrail-name">{label}</span>
-              <span className="guardrail-states">
-                <StatusChip status={item.baseline} prefix={WORKSPACE_COPY.baseline} />
-                <span aria-hidden="true">to</span>
-                <StatusChip status={item.postAction} prefix={WORKSPACE_COPY.postAction} />
-              </span>
-              <span className="guardrail-meta mono">
-                Margin {item.margin ?? 'unknown'}
-                {item.timestamp && ` · ${formatTime(item.timestamp)}`}
-              </span>
-              {item.note && <span className="guardrail-note">{item.note}</span>}
-            </li>
-          );
-        })}
-      </ul>
+      <h3 id="guardrail-heading" className="card-kicker">
+        {WORKSPACE_COPY.guardrailTitle}
+        <span className="guardrail-summary">
+          {WORKSPACE_COPY.postAction}:{' '}
+          {counts.map((item) => `${item.count} ${GUARDRAIL_STATUS_LABEL[item.status].toLowerCase()}`).join(', ')}
+        </span>
+      </h3>
+      <table className="guardrail-table">
+        <thead>
+          <tr>
+            <th scope="col">Guardrail</th>
+            <th scope="col">{WORKSPACE_COPY.baseline}</th>
+            <th scope="col">{WORKSPACE_COPY.postAction}</th>
+            <th scope="col">Margin</th>
+          </tr>
+        </thead>
+        <tbody>
+          {guardrails.map((item) => {
+            const changed = item.baseline !== item.postAction;
+            return (
+              <tr key={item.name} className={changed ? 'guardrail-changed' : undefined}>
+                <th scope="row">
+                  {GUARDRAIL_LABEL[item.name]}
+                  {item.note && <span className="guardrail-note">{item.note}</span>}
+                </th>
+                <td><StatusChip status={item.baseline} prefix={WORKSPACE_COPY.baseline} /></td>
+                <td><StatusChip status={item.postAction} prefix={WORKSPACE_COPY.postAction} /></td>
+                <td className="mono guardrail-meta">
+                  {item.margin ?? 'Unknown'}
+                  {item.timestamp && ` · ${formatTime(item.timestamp)}`}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </section>
   );
 }
