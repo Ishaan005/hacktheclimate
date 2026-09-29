@@ -108,7 +108,7 @@
     {
       "action_id": "GENERATOR_REDISPATCH",
       "name": "Generator redispatch",
-      "description": "Reduce generation on one side of a bottleneck or surplus and increase qualified replacement generation where required.",
+      "description": "Shift generation from a reviewed source generator to a reviewed replacement generator to change network flows while preserving system MW balance. The planning screen gives this action no renewable-energy credit by itself.",
       "applicable_scenarios": [
         "T1",
         "T2",
@@ -118,17 +118,23 @@
         "H2",
         "H4"
       ],
-      "execution_status": "evidence_only",
+      "execution_status": "planning_supported",
       "required_parameters": [
         "source_asset_id",
         "replacement_asset_id",
-        "power_mw"
+        "source_bus_id",
+        "replacement_bus_id",
+        "power_mw",
+        "source_down_headroom_mw",
+        "replacement_up_headroom_mw",
+        "source_ramp_limit_mw",
+        "replacement_ramp_limit_mw",
+        "available_from",
+        "available_until",
+        "review_status",
+        "evidence_reference"
       ],
-      "required_evidence_fields": [
-        "generator_location",
-        "generator_ramp_mw_per_min",
-        "generator_minimum_mw"
-      ],
+      "required_evidence_fields": [],
       "required_safety_rules": [
         "network_loading",
         "islanding",
