@@ -9,6 +9,7 @@ from backend.app.decision import DecisionCase, EvidenceValue
 from backend.app.network_scenarios import Asset
 from backend.app.operator_evaluation import OperatorEvaluationRequest, evaluate_operator_case
 from test_network_forecast import _case, _crosswalk, _rows
+from test_action_bundles import _redispatch_candidate
 from test_network_safety_actions import _candidate
 
 
@@ -125,3 +126,36 @@ def test_no_action_candidates_leaves_baseline_as_only_bundle_option():
     assert result["best_screening_pass_bundle"] is None
     assert any("No scenario-valid planning-supported action candidates" in reason
                for reason in result["blocking_reasons"])
+
+
+def test_operator_evaluation_exposes_redispatch_and_mixed_bundle():
+    flex = _candidate()
+    redispatch = _redispatch_candidate()
+    result = evaluate_operator_case(
+        _request(action_candidates=[flex, redispatch]),
+        _case(), _crosswalk(), planned_outage=Asset("branch", "1:3:1"),
+    )
+
+    eligible = {item["action_id"]: item for item in result["eligible_actions"]}
+    assert eligible["GENERATOR_REDISPATCH"]["execution_status"] == "planning_supported"
+    assert not any(
+        item["action_id"] == "GENERATOR_REDISPATCH"
+        for item in result["unavailable_actions"]
+    )
+
+    redispatch_eval = next(
+        item for item in result["planning_action_evaluations"]
+        if item["action_instance_ids"] == ["redispatch-1"]
+    )
+    assert redispatch_eval["modeled_capture_upper_bound_mwh"] == pytest.approx(0.0)
+    assert "reserve" in redispatch_eval["required_safety_rules"]
+    assert "reserve" in redispatch_eval["missing_required_safety_rules"]
+
+    mixed = next(
+        item for item in result["bundle_options"]
+        if set(item["action_instance_ids"]) == {"illustrative-flex-1", "redispatch-1"}
+    )
+    assert set(mixed["contract_action_ids"]) == {"FLEX_LOAD", "GENERATOR_REDISPATCH"}
+    assert mixed["modeled_capture_upper_bound_mwh"] == pytest.approx(10.0)
+    assert mixed["expected_avoided_dispatch_down_mwh"] is None
+    assert result["recommendation"] is None
