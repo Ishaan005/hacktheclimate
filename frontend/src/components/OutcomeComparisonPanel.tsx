@@ -5,46 +5,47 @@ import type { OutcomeState, WorkspaceScenario } from '../types';
 import MetricCard from './MetricCard';
 import StatusChip from './StatusChip';
 
-function widthPct(value: number | null, max: number): string {
+function heightPct(value: number | null, max: number): string {
   return value === null || max <= 0 ? '0%' : `${(value / max) * 100}%`;
 }
 
-type RowProps = {
+type ColumnProps = {
   title: string;
   state: OutcomeState | null;
   max: number;
-  // Post-action row: the waste avoided against baseline, drawn as a pale
-  // segment after the remaining waste.
+  // Post-action column: the waste avoided against baseline, drawn as a pale
+  // segment stacked above the remaining waste.
   avoided?: number | null;
 };
 
-function OutcomeRow({ title, state, max, avoided }: RowProps) {
+function OutcomeColumn({ title, state, max, avoided }: ColumnProps) {
   const waste = state?.dispatchDownWasteMwh ?? null;
   return (
-    <tr className={avoided === undefined ? 'outcome-row-baseline' : 'outcome-row-post'}>
-      <th scope="row">{title}</th>
-      <td>
-        <StatusChip status={state?.securityResult ?? 'unknown'} prefix={`${title} security result`} />
-      </td>
-      <td className="outcome-bar-cell" aria-hidden="true">
-        <span className="outcome-bar">
-          <span className="outcome-bar-fill" style={{ width: widthPct(waste, max) }} />
-          {avoided != null && avoided > 0 && (
-            <span
-              className="outcome-bar-avoided"
-              style={{ width: widthPct(avoided, max) }}
-              title={`${formatNumber(avoided, 'MWh')} avoided`}
-            />
-          )}
-        </span>
-      </td>
-      <td className="num">{formatNumber(waste, 'MWh')}</td>
-    </tr>
+    <li className={avoided === undefined ? 'outcome-column outcome-column-baseline' : 'outcome-column outcome-column-post'}>
+      <span className="outcome-value num">{formatNumber(waste, 'MWh')}</span>
+      <span className="outcome-bar" aria-hidden="true">
+        {avoided != null && avoided > 0 && (
+          <span
+            className="outcome-bar-avoided"
+            style={{ height: heightPct(avoided, max) }}
+            title={`${formatNumber(avoided, 'MWh')} avoided`}
+          />
+        )}
+        <span
+          className="outcome-bar-fill"
+          style={{ height: heightPct(waste, max) }}
+          title={`${title}: ${formatNumber(waste, 'MWh')}`}
+        />
+      </span>
+      <span className="outcome-column-label">{title}</span>
+      <StatusChip status={state?.securityResult ?? 'unknown'} prefix={`${title} security result`} />
+    </li>
   );
 }
 
-// Baseline and post-action share one row layout and one bar scale so they can
-// be read down. Security comes before any value metric.
+// Baseline and post-action stand side by side on one vertical scale so the
+// bar heights compare directly. Each column shows its security result under
+// the bar.
 function OutcomeComparisonPanel({ scenario }: { scenario: WorkspaceScenario }) {
   const reduction = dispatchDownReductionPct(scenario);
   const avoided = avoidedWasteMwh(scenario);
@@ -52,39 +53,40 @@ function OutcomeComparisonPanel({ scenario }: { scenario: WorkspaceScenario }) {
   return (
     <section className="card card-outcome" aria-labelledby="outcome-heading">
       <h3 id="outcome-heading" className="card-kicker">{WORKSPACE_COPY.outcomeTitle}</h3>
-      <table className="outcome-table">
-        <thead>
-          <tr>
-            <th scope="col"><span className="visually-hidden">State</span></th>
-            <th scope="col">Security result</th>
-            <th scope="col">Dispatch-down waste</th>
-            <th scope="col" className="num"><span className="visually-hidden">MWh</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <OutcomeRow title={WORKSPACE_COPY.baseline} state={scenario.baseline} max={max} />
-          <OutcomeRow title={WORKSPACE_COPY.postAction} state={scenario.postAction} max={max} avoided={avoided} />
-        </tbody>
-      </table>
-      <dl className="metrics metrics-row" aria-label="Change from recommended action">
-        <MetricCard label="Avoided dispatch-down waste" value={formatNumber(avoided, 'MWh')} />
-        <MetricCard
-          label="Dispatch-down reduction"
-          value={reduction === 'n/a' ? 'N/A' : formatPercent(reduction)}
-          detail={reduction === 'n/a' ? 'Baseline waste is zero.' : undefined}
-        />
-        <MetricCard label="Net financial value" value={formatEur(scenario.impact?.netFinancialValueEur ?? null)} />
-        <MetricCard
-          label="Estimated avoided emissions"
-          value={formatNumber(scenario.impact?.estimatedAvoidedEmissionsTco2e ?? null, 'tCO2e', 1)}
-          detail="Scenario estimate, not a verified carbon saving."
-        />
-        <MetricCard
-          priority="secondary"
-          label="Gross market opportunity"
-          value={formatEur(scenario.impact?.grossMarketOpportunityEur ?? null)}
-        />
-      </dl>
+      <div className="outcome-body">
+        <figure className="outcome-chart">
+          <figcaption className="outcome-chart-caption">Dispatch-down waste</figcaption>
+          {avoided != null && avoided > 0 && (
+            <ul className="outcome-legend">
+              <li><span className="outcome-swatch outcome-swatch-fill" aria-hidden="true" />Remaining</li>
+              <li><span className="outcome-swatch outcome-swatch-avoided" aria-hidden="true" />Avoided</li>
+            </ul>
+          )}
+          <ul className="outcome-columns">
+            <OutcomeColumn title={WORKSPACE_COPY.baseline} state={scenario.baseline} max={max} />
+            <OutcomeColumn title={WORKSPACE_COPY.postAction} state={scenario.postAction} max={max} avoided={avoided} />
+          </ul>
+        </figure>
+        <dl className="metrics metrics-row" aria-label="Change from recommended action">
+          <MetricCard label="Avoided dispatch-down waste" value={formatNumber(avoided, 'MWh')} />
+          <MetricCard
+            label="Dispatch-down reduction"
+            value={reduction === 'n/a' ? 'N/A' : formatPercent(reduction)}
+            detail={reduction === 'n/a' ? 'Baseline waste is zero.' : undefined}
+          />
+          <MetricCard label="Net financial value" value={formatEur(scenario.impact?.netFinancialValueEur ?? null)} />
+          <MetricCard
+            label="Estimated avoided emissions"
+            value={formatNumber(scenario.impact?.estimatedAvoidedEmissionsTco2e ?? null, 'tCO2e', 1)}
+            detail="Scenario estimate, not a verified carbon saving."
+          />
+          <MetricCard
+            priority="secondary"
+            label="Gross market opportunity"
+            value={formatEur(scenario.impact?.grossMarketOpportunityEur ?? null)}
+          />
+        </dl>
+      </div>
     </section>
   );
 }

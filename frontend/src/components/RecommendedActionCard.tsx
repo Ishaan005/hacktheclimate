@@ -1,8 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { ACTION_FAMILY_LABEL, EXECUTABILITY_LABEL, WORKSPACE_COPY } from '../copy';
 import { formatTime } from '../format';
-import { effectiveExecutability, instructionText } from '../scenarios';
-import type { RecommendedAction } from '../types';
-import ActionDetails from './ActionDetails';
+import { instructionText } from '../scenarios';
+import type { ActionStep, RecommendedAction } from '../types';
 import ActionTimeline from './ActionTimeline';
 
 type Props = {
@@ -10,9 +10,42 @@ type Props = {
   noActionReason: string | null;
 };
 
-// Shared shell: the complete instruction first, then the state change and a
-// schedule strip. The full field list and family-specific detail sit behind
-// the disclosure.
+// A dropdown panel that floats over the content below, so opening it never
+// changes the card height. Closes on Escape or a click outside.
+function ActionSteps({ steps }: { steps: ActionStep[] }) {
+  const ref = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    function close(event: Event) {
+      const details = ref.current;
+      if (!details?.open) return;
+      if (event instanceof KeyboardEvent ? event.key === 'Escape' : !details.contains(event.target as Node)) {
+        details.open = false;
+      }
+    }
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', close);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', close);
+    };
+  }, []);
+  return (
+    <details ref={ref} className="action-steps">
+      <summary>{WORKSPACE_COPY.actionStepsTitle} ({steps.length})</summary>
+      <ol className="action-steps-panel">
+        {steps.map((step, i) => (
+          <li key={i}>
+            <span className="action-step-time mono">{step.time ? formatTime(step.time) : '—'}</span>
+            <span>{step.text}</span>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+// Overview only: the complete instruction, any conditional warning, the state
+// change and the schedule strip. The ordered steps sit in a dropdown list.
 function RecommendedActionCard({ action, noActionReason }: Props) {
   if (!action) {
     return (
@@ -23,21 +56,19 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
       </section>
     );
   }
-  const executability = effectiveExecutability(action);
-  const executableTone = executability === 'executable' ? 'chip-neutral' : 'chip-unknown';
-  const unconfirmedRequest = action.family === 'interconnector_request' && executability === 'unconfirmed';
+  const conditional = action.executability === 'conditional';
   return (
     <section
-      className={`card card-action${unconfirmedRequest ? ' card-action-conditional' : ''}`}
+      className={`card card-action${conditional ? ' card-action-conditional' : ''}`}
       aria-labelledby="action-heading"
     >
       <h3 id="action-heading" className="card-kicker">
         {WORKSPACE_COPY.actionTitle}
         <span className="chip chip-neutral">{ACTION_FAMILY_LABEL[action.family]}</span>
-        <span className={`chip ${executableTone}`}>{EXECUTABILITY_LABEL[executability]}</span>
+        <span className={`chip ${conditional ? 'chip-unknown' : 'chip-neutral'}`}>{EXECUTABILITY_LABEL[action.executability]}</span>
       </h3>
       <p className="instruction">{instructionText(action)}</p>
-      {unconfirmedRequest && <p className="action-warning">{WORKSPACE_COPY.interconnectorNotConfirmed}</p>}
+      {conditional && <p className="action-warning">{WORKSPACE_COPY.actionConditional}</p>}
       <p className="state-change">
         <span className="state-change-asset">{action.assetName} · {action.location}</span>
         <span className="state-change-values">
@@ -48,26 +79,7 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
         </span>
       </p>
       <ActionTimeline action={action} />
-      <details className="action-details">
-        <summary>{WORKSPACE_COPY.actionDetailsSummary}: {ACTION_FAMILY_LABEL[action.family]}</summary>
-        <div className="action-detail">
-          <dl className="fields fields-action">
-            <div><dt>Asset</dt><dd>{action.assetName}</dd></div>
-            <div><dt>Location</dt><dd>{action.location}</dd></div>
-            <div><dt>Current state</dt><dd>{action.currentState}</dd></div>
-            <div><dt>Target state</dt><dd>{action.targetState}</dd></div>
-            <div><dt>Issue time</dt><dd className="mono">{formatTime(action.issueTime)}</dd></div>
-            <div><dt>Start time</dt><dd className="mono">{formatTime(action.startTime)}</dd></div>
-            <div><dt>Target achieved</dt><dd className="mono">{formatTime(action.targetTime)}</dd></div>
-            <div><dt>Effective until</dt><dd className="mono">{formatTime(action.effectiveUntil)}</dd></div>
-            <div>
-              <dt>Earliest achievable execution</dt>
-              <dd className="mono">{action.earliestExecution ? formatTime(action.earliestExecution) : 'Unknown'}</dd>
-            </div>
-          </dl>
-        </div>
-        <ActionDetails action={action} />
-      </details>
+      {action.steps.length > 0 && <ActionSteps steps={action.steps} />}
     </section>
   );
 }

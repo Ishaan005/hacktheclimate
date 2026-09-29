@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from './App';
 import OutcomeComparisonPanel from './components/OutcomeComparisonPanel';
-import { FORBIDDEN_PHRASES, WORKSPACE_COPY } from './copy';
+import { FORBIDDEN_PHRASES, REVIEW_COPY, WORKSPACE_COPY } from './copy';
 import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
 import { DEFAULT_TARGET } from './dispatchDown';
 import { dispatchDownReductionPct, resolveFixtureSolver, resolveSituation } from './scenarios';
@@ -23,6 +23,13 @@ function submitSituation(value: string) {
   fireEvent.click(screen.getByRole('button', { name: WORKSPACE_COPY.situationSubmit }));
 }
 
+// Describe, then evaluate from the fact review. Matched illustrative
+// descriptions come back with every required fact filled.
+async function evaluateSituation(value: string) {
+  submitSituation(value);
+  fireEvent.click(await screen.findByRole('button', { name: REVIEW_COPY.evaluate }));
+}
+
 describe('situation input and workspace', () => {
   it('starts with only the input field and no scenario', () => {
     render(<App />);
@@ -33,14 +40,16 @@ describe('situation input and workspace', () => {
 
   it('returns a complete instruction with security before value', async () => {
     render(<App />);
-    submitSituation('line overload in the west after the outage');
+    await evaluateSituation('line overload in the west after the outage');
     const region = await screen.findByRole('region', { name: thermal.title });
     expect(within(region).getByText('Issued 14:55 — Generator A to 100 MW by 15:10, effective until 16:30.')).toBeInTheDocument();
     expect(within(region).getByText(WORKSPACE_COPY.illustrativeNote)).toBeInTheDocument();
     expect(within(region).getByText('Advisory')).toBeInTheDocument();
 
-    const text = region.textContent ?? '';
-    expect(text.indexOf('Security result')).toBeLessThan(text.indexOf('Net financial value'));
+    const text = (region.textContent ?? '').toLowerCase();
+    const security = text.indexOf('security result');
+    expect(security).toBeGreaterThanOrEqual(0);
+    expect(security).toBeLessThan(text.indexOf('net financial value'));
     expect(within(region).getByText('30 MWh')).toBeInTheDocument();
     expect(within(region).getByText('71%')).toBeInTheDocument();
     expectNoForbiddenCopy();
@@ -48,9 +57,9 @@ describe('situation input and workspace', () => {
 
   it('replaces the result with a new description', async () => {
     render(<App />);
-    submitSituation('overload in the west');
+    await evaluateSituation('overload in the west');
     await screen.findByRole('region', { name: thermal.title });
-    submitSituation('Low voltage in the north-west at the evening ramp');
+    await evaluateSituation('Low voltage in the north-west at the evening ramp');
     const region = await screen.findByRole('region', { name: voltage.title });
     expect(within(region).getByText(/Storage B to charging at 20 MW/)).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: thermal.title })).not.toBeInTheDocument();
@@ -58,7 +67,7 @@ describe('situation input and workspace', () => {
 
   it('shows no action when the scenario has none', async () => {
     render(<App />);
-    submitSituation('SNSP overnight');
+    await evaluateSituation('SNSP overnight');
     const region = await screen.findByRole('region', { name: snsp.title });
     expect(within(region).getByText(WORKSPACE_COPY.actionNone)).toBeInTheDocument();
     expect(within(region).getByText(snsp.noActionReason as string)).toBeInTheDocument();
@@ -74,11 +83,13 @@ describe('situation input and workspace', () => {
     expect(screen.queryByRole('region', { name: thermal.title })).not.toBeInTheDocument();
   });
 
-  it('says so when nothing matches', async () => {
+  it('asks for every required fact when nothing matches, and evaluates nothing', async () => {
     render(<App />);
     submitSituation('xyzzy plugh');
-    expect(await screen.findByText(WORKSPACE_COPY.noMatchTitle)).toBeInTheDocument();
-    expect(screen.queryByRole('region')).not.toBeInTheDocument();
+    const review = await screen.findByRole('region', { name: new RegExp(REVIEW_COPY.title) });
+    expect(within(review).getByText(REVIEW_COPY.stoppedTitle)).toBeInTheDocument();
+    expect(within(review).queryByRole('button', { name: REVIEW_COPY.evaluate })).not.toBeInTheDocument();
+    expect(within(review).getByRole('button', { name: `${REVIEW_COPY.add} Event window` })).toBeInTheDocument();
   });
 
   it('shows N/A reduction when baseline waste is zero and never shows unknown as within limit', () => {

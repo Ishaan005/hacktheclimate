@@ -1,0 +1,83 @@
+/* Fact review table; becomes labelled rows when the card is narrow. */
+
+.case-review {
+  display: grid;
+  gap: var(--space-12);
+  container-type: inline-size;
+}
+
+.case-review-intro {
+  margin: 0;
+}
+
+.fact-section-title {
+  margin: var(--space-8) 0 var(--space-4);
+  font-size: var(--font-size-14);
+}
+
+.fact-table th[scope='row'] {
+  font-weight: var(--font-weight-semibold);
+}
+
+.fact-optional {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+}
+
+.fact-missing th[scope='row'],
+.fact-missing td:nth-child(2) {
+  color: var(--color-warning-text);
+}
+
+.fact-table .cell-note {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+}
+
+.fact-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.fact-editor .input {
+  width: auto;
+  min-width: 8rem;
+}
+
+.fact-unit {
+  color: var(--color-text-muted);
+}
+
+.case-review-actions {
+  display: flex;
+  gap: var(--space-8);
+}
+
+@container (max-width: 639px) {
+  .fact-table thead {
+    display: none;
+  }
+
+  .fact-table tr {
+    display: block;
+    padding: var(--space-8) 0;
+    border-bottom: 1px solid var(--color-border-strong);
+  }
+
+  .fact-table th,
+  .fact-table td {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-12);
+    padding: var(--space-4) 0;
+    border: none;
+  }
+
+  .fact-table td::before {
+    content: attr(data-label);
+    color: var(--color-text-muted);
+  }
+}

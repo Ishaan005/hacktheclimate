@@ -4,4 +4,6 @@ import { afterEach } from 'vitest';
 
 afterEach(() => {
   cleanup();
+  // The solver hook saves the case; each test starts without one.
+  localStorage.clear();
 });

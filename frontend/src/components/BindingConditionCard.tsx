@@ -38,10 +38,13 @@ function BindingConditionCard({ binding }: { binding: BindingCondition | null })
             {binding.type} <StatusChip status={binding.status} prefix="Binding status" />
           </p>
           {loading !== null && <LoadingMeter value={loading} />}
+          <p className={`binding-margin binding-margin-${binding.status}`}>
+            <span className="binding-margin-label">Margin to limit</span>
+            <span className="binding-margin-value">{binding.margin ?? 'Unknown'}</span>
+          </p>
           <dl className="fields">
             <div><dt>Limiting metric</dt><dd>{binding.metric}</dd></div>
             <div><dt>Location</dt><dd>{binding.location ?? 'Unknown'}</dd></div>
-            <div><dt>Margin to limit</dt><dd className="mono">{binding.margin ?? 'Unknown'}</dd></div>
           </dl>
         </>
       ) : (

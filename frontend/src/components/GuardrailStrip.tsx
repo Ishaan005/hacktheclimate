@@ -5,7 +5,7 @@ import StatusChip from './StatusChip';
 
 const STATUS_ORDER: GuardrailStatus[] = ['breach', 'unknown', 'within_modelled_limit'];
 
-// One row per guardrail so baseline and post-action read down in columns.
+// One row per safety constraint so baseline and post-action read down in columns.
 // Rows whose status changes are highlighted; the rest are context.
 function GuardrailStrip({ guardrails }: { guardrails: Guardrail[] }) {
   const counts = STATUS_ORDER.map((status) => ({
@@ -24,7 +24,7 @@ function GuardrailStrip({ guardrails }: { guardrails: Guardrail[] }) {
       <table className="guardrail-table">
         <thead>
           <tr>
-            <th scope="col">Guardrail</th>
+            <th scope="col">Constraint</th>
             <th scope="col">{WORKSPACE_COPY.baseline}</th>
             <th scope="col">{WORKSPACE_COPY.postAction}</th>
             <th scope="col">Margin</th>

@@ -1,6 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { ACTION_FAMILY_LABEL, COPY, FORBIDDEN_PHRASES, WORKSPACE_COPY } from '../copy';
+import { ACTION_FAMILY_LABEL, FORBIDDEN_PHRASES, WORKSPACE_COPY } from '../copy';
 import { illustrativeScenarios } from '../fixtures/illustrativeScenarios';
 import { resolveSituation } from '../scenarios';
 import type { RecommendedAction } from '../types';
@@ -17,91 +17,61 @@ function renderCard(action: RecommendedAction) {
   return screen.getByRole('region', { name: new RegExp(WORKSPACE_COPY.actionTitle) });
 }
 
-function field(card: HTMLElement, label: string): string {
-  return within(card).getByText(label).nextElementSibling?.textContent ?? '';
-}
-
-describe('action-family detail modules', () => {
+describe('recommended action card', () => {
   it('has an illustrative scenario for every action family', () => {
     for (const family of Object.keys(ACTION_FAMILY_LABEL) as RecommendedAction['family'][]) {
       expect(actionFor(family).family).toBe(family);
     }
   });
 
-  it('keeps family detail behind a disclosure labelled with the family', () => {
-    const card = renderCard(actionFor('generator_setpoint'));
-    const summary = within(card).getByText(`${WORKSPACE_COPY.actionDetailsSummary}: Generator active-power output`);
-    expect(summary.closest('details')).not.toHaveAttribute('open');
+  it('shows the overview and keeps the ordered steps in a closed dropdown', () => {
+    const card = renderCard(actionFor('generator_redispatch'));
+    expect(within(card).getByText('60 MW')).toBeInTheDocument();
+    const summary = within(card).getByText(`${WORKSPACE_COPY.actionStepsTitle} (4)`);
+    const details = summary.closest('details') as HTMLDetailsElement;
+    expect(details).not.toHaveAttribute('open');
+    fireEvent.click(summary);
+    const steps = within(details).getAllByRole('listitem');
+    expect(steps[0]).toHaveTextContent('14:55Issue a dispatch instruction to Generator A');
+    expect(steps[3]).toHaveTextContent('16:30Release the instruction');
   });
 
-  it('renders generator setpoint detail and its redispatch cost', () => {
-    const card = renderCard(actionFor('generator_setpoint'));
-    expect(field(card, 'Ramp rate')).toBe('4.0 MW/min');
-    expect(field(card, 'Minimum stable generation')).toBe('40 MW');
-    expect(field(card, 'Services lost')).toBe('Upward reserve above 20 MW');
-    expect(field(card, 'Estimated redispatch cost')).toBe('€1,250');
+  it('closes the steps dropdown on Escape and on a click outside', () => {
+    const card = renderCard(actionFor('generator_redispatch'));
+    const details = within(card).getByText(`${WORKSPACE_COPY.actionStepsTitle} (4)`).closest('details') as HTMLDetailsElement;
+    details.open = true;
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(details.open).toBe(false);
+    details.open = true;
+    fireEvent.mouseDown(within(details).getAllByRole('listitem')[0]);
+    expect(details.open).toBe(true);
+    fireEvent.mouseDown(document.body);
+    expect(details.open).toBe(false);
   });
 
-  it('renders commitment timing for a start', () => {
-    const card = renderCard(actionFor('commitment_change'));
-    expect(field(card, 'Target commitment')).toBe('Online');
-    expect(field(card, 'Hot, warm or cold')).toBe('Warm');
-    expect(field(card, 'Synchronisation time')).toBe('50 min');
-    expect(within(card).queryByText('Shutdown time')).not.toBeInTheDocument();
-    expect(field(card, 'Minimum-run cost')).toBe('€5,600');
+  it('shows no family detail fields or costs', () => {
+    const card = renderCard(actionFor('generator_redispatch'));
+    expect(within(card).queryByText('Ramp rate')).toBeNull();
+    expect(within(card).queryByText('Estimated redispatch cost')).toBeNull();
   });
 
-  it('renders storage limits, efficiency and rebound', () => {
+  it('marks a step with no fixed time', () => {
+    const card = renderCard(actionFor('outage_review'));
+    expect(within(card).getAllByRole('listitem', { hidden: true })[1]).toHaveTextContent(/^—Confirm the field crew/);
+  });
+
+  it('asks for an outage review, never a cancellation, and marks it conditional', () => {
+    const card = renderCard(actionFor('outage_review'));
+    expect(within(card).getByText(/^Review by 09:00 — Line M-1 outage: move the outage/)).toBeInTheDocument();
+    expect(within(card).getByText('Conditional', { selector: '.chip' })).toBeInTheDocument();
+    expect(within(card).getByText(WORKSPACE_COPY.actionConditional)).toBeInTheDocument();
+    expect(card.textContent?.toLowerCase()).not.toContain('cancel');
+  });
+
+  it('shows an executable action without the conditional warning', () => {
     const card = renderCard(actionFor('storage_charging'));
-    expect(field(card, 'State of charge limits')).toBe('10%–90%');
-    expect(field(card, 'Round-trip efficiency')).toBe('85%');
-    expect(field(card, 'Rebound requirement')).toMatch(/Discharge 20 MW/);
-  });
-
-  it('renders signed reactive power and tap change', () => {
-    const card = renderCard(actionFor('reactive_control'));
-    expect(field(card, 'Target reactive power')).toBe('−40 Mvar');
-    expect(field(card, 'Tap position')).toBe('9 to 7');
-    expect(field(card, 'Reactive capability at present output')).toBe('−60 Mvar to 0 Mvar at 0 MW');
-  });
-
-  it('renders renewable limit window from the action times', () => {
-    const card = renderCard(actionFor('renewable_limit'));
-    expect(field(card, 'Total reduction')).toBe('25 MW');
-    expect(field(card, 'Limit start')).toBe('12:00');
-    expect(field(card, 'Limit end')).toBe('14:00');
-    expect(field(card, 'Affected units')).toBe('Solar Farm E, Solar Farm F, Wind Farm G');
-  });
-
-  it('never shows an unconfirmed interconnector request as executable', () => {
-    const action = actionFor('interconnector_request');
-    // Even if the solver marks it executable, coordination status wins.
-    const card = renderCard({ ...action, executability: 'executable' });
-    expect(within(card).getByText('Unconfirmed', { selector: '.chip' })).toBeInTheDocument();
-    expect(within(card).queryByText('Executable')).not.toBeInTheDocument();
-    expect(within(card).getByText(WORKSPACE_COPY.interconnectorNotConfirmed)).toBeInTheDocument();
-    expect(within(card).getByText(/^Requested 19:00 — Interconnector C/)).toBeInTheDocument();
-    expect(field(card, 'Counterparty coordination')).toBe('Unconfirmed');
-  });
-
-  it('treats a confirmed interconnector request as the solver reported', () => {
-    const action = actionFor('interconnector_request');
-    if (action.family !== 'interconnector_request') throw new Error('unexpected family');
-    const card = renderCard({ ...action, details: { ...action.details, coordinationStatus: 'confirmed' } });
-    expect(within(card).getByText('Conditional')).toBeInTheDocument();
-    expect(within(card).queryByText(WORKSPACE_COPY.interconnectorNotConfirmed)).not.toBeInTheDocument();
-  });
-
-  it('shows missing detail as not available, never as zero', () => {
-    const action = actionFor('generator_setpoint');
-    if (action.family !== 'generator_setpoint') throw new Error('unexpected family');
-    const card = renderCard({
-      ...action,
-      details: { ...action.details, rampRateMwPerMin: null, servicesLost: null, redispatchCostEur: null },
-    });
-    expect(field(card, 'Ramp rate')).toBe(COPY.notAvailable);
-    expect(field(card, 'Services lost')).toBe(COPY.notAvailable);
-    expect(field(card, 'Estimated redispatch cost')).toBe(COPY.notAvailable);
+    expect(within(card).getByText('Executable')).toBeInTheDocument();
+    expect(within(card).queryByText(WORKSPACE_COPY.actionConditional)).not.toBeInTheDocument();
   });
 
   it('uses no overclaiming copy in any family', () => {
@@ -114,10 +84,9 @@ describe('action-family detail modules', () => {
     }
   });
 
-  it('matches each new scenario from a plain description', () => {
-    expect(resolveSituation('low inertia at midday in the south', illustrativeScenarios)?.action?.family).toBe('commitment_change');
-    expect(resolveSituation('high voltage in Dublin at light load', illustrativeScenarios)?.action?.family).toBe('reactive_control');
-    expect(resolveSituation('south-east solar export limit', illustrativeScenarios)?.action?.family).toBe('renewable_limit');
-    expect(resolveSituation('wind surplus, export on the interconnector', illustrativeScenarios)?.action?.family).toBe('interconnector_request');
+  it('matches each scenario from a plain description', () => {
+    expect(resolveSituation('south-east solar export limit, move data centre workload', illustrativeScenarios)?.action?.family).toBe('flexible_demand');
+    expect(resolveSituation('planned outage in the midlands during high wind', illustrativeScenarios)?.action?.family).toBe('outage_review');
+    expect(resolveSituation('low inertia at midday in the south', illustrativeScenarios)?.action).toBeNull();
   });
 });

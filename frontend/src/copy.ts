@@ -73,6 +73,14 @@ export const WORKSPACE_COPY = {
   solverUnavailableConsequence: 'No action can be returned yet. Questions about dispatch-down risk still work. Use fixture mode to preview the workspace layout.',
   solverErrorTitle: 'Scenario solver did not respond',
   solverErrorConsequence: 'No action is shown. Try again.',
+  assistantTitle: 'Grid assistant',
+  traceTitle: 'How the assistant answered',
+  traceSummary: 'Path through the LangGraph for this reply',
+  traceSkipped: 'Not used this time',
+  assistantToolsUsed: 'Data used',
+  assistantNoTools: 'No tools called',
+  assistantRecommended: 'Recommended action',
+  assistantNote: 'Historical replay of January 2026 data, not a live forecast. Check the recommendation before acting.',
   clarifyTitle: 'The solver needs more detail',
   clarifyRound: 'Round',
   clarifyDescribed: 'You described',
@@ -86,6 +94,8 @@ export const WORKSPACE_COPY = {
   clarifyQuestion: 'Question',
   clarifyOf: 'of',
   clarifyCancel: 'Start again',
+  stoppedTitle: "Can't recommend yet",
+  stoppedConsequence: 'No action is recommended. The solver still needs these facts after the last round of questions:',
   comparisonLabel: 'Compare',
   comparisonBaseline: 'Baseline vs recommended action',
   lastModelRun: 'Last model run',
@@ -94,10 +104,9 @@ export const WORKSPACE_COPY = {
   bindingNone: 'No binding condition identified',
   actionTitle: 'Recommended action',
   actionNone: 'No recommended action',
-  actionDetailsSummary: 'Action details',
+  actionStepsTitle: 'Action steps',
   actionCostsTitle: 'Costs',
-  interconnectorNotConfirmed:
-    'Counterparty has not confirmed this request. It is not executable as a direct dispatch instruction.',
+  actionConditional: 'Depends on a check or confirmation that has not been made. Do not treat it as ready to issue.',
   outcomeTitle: 'New outcome',
   baseline: 'Baseline',
   postAction: 'Post-action',
@@ -119,43 +128,74 @@ export const GUARDRAIL_STATUS_LABEL = {
 } as const;
 
 export const GUARDRAIL_LABEL = {
-  voltage: 'Voltage',
-  thermal: 'Thermal capacity',
+  transmission_line: 'Transmission line',
+  thermal_capacity: 'Thermal capacity',
   snsp: 'SNSP',
-  inertia: 'Inertia',
-  frequency: 'Frequency',
+  scope: 'Region vs grid-wide impact',
+  min_generation: 'High frequency / minimum generation',
 } as const;
 
 export const ACTION_FAMILY_LABEL = {
-  generator_setpoint: 'Generator active-power output',
-  commitment_change: 'Commitment state change',
   storage_charging: 'Storage charging',
-  reactive_control: 'Voltage or reactive-power control',
-  renewable_limit: 'Renewable active-power limit',
-  interconnector_request: 'Interconnector flow change',
+  flexible_demand: 'Flexible demand',
+  generator_redispatch: 'Generator redispatch',
+  outage_review: 'Planned-outage review',
+} as const;
+
+export const DEMAND_DIRECTION_LABEL = {
+  increase: 'Increase',
+  decrease: 'Decrease',
 } as const;
 
 export const EXECUTABILITY_LABEL = {
   executable: 'Executable',
   conditional: 'Conditional',
-  unconfirmed: 'Unconfirmed',
 } as const;
 
-export const COORDINATION_LABEL = {
-  confirmed: 'Confirmed',
-  unconfirmed: 'Unconfirmed',
-  unavailable: 'Unavailable',
+// Fact review (build issues 04–06).
+export const REVIEW_COPY = {
+  title: 'Check the facts',
+  intro: 'These are the facts the tool will use. Correct anything wrong before it looks for an action.',
+  intakeTitle: 'Reading the description…',
+  intakeConsequence: 'No facts are shown until the case is ready.',
+  fact: 'Fact',
+  value: 'Value',
+  source: 'Source',
+  time: 'Time',
+  status: 'Status',
+  edit: 'Edit',
+  add: 'Add',
+  save: 'Save',
+  cancel: 'Cancel',
+  unknownValue: 'Unknown',
+  optional: 'optional',
+  stoppedTitle: "Can't recommend yet",
+  stoppedConsequence: 'No action is evaluated until these facts are added in the table, most blocking first:',
+  evaluate: 'Evaluate actions',
 } as const;
 
-export const COMMITMENT_LABEL = {
-  online: 'Online',
-  offline: 'Offline',
+export const EXTRACTION_LABEL = {
+  llm: 'Read by the language model',
+  rules: 'Read by keyword rules',
+  fixture: 'Illustrative',
+  manual: 'Automatic reading unavailable',
 } as const;
 
-export const THERMAL_STATE_LABEL = {
-  hot: 'Hot',
-  warm: 'Warm',
-  cold: 'Cold',
+export const FACT_STATUS_LABEL = {
+  supplied: 'Supplied',
+  verified: 'Verified',
+  corrected: 'Corrected',
+  stale: 'Stale',
+  unknown: 'Unknown',
+} as const;
+
+export const FACT_SOURCE_LABEL = {
+  operator: 'Operator',
+  measured: 'Measured',
+  forecast: 'Forecast',
+  modelled: 'Modelled',
+  asset_register: 'Asset register',
+  publication: 'Publication',
 } as const;
 
 // Plain-language definitions shown in tooltips.

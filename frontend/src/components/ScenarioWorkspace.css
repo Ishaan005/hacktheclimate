@@ -16,6 +16,11 @@
   font-weight: var(--font-weight-semibold);
 }
 
+.situation-label-secondary {
+  margin-top: var(--space-8);
+  font-size: var(--font-size-14);
+}
+
 .situation-hint {
   margin: 0;
   color: var(--color-text-muted);
@@ -25,17 +30,23 @@
 .situation-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: var(--space-8);
   margin-top: var(--space-4);
 }
 
-.situation input {
+/* Text boxes grow with their content (see AutoGrowTextarea) up to about
+   eight lines, then scroll. */
+.situation textarea {
   flex: 1 1 280px;
   min-width: 0;
+  max-height: calc(8lh + 2 * var(--space-8));
   padding: var(--space-8) var(--space-12);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   font: inherit;
+  line-height: var(--line-height-default);
+  resize: none;
 }
 
 /* ---- Workspace ---- */
@@ -106,6 +117,8 @@
   color: var(--color-text);
 }
 
+/* Both cards share the row height, so no gap opens below the shorter one.
+   The binding card's margin panel takes any spare height. */
 .workspace-flow {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -120,7 +133,43 @@
 
 /* The binding guardrail is the most prominent guardrail object on screen. */
 .card-binding {
+  display: flex;
+  flex-direction: column;
   border-left-width: 4px;
+}
+
+/* Margin to limit is the number the operator acts on, so it reads as a
+   hero value between the meter and the supporting facts. The panel takes
+   any spare height when the action card is taller. */
+.binding-margin {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  gap: var(--space-2);
+  margin: var(--space-12) 0;
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.binding-margin-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+}
+
+.binding-margin-value {
+  font-size: var(--font-size-24);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.binding-margin-breach {
+  background: var(--color-danger-soft);
+}
+
+.binding-margin-breach .binding-margin-value {
+  color: var(--color-danger);
 }
 
 .card-binding-breach {
@@ -135,13 +184,27 @@
   border-left-color: var(--color-status-unknown);
 }
 
+/* The recommended action is the decision on screen, so it carries the
+   accent: thicker border, tinted surface, raised shadow. */
 .card-action {
-  border-color: var(--color-accent);
+  border: 2px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent-soft) 35%, var(--color-surface));
+  box-shadow: var(--shadow-md);
+}
+
+.card-action .card-kicker {
+  color: var(--color-accent);
+}
+
+.card-action .instruction {
+  color: var(--color-accent-strong);
 }
 
 .card-action-none {
   border-color: var(--color-border-strong);
   border-style: dashed;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .instruction {
@@ -218,8 +281,13 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* Current state in red, target state in green. */
 .state-change-from {
-  color: var(--color-text-muted);
+  color: var(--color-danger);
+}
+
+.state-change-to {
+  color: var(--color-success);
 }
 
 /* Room above and below the track for the alternating event labels. */
@@ -316,58 +384,147 @@
 
 /* ---- Outcome comparison ---- */
 
-.outcome-table th[scope='row'] {
-  width: 1%;
+.outcome-chart {
+  margin: 0;
+}
+
+.outcome-chart-caption {
+  margin-bottom: var(--space-8);
+  color: var(--color-text-muted);
+}
+
+.outcome-legend {
+  display: flex;
+  gap: var(--space-16);
+  margin: 0 0 var(--space-12);
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+}
+
+.outcome-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.outcome-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.outcome-swatch-fill {
+  background: var(--color-accent);
+}
+
+.outcome-swatch-avoided {
+  background: var(--color-accent-soft);
+}
+
+.outcome-columns {
+  display: flex;
+  gap: var(--space-24);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.outcome-column {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 160px;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.outcome-value {
   white-space: nowrap;
   font-weight: var(--font-weight-semibold);
 }
 
-.outcome-table td:nth-child(2) {
-  width: 1%;
-}
-
-.outcome-table td,
-.outcome-table th {
-  vertical-align: middle;
-}
-
-.outcome-bar-cell {
-  width: 100%;
-}
-
+/* Bars grow up from a shared baseline; the avoided segment stacks on top. */
 .outcome-bar {
   display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   gap: 2px;
-  height: 16px;
+  width: 48px;
+  height: 160px;
+  border-bottom: 1px solid var(--color-border-strong);
 }
 
 .outcome-bar-fill,
 .outcome-bar-avoided {
   display: block;
-  height: 100%;
+  width: 100%;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .outcome-bar-fill {
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--color-border-strong);
 }
 
-.outcome-row-post .outcome-bar-fill {
+.outcome-column-post .outcome-bar-fill {
   background: var(--color-accent);
 }
 
 .outcome-bar-avoided {
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--color-accent-soft);
 }
 
-.outcome-table .num {
-  white-space: nowrap;
+.outcome-column-post .outcome-bar-avoided + .outcome-bar-fill {
+  border-radius: 0;
+}
+
+.outcome-column-label {
   font-weight: var(--font-weight-semibold);
 }
 
 .metrics-row {
   margin-top: var(--space-16);
+}
+
+/* Chart on the left, change metrics beside it in a 2 x 2 grid. The secondary
+   metric sits on its own row under a rule so no cell is left orphaned. */
+.outcome-body {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 640px);
+  gap: var(--space-24) var(--space-32);
+  align-items: center;
+  justify-content: start;
+}
+
+.outcome-body .metrics-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-24) var(--space-32);
+  align-content: center;
+  margin-top: 0;
+  padding-left: var(--space-32);
+  border-left: 1px solid var(--color-border);
+}
+
+.outcome-body .metric-secondary {
+  grid-column: 1 / -1;
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Stack when the workspace is too narrow for the chart plus a readable
+   metric grid, so the two never overlap. */
+@container (max-width: 820px) {
+  .outcome-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .outcome-body .metrics-row {
+    padding-top: var(--space-16);
+    padding-left: 0;
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
 }
 
 /* ---- Guardrail table ---- */
@@ -411,7 +568,7 @@
 
 /* ---- Action-family detail ---- */
 
-/* An unconfirmed request must not look as executable as direct dispatch. */
+/* A conditional action must not look as ready as an executable one. */
 .card-action-conditional {
   border-color: var(--color-status-unknown);
   border-style: dashed;
@@ -427,12 +584,15 @@
   font-weight: var(--font-weight-medium);
 }
 
-.action-details {
-  margin-top: var(--space-16);
+/* Ordered steps in a dropdown under the action overview. The panel floats
+   over the content below so the card keeps its height. */
+.action-steps {
+  position: relative;
+  margin-top: var(--space-12);
   border-top: 1px solid var(--color-border);
 }
 
-.action-details summary {
+.action-steps summary {
   padding: var(--space-12) 0 var(--space-4);
   color: var(--color-accent);
   font-size: var(--font-size-14);
@@ -440,25 +600,41 @@
   cursor: pointer;
 }
 
-.action-details summary:hover {
+.action-steps summary:hover {
   color: var(--color-accent-hover);
 }
 
-.action-detail {
+.action-steps-panel {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  right: 0;
+  left: 0;
   display: grid;
   gap: var(--space-8);
-  padding-top: var(--space-8);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-12) var(--space-16) var(--space-12) var(--space-32);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  font-size: var(--font-size-14);
 }
 
-.action-detail .fields dd {
+.action-steps li {
+  padding-left: var(--space-4);
+}
+
+.action-steps li::marker {
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
-.action-detail-subhead {
-  margin: var(--space-8) 0 0;
+.action-step-time {
+  display: inline-block;
+  min-width: 3.5em;
+  margin-right: var(--space-8);
   color: var(--color-text-muted);
-  font-size: var(--font-size-13);
-  font-weight: var(--font-weight-semibold);
 }
 
 /* Grid assistant reply (live /v1/chat). */

@@ -36,6 +36,11 @@
   color: var(--color-danger);
 }
 
+.status-items {
+  margin: 0;
+  padding-left: var(--space-16);
+}
+
 .status-detail {
   color: var(--color-text-muted);
   font-size: var(--font-size-14);
