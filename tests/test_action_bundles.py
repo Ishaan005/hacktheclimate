@@ -118,6 +118,9 @@ def test_redispatch_changes_network_but_gets_no_direct_capture_credit():
     assert result["modeled_capture_upper_bound_mwh"] == pytest.approx(0.0)
     effect = first["network_effect"]["planned_outage"]["flow_changes"]
     assert effect["changed_asset_count"] > 0
+    transmission = first["safety"]["families"]["transmission"]
+    assert transmission["checks"]["current_forecast_thermal_margin"]["value"] is not None
+    assert transmission["checks"]["time_to_relief"]["status"] == "UNKNOWN"
 
 
 def test_mixed_flex_and_redispatch_bundle_credits_only_recovered_renewable():
