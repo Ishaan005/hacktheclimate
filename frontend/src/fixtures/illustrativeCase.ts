@@ -33,8 +33,10 @@ function scenarioFamilies(scenario: WorkspaceScenario): ScenarioFamily[] {
   return families.length ? families : ['cause_unknown'];
 }
 
-function illustrativeFact(key: string, value: FactValue, unit: string | null, asOf: string): Fact {
-  return { key, value, unit, status: 'supplied', source: 'modelled', sourceName: 'Illustrative fixture (invented)', asOf, history: [] };
+// Matched from the description (system_inferred) or read from an invented
+// forecast (forecast). Never operator supplied or verified.
+function illustrativeFact(key: string, value: FactValue, unit: string | null, asOf: string, status: 'system_inferred' | 'forecast'): Fact {
+  return { key, value, unit, status, source: 'modelled', sourceName: 'Illustrative fixture (invented)', asOf, history: [] };
 }
 
 function window(scenario: WorkspaceScenario): string {
@@ -49,11 +51,11 @@ function situationCase(text: string, createdAt: string, scenarios: WorkspaceScen
   const asOf = match.modelRunAt ?? createdAt;
   const waste = match.baseline.dispatchDownWasteMwh;
   const facts: Record<string, Fact> = {
-    event_window: illustrativeFact('event_window', window(match), null, asOf),
-    affected_area: illustrativeFact('affected_area', match.binding?.location ?? null, null, asOf),
-    expected_dispatch_down_mwh: illustrativeFact('expected_dispatch_down_mwh', waste, 'MWh', asOf),
-    event_probability: illustrativeFact('event_probability', 70, '%', asOf),
-    forecast_range_mwh: illustrativeFact('forecast_range_mwh', waste === null ? null : `${Math.round(waste * 0.6)}–${Math.round(waste * 1.4)}`, 'MWh', asOf),
+    event_window: illustrativeFact('event_window', window(match), null, asOf, 'system_inferred'),
+    affected_area: illustrativeFact('affected_area', match.binding?.location ?? null, null, asOf, 'system_inferred'),
+    expected_dispatch_down_mwh: illustrativeFact('expected_dispatch_down_mwh', waste, 'MWh', asOf, 'forecast'),
+    event_probability: illustrativeFact('event_probability', 70, '%', asOf, 'forecast'),
+    forecast_range_mwh: illustrativeFact('forecast_range_mwh', waste === null ? null : `${Math.round(waste * 0.6)}–${Math.round(waste * 1.4)}`, 'MWh', asOf, 'forecast'),
   };
   return { ...operatorCase, scenarios: scenarioFamilies(match), facts };
 }

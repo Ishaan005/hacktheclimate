@@ -7,6 +7,7 @@ import {
   newCase,
   readyForEvaluation,
   REQUIRED_ACTION_FACTS,
+  reviewSections,
   setCaseFact,
   SITUATION_FACTS,
   unknownFact,
@@ -119,7 +120,7 @@ describe('applyAnswers and setCaseFact', () => {
       { round: 1, questionId: 'situation.affected_area', value: null },
     ], asOf);
     expect(next.scenarios).toEqual(['local_network_constraint']);
-    expect(next.facts.event_window).toMatchObject({ value: '14:00–17:00', status: 'supplied', source: 'operator', asOf });
+    expect(next.facts.event_window).toMatchObject({ value: '14:00–17:00', status: 'operator_supplied', source: 'operator', asOf });
     expect(next.facts.affected_area).toBeUndefined();
     expect(next.proposedAction?.facts.max_charging_mw).toMatchObject({ value: 40, unit: 'MW' });
     expect(next.comparison?.kind === 'action' && next.comparison.action.facts.max_output_mw.value).toBe(400);
@@ -149,5 +150,14 @@ describe('applyAnswers and setCaseFact', () => {
   it('keeps a proposed-action answer as a situation fact when there is no proposed action', () => {
     const next = setCaseFact(newCase('x', asOf), 'proposed.max_charging_mw', 40, 'MW', asOf);
     expect(next.facts['proposed.max_charging_mw'].value).toBe(40);
+  });
+
+  it('shows a scenario read from the description as system inferred until the operator picks it', () => {
+    const scenarioFact = (operatorCase: OperatorCase) => reviewSections(operatorCase)[0].rows.find((row) => row.definition.key === 'scenario')?.fact;
+    const inferred = { ...newCase('overload in the west', asOf), scenarios: ['local_network_constraint' as const] };
+    expect(scenarioFact(inferred)).toMatchObject({ status: 'system_inferred', sourceName: 'Read from the operator description' });
+    const later = '2026-09-29T09:00:00Z';
+    const picked = setCaseFact(inferred, 'situation.scenario', 'system_wide_curtailment', null, later);
+    expect(scenarioFact(picked)).toMatchObject({ status: 'operator_supplied', asOf: later });
   });
 });
