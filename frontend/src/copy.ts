@@ -66,7 +66,7 @@ export const WORKSPACE_COPY = {
   situationLabel: 'Describe the situation',
   situationHint: 'Name the area, asset, limit and time, or ask for dispatch-down risk. The workspace returns the recommended next action or the risk estimate.',
   situationSubmit: 'Find next action',
-  situationPlaceholder: 'e.g. line overload in the west after the outage',
+  situationPlaceholder: 'e.g. planned outage in the west; Ballylickey wind constrained for the next 2 hours',
   solvingTitle: 'Finding the next action…',
   solvingConsequence: 'No action is shown until the result arrives.',
   noMatchTitle: 'No scenario found for this description',
