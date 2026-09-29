@@ -240,6 +240,7 @@ def evaluate_operator_case(
             **action,
             "contract_action_id": family,
             "required_safety_rules": resolution.required_safety_rules,
+            "required_safety_families": resolution.required_safety_families,
         })
 
     bundle_generation = generate_action_bundles(planning_candidates)
@@ -283,6 +284,7 @@ def evaluate_operator_case(
         "network_loading", "islanding", "renewable_share",
         "voltage", "inertia", "rocof",
     }
+    directly_screened_families = {"transmission"}
     bundle_options = [baseline_bundle]
     for evaluation in bundle_screen["evaluated"]:
         definition = bundle_contract[evaluation["bundle_id"]]
@@ -291,9 +293,17 @@ def evaluate_operator_case(
             for family in definition.contract_action_ids
             for rule in resolved_by_id[family].required_safety_rules
         })
+        required_families = sorted({
+            safety_family
+            for family in definition.contract_action_ids
+            for safety_family in resolved_by_id[family].required_safety_families
+        })
         missing_rule_checks = sorted(set(required_rules) - directly_screened_rules)
+        missing_family_checks = sorted(
+            set(required_families) - directly_screened_families
+        )
         safety = evaluation["safety_overall"]
-        if safety != "FAIL" and missing_rule_checks:
+        if safety != "FAIL" and (missing_rule_checks or missing_family_checks):
             safety = "UNKNOWN"
         bundle_options.append({
             **evaluation,
@@ -301,6 +311,8 @@ def evaluate_operator_case(
             "is_baseline": False,
             "required_safety_rules": required_rules,
             "missing_required_safety_rules": missing_rule_checks,
+            "required_safety_families": required_families,
+            "missing_required_safety_families": missing_family_checks,
             "safety_overall": safety,
             "expected_dispatch_down_mwh": None,
         })
