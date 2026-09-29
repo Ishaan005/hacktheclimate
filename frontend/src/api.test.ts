@@ -17,6 +17,53 @@ function json(body: unknown, status = 200) {
 
 afterEach(() => vi.restoreAllMocks());
 
+describe('reviewed case workspace route', () => {
+  it('posts the reviewed case to the structured evaluator', async () => {
+    const operatorCase = {
+      id: 'case-1',
+      originalText: 'Line overload in the west after the outage',
+      createdAt: '2026-09-29T12:00:00Z',
+      scenarios: ['local_network_constraint', 'planned_outage_exposure'],
+      facts: {},
+      proposedAction: null,
+      comparison: null,
+    };
+    const scenario = {
+      id: 'case-1',
+      title: 'Thermal capacity advisory — T3',
+      intervalStart: '2026-09-29T13:00:00Z',
+      intervalEnd: '2026-09-30T13:00:00Z',
+      source: 'live',
+      modelRunAt: null,
+      summary: 'Evidence-gated planning result.',
+      keywords: [],
+      binding: null,
+      action: null,
+      noActionReason: 'No action has complete evidence for recommendation.',
+      baseline: { securityResult: 'unknown', dispatchDownWasteMwh: null },
+      postAction: null,
+      impact: null,
+      guardrails: [],
+    };
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ kind: 'scenario', scenario }));
+    const result = await solveSituation({
+      description: operatorCase.originalText,
+      threadId: null,
+      answers: [],
+      caseSummary: 'Reviewed facts',
+      operatorCase,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/v1/workspace/evaluate',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ case: operatorCase }),
+      }),
+    );
+    expect(result).toEqual({ kind: 'scenario', scenario });
+  });
+});
+
 describe('live solver through the LangGraph chat route', () => {
   it('posts the description to /v1/chat in its request shape', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({

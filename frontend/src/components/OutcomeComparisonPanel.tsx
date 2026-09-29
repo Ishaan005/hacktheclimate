@@ -47,6 +47,7 @@ function OutcomeColumn({ title, state, max, avoided }: ColumnProps) {
 // bar heights compare directly. Each column shows its security result under
 // the bar.
 function OutcomeComparisonPanel({ scenario }: { scenario: WorkspaceScenario }) {
+  const demo = scenario.source === 'demo';
   const reduction = dispatchDownReductionPct(scenario);
   const avoided = avoidedWasteMwh(scenario);
   const max = Math.max(scenario.baseline.dispatchDownWasteMwh ?? 0, scenario.postAction?.dispatchDownWasteMwh ?? 0);
@@ -59,7 +60,7 @@ function OutcomeComparisonPanel({ scenario }: { scenario: WorkspaceScenario }) {
           {avoided != null && avoided > 0 && (
             <ul className="outcome-legend">
               <li><span className="outcome-swatch outcome-swatch-fill" aria-hidden="true" />Remaining</li>
-              <li><span className="outcome-swatch outcome-swatch-avoided" aria-hidden="true" />Avoided</li>
+              <li><span className="outcome-swatch outcome-swatch-avoided" aria-hidden="true" />{demo ? 'Assumed reduction' : 'Avoided'}</li>
             </ul>
           )}
           <ul className="outcome-columns">
@@ -67,10 +68,10 @@ function OutcomeComparisonPanel({ scenario }: { scenario: WorkspaceScenario }) {
             <OutcomeColumn title={WORKSPACE_COPY.postAction} state={scenario.postAction} max={max} avoided={avoided} />
           </ul>
         </figure>
-        <dl className="metrics metrics-row" aria-label="Change from recommended action">
-          <MetricCard label="Avoided dispatch-down waste" value={formatNumber(avoided, 'MWh')} />
+        <dl className="metrics metrics-row" aria-label={demo ? 'Demo scenario comparison' : 'Change from recommended action'}>
+          <MetricCard label={demo ? 'Assumed dispatch-down reduction' : 'Avoided dispatch-down waste'} value={formatNumber(avoided, 'MWh')} />
           <MetricCard
-            label="Dispatch-down reduction"
+            label={demo ? 'Assumed reduction rate' : 'Dispatch-down reduction'}
             value={reduction === 'n/a' ? 'N/A' : formatPercent(reduction)}
             detail={reduction === 'n/a' ? 'Baseline waste is zero.' : undefined}
           />
