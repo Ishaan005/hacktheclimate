@@ -152,6 +152,11 @@ def test_complete_action_evidence_resolves_asset_and_timing_contract_rules():
     )
     assert bundle["action_specific"]["asset_capability"]["status"] == "PASS"
     assert bundle["action_specific"]["timing"]["status"] == "PASS"
+    assert (
+        bundle["intervals"][0]["safety"]["families"]["transmission"]
+        ["checks"]["time_to_relief"]["status"]
+        == "PASS"
+    )
     assert "asset_capability" not in bundle["missing_required_safety_rules"]
     assert "timing" not in bundle["missing_required_safety_rules"]
 
