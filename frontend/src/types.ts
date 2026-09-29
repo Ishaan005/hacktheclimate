@@ -492,10 +492,10 @@ export type SolverRequest = {
   description: string;
   threadId: string | null;
   answers: ClarificationAnswer[];
-  // The reviewed case as text (description plus confirmed facts and their
-  // sources). Set once the operator has checked the facts; the live solver
-  // reads it instead of the bare description.
+  // The reviewed case as text, retained for chat/audit surfaces.
   caseSummary?: string;
+  // Exact reviewed case object used by the structured workspace evaluator.
+  operatorCase?: unknown;
 };
 
 // What the situation solver can return. The LLM chooses the output type from
