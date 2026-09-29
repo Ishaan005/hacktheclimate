@@ -3,6 +3,7 @@ import { solveSituation, SolverUnavailableError, startCase } from './api';
 import type { Extraction } from './api';
 import { SKIP_CASE_REVIEW } from './mode';
 import { resolveDispatchDownQuestion } from './scenarios';
+import { autofillSituation } from './autofill';
 import { applyAnswers, caseSummaryText, newCase, readyForEvaluation, setCaseFact } from './case';
 import { clearSession, loadSession, saveSession, SESSION_VERSION } from './caseStore';
 import { InvalidClarificationError, parseClarificationRequest } from './clarification';
@@ -152,6 +153,7 @@ export function useSituationSolver() {
     controllerRef.current = controller;
     setState({ status: 'intake' });
     startCase(text, comparisonText, controller.signal)
+      .then(async (result) => ({ ...result, operatorCase: await autofillSituation(result.operatorCase, controller.signal) }))
       .then(({ operatorCase: extracted, extraction }) => {
         if (controller.signal.aborted) return;
         updateCase(extracted);
