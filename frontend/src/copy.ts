@@ -33,6 +33,23 @@ export const COPY = {
 
 // Consequence-led state messages: what the operator can and cannot rely on.
 export const STATE_COPY = {
+  forecastUnavailableTitle: 'No national outlook yet',
+  forecastUnavailableConsequence:
+    'This screen cannot show when national constraint risk rises. The planning scenario below still works, but it says nothing about timing.',
+  forecastLoadingConsequence: 'Fetching the latest national forecast. Nothing is shown until it arrives.',
+  forecastErrorTitle: 'National forecast did not load',
+  forecastErrorConsequence: 'No forecast figures are shown, so none of them can be out of date. Try again, or check that the API is running.',
+  forecastStaleTitle: 'Some forecast inputs are out of date',
+  forecastStaleConsequence: 'Treat the timeline as less reliable until these sources refresh:',
+  scenarioEmptyTitle: 'No outage selected',
+  scenarioEmptyConsequence:
+    'Pick a reviewed outage above to see how switching that equipment off would move power in the 2024 planning model.',
+  scenarioLoadingConsequence: 'Solving the planning model for this outage.',
+  scenarioErrorTitle: 'Planning scenario did not load',
+  scenarioErrorConsequence: 'No modelled flows are shown for this outage. Try again, or pick another outage.',
+  scenarioUnavailableTitle: 'This outage cannot be modelled yet',
+  scenarioUnavailableConsequence:
+    'No flow change is shown because the equipment could not be matched to the planning model with enough confidence.',
   retry: 'Try again',
 } as const;
 
@@ -51,16 +68,8 @@ export const WORKSPACE_COPY = {
   solvingConsequence: 'No action is shown until the result arrives.',
   noMatchTitle: 'No scenario found for this description',
   noMatchConsequence: 'No action is shown. Add the area, asset or limit and try again.',
-  solverUnavailableTitle: 'Grid assistant not available',
-  solverUnavailableConsequence: 'No action can be returned. Questions about dispatch-down risk still open the forecast. Check that the API is running and Azure OpenAI is set in .env.',
-  assistantTitle: 'Grid assistant',
-  traceTitle: 'How the assistant answered',
-  traceSummary: 'Path through the LangGraph for this reply',
-  traceSkipped: 'Not used this time',
-  assistantToolsUsed: 'Data used',
-  assistantNoTools: 'No tools called',
-  assistantRecommended: 'Recommended action',
-  assistantNote: 'Historical replay of January 2026 data, not a live forecast. Check the recommendation before acting.',
+  solverUnavailableTitle: 'Scenario solver not connected',
+  solverUnavailableConsequence: 'No action can be returned yet. Questions about dispatch-down risk still work. Use fixture mode to preview the workspace layout.',
   solverErrorTitle: 'Scenario solver did not respond',
   solverErrorConsequence: 'No action is shown. Try again.',
   clarifyTitle: 'The solver needs more detail',
