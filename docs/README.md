@@ -25,6 +25,7 @@ The [project status](PROJECT_STATUS.md) is a 27 September verification snapshot.
 | 48 half-hour network forecast adapter and API | [Network forecast architecture](NETWORK_FORECAST_ARCHITECTURE.md) |
 | Safety checks, controlled action scenarios and operator API | [Network safety and actions](NETWORK_SAFETY_ACTIONS.md) |
 | Decision-time evidence, versioned policy, past cases and current-plan baseline | [Advisory decision backend](DECISION_BACKEND.md) |
+| Combined case intake, action simulations and output inspection | [Operator case evaluation](OPERATOR_EVALUATION.md) |
 | Read-only case preview and pending scenario/action handoff | [Case-flow handoff](DECISION_HANDOFF.md) |
 
 The [data contract](../config/data_contract.yaml) distinguishes forecast-safe inputs from same-period measurements. The [README](../README.md) lists current API paths.

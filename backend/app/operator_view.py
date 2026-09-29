@@ -33,7 +33,10 @@ def build_operator_view(
         selected_contingency=selected_contingency,
     )
     missing = []
-    if not action_catalog_available:
+    if not action_catalog_available or not any(
+        item.get("review_status") in {"accepted_proxy", "accepted_verified"}
+        for item in action_candidates
+    ):
         missing.append("reviewed flexible-action catalog")
     if not all(row.get("recoverable_renewable_mw") for row in forecast_rows):
         missing.append("regional recoverable renewable forecast")
