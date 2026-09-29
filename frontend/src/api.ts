@@ -3,6 +3,7 @@ import { fixtureOperatorView, fixtureOutages, fixtureScenario } from './fixtures
 import { namedTarget, resolveDispatchDownQuestion, resolveFixtureSolver } from './scenarios';
 import type { ClarificationAnswer, NetworkDecision, OperatorView, ReviewedOutageOption, SolverRequest, SolverResult } from './types';
 
+import { DEFAULT_TARGET } from './dispatchDown';
 import { USE_FIXTURE } from './mode';
 
 export { USE_FIXTURE };
@@ -146,10 +147,14 @@ export async function solveSituation(request: SolverRequest, signal?: AbortSigna
   }
   if (!response.ok) throw new Error(await errorDetail(response));
   const body = (await response.json()) as ChatResponse;
-  const usedForecast = body.tools_used.some((name) => DISPATCH_DOWN_TOOLS.has(name));
+  // Show the real forecast chart whenever the reply is about dispatch-down:
+  // the assistant called a forecast tool, or the question asked about it.
+  // It opens at the named time, or the default replay time.
+  const aboutDispatchDown = body.tools_used.some((name) => DISPATCH_DOWN_TOOLS.has(name))
+    || resolveDispatchDownQuestion(request.description) !== null;
   return {
     kind: 'assistant_reply',
     reply: { threadId: body.thread_id, text: body.reply, toolsUsed: body.tools_used, model: body.model },
-    target: usedForecast ? selectedTarget : null,
+    target: aboutDispatchDown ? selectedTarget ?? DEFAULT_TARGET : null,
   };
 }

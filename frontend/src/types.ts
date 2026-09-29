@@ -508,8 +508,8 @@ export type SolverResult =
   | { kind: 'dispatch_down_risk'; target: string }
   | { kind: 'clarification'; threadId: string | null; clarification: ClarificationRequest }
   // Free-text answer from the LangGraph assistant (POST /v1/chat). `target`
-  // is set when the reply used a dispatch-down tool for a named half-hour, so
-  // the real forecast view can sit beside it.
+  // is set when the reply is about dispatch-down, so the real forecast view
+  // can sit beside it.
   | { kind: 'assistant_reply'; reply: AssistantReply; target: string | null };
 
 export type AssistantReply = {

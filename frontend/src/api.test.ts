@@ -37,10 +37,16 @@ describe('live solver through the LangGraph chat route', () => {
     });
   });
 
-  it('only shows the forecast view when a dispatch-down tool was used', async () => {
+  it('shows the forecast view for dispatch-down replies, at the default time when none is named', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ thread_id: 't1', reply: 'High risk.', tools_used: ['get_dispatch_down_day'], model: 'gpt-4.1' }));
+    await expect(solveSituation(request('how does today look?'))).resolves.toMatchObject({ target: DEFAULT_TARGET });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ thread_id: 't1', reply: 'High risk.', tools_used: [], model: 'gpt-4.1' }));
+    await expect(solveSituation(request('what is the dispatch-down risk?'))).resolves.toMatchObject({ target: DEFAULT_TARGET });
+  });
+
+  it('shows no forecast view for replies that are not about dispatch-down', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ thread_id: 't1', reply: 'Hello.', tools_used: [], model: 'gpt-4.1' }));
-    const result = await solveSituation(request('hello at 2026-01-24 01:00'));
-    expect(result).toMatchObject({ kind: 'assistant_reply', target: null });
+    await expect(solveSituation(request('hello'))).resolves.toMatchObject({ kind: 'assistant_reply', target: null });
   });
 
   it('falls back to the real dispatch-down view when chat is not configured', async () => {
