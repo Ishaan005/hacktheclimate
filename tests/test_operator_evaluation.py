@@ -137,6 +137,9 @@ def test_complete_action_evidence_resolves_asset_and_timing_contract_rules():
         "capability_mw": 10.0,
         "side_effects_review_status": "reviewed",
         "evidence_reference": "synthetic operator evidence",
+        "available_at": "2026-09-28T23:40:00Z",
+        "max_age_seconds": 3600,
+        "valid_until": "2026-09-29T01:00:00Z",
     }
     result = evaluate_operator_case(
         _request(action_candidates=[candidate]),
