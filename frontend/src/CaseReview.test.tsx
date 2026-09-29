@@ -74,22 +74,18 @@ describe('fact review', () => {
     add('What is limiting renewable output?', 'local_network_constraint');
     add('Event window', '14:00–17:00');
     add('Affected area or constraint group', 'West');
-    add('Expected dispatch-down', '40');
-    add('Material-event probability', '60');
-    add('Forecast range', '20–60');
 
     expect(within(review).queryByText(REVIEW_COPY.stoppedTitle)).not.toBeInTheDocument();
-    expect(row(review, 'Expected dispatch-down')).toHaveTextContent('40 MWh');
     expect(within(row(review, 'Affected area')).getByText('Supplied')).toBeInTheDocument();
     expect(row(review, 'What is limiting renewable output?')).toHaveTextContent('Local network limit');
     expect(within(review).getByRole('button', { name: REVIEW_COPY.evaluate })).toBeInTheDocument();
   });
 
-  it('rejects a number outside its range', async () => {
+  it('rejects a required action number outside its range', async () => {
     render(<App />);
-    const review = await describeSituation('xyzzy plugh');
-    fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.add} Material-event probability` }));
-    fireEvent.change(within(review).getByLabelText('Material-event probability'), { target: { value: '150' } });
+    const review = await describeSituation('line overload in the west with Generator A redispatch');
+    fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.add} Scheduled output` }));
+    fireEvent.change(within(review).getByLabelText('Scheduled output'), { target: { value: '2500' } });
     expect(within(review).getByRole('button', { name: REVIEW_COPY.save })).toBeDisabled();
   });
 
