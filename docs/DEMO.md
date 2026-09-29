@@ -6,8 +6,20 @@ action contract and bundle engine without the external TYTFS working files.
 
 ## Start the teammate demo
 
-Check out the `feat/golden-path-demo` branch (PR #60). Use Python 3.11 and
-Node 22. From the repository root, install once and run the preflight:
+Clone the repository and check out `feat/golden-path-demo` (PR #60). The easiest
+cross-platform route is Docker Desktop or Docker Engine. From the repository
+root:
+
+```bash
+docker build -t htc-golden-demo .
+docker run --rm -p 8000:8000 htc-golden-demo
+```
+
+Open <http://127.0.0.1:8000/>. The container serves both the built UI and API,
+so it does not need local Python or Node. Docker must be installed and running.
+
+For local development without Docker, use Python 3.11 and Node 22. From the
+repository root on macOS or Linux, install once and run the preflight:
 
 ```bash
 python3.11 -m venv .venv
@@ -32,6 +44,12 @@ mode uses invented screen fixtures and does not run this backend path. No
 Azure credentials, external planning files or current GFS snapshot are needed
 for the two prompts below. If the page has an earlier case, enter either prompt
 in the top situation box to replace it.
+
+On Windows PowerShell, use `py -3.11 -m venv .venv`, then
+`.\.venv\Scripts\python.exe` in place of `.venv/bin/python` in the commands
+above. Run `npm ci` and `npm run dev -- --host 127.0.0.1 --port 5173 --strictPort`
+from `frontend` in a second PowerShell window. Docker is the simpler Windows
+path because it serves both pieces on port 8000.
 
 ## Hero prompt
 
@@ -83,7 +101,7 @@ candidate. Re-enter the hero prompt to return to the positive case.
 Run:
 
 ```bash
-python -m scripts.check_demo_ready
+.venv/bin/python -m scripts.check_demo_ready
 ```
 
 It must end with:
@@ -113,3 +131,15 @@ DEMO READY
 
 Do not present this as the current Irish operating grid or as an operational
 instruction. It is a planning-case demonstration of the product workflow.
+
+## What comes with a clone
+
+The golden path is packaged in tracked backend source and configuration. It
+does not read `data/raw/`, `data/inference/`, Azure credentials, or a local
+TYTFS case. The repository also tracks the processed datasets, saved models,
+metrics, source manifests, and audit documentation used by other project paths.
+
+Original workbooks and raw downloads remain outside Git or under ignored
+`data/raw/`; generated current inference snapshots under `data/inference/` are
+also ignored. Those are not needed for this demo. Other live or planning routes
+can still report unavailable until their separately reviewed inputs exist.
