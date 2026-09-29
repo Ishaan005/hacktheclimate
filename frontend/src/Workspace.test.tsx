@@ -2,10 +2,12 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import AssistantApp from './AssistantApp';
 import OutcomeComparisonPanel from './components/OutcomeComparisonPanel';
+import ScenarioWorkspace from './components/ScenarioWorkspace';
 import { FORBIDDEN_PHRASES, REVIEW_COPY, WORKSPACE_COPY } from './copy';
 import { illustrativeScenarios } from './fixtures/illustrativeScenarios';
 import { DEFAULT_TARGET } from './dispatchDown';
 import { dispatchDownReductionPct, resolveFixtureSolver, resolveSituation } from './scenarios';
+import type { WorkspaceScenario } from './types';
 
 const [thermal, voltage, snsp] = illustrativeScenarios;
 
@@ -97,6 +99,69 @@ describe('situation input and workspace', () => {
     expect(dispatchDownReductionPct(voltage)).toBe('n/a');
     expect(screen.getByText('N/A')).toBeInTheDocument();
     expect(screen.getByText(`${WORKSPACE_COPY.postAction} security result:`).parentElement).toHaveTextContent('Unknown');
+  });
+});
+
+describe('golden-path demo presentation', () => {
+  it('labels a calculated demo bundle as a modeled candidate, not a recommendation', () => {
+    const demo: WorkspaceScenario = {
+      id: 'demo-west',
+      title: 'West outage golden-path demo — T3',
+      intervalStart: '2026-09-29T14:00:00Z',
+      intervalEnd: '2026-09-29T16:00:00Z',
+      source: 'demo',
+      modelRunAt: '2026-09-29T13:30:00Z',
+      summary: 'Synthetic operating conditions; network effects are calculated by the backend.',
+      keywords: [],
+      binding: {
+        type: 'Transmission line',
+        metric: '3:4:1 · 109.1% of rate A',
+        location: 'West',
+        margin: '-5.0 MW to rate A',
+        status: 'breach',
+      },
+      action: {
+        family: 'flexible_demand',
+        assetName: '10 MW flexible demand + 15 MW redispatch bundle',
+        location: 'Synthetic West/East nodes',
+        currentState: 'No coordinated intervention',
+        targetState: '10 MW local demand increase + 15 MW West-to-East redispatch',
+        issueTime: '2026-09-29T13:30:00Z',
+        startTime: '2026-09-29T14:00:00Z',
+        targetTime: '2026-09-29T14:15:00Z',
+        effectiveUntil: '2026-09-29T16:00:00Z',
+        earliestExecution: '2026-09-29T14:00:00Z',
+        executability: 'conditional',
+        steps: [],
+        details: {
+          direction: 'increase',
+          changeMw: 10,
+          availableMwh: 20,
+          demandBaselineMw: 10,
+          activationDelayMinutes: 0,
+          maxDurationMinutes: 120,
+          constraintReliefPerMw: null,
+          reboundRequirement: null,
+          activationCostEur: null,
+          reboundCostEur: null,
+        },
+      },
+      actionPresentation: 'modeled_candidate',
+      noActionReason: null,
+      baseline: { securityResult: 'breach', dispatchDownWasteMwh: 40 },
+      postAction: { securityResult: 'within_modelled_limit', dispatchDownWasteMwh: 20 },
+      impact: {
+        grossMarketOpportunityEur: null,
+        netFinancialValueEur: null,
+        estimatedAvoidedEmissionsTco2e: null,
+      },
+      guardrails: [],
+    };
+    render(<ScenarioWorkspace scenario={demo} />);
+    expect(screen.getByText(WORKSPACE_COPY.demo)).toBeInTheDocument();
+    expect(screen.getByText(WORKSPACE_COPY.demoNote)).toBeInTheDocument();
+    expect(screen.getByText(WORKSPACE_COPY.modeledCandidateTitle)).toBeInTheDocument();
+    expect(screen.queryByText(WORKSPACE_COPY.actionTitle)).not.toBeInTheDocument();
   });
 });
 

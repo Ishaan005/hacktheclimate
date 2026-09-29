@@ -57,7 +57,11 @@ def test_evaluation_joins_current_plan_network_effect_and_blocks_ranking():
     assert action["intervals"][0]["network_effect"]["planned_outage"]["base"] != action["intervals"][0]["network_effect"]["planned_outage"]["with_action"]
     assert action["contract_action_id"] == "FLEX_LOAD"
     assert "network_loading" in action["required_safety_rules"]
-    assert any(item["action_id"] == "FLEX_LOAD" for item in result["eligible_actions"])
+    assert action["required_safety_families"] == ["transmission"]
+    flex_resolution = next(
+        item for item in result["eligible_actions"] if item["action_id"] == "FLEX_LOAD"
+    )
+    assert flex_resolution["required_safety_families"] == ["transmission"]
     assert any(item["action_id"] == "NETWORK_SWITCHING" for item in result["unavailable_actions"])
     assert result["ranked_modeled_capture_bounds"][0]["action_id"] == action["action_id"]
     assert result["ranked_expected_avoided_dispatch_down"] == []
@@ -108,12 +112,53 @@ def test_evaluation_includes_baseline_and_shared_budget_bundles():
     )
     assert pair["modeled_capture_upper_bound_mwh"] == pytest.approx(10.0)
     assert pair["expected_avoided_dispatch_down_mwh"] is None
-    assert "asset_capability" in pair["missing_required_safety_rules"]
+    assert pair["missing_required_safety_rules"] == []
+    assert pair["required_safety_families"] == ["transmission"]
+    assert pair["missing_required_safety_families"] == []
+    assert pair["action_specific"]["asset_capability"]["status"] == "UNKNOWN"
+    assert pair["action_specific"]["timing"]["status"] == "UNKNOWN"
     # A modeled breach wins over unresolved contract checks: FAIL must not be
     # softened to UNKNOWN just because asset capability/timing are also missing.
     assert pair["safety_overall"] == "FAIL"
     assert result["best_screening_pass_bundle"] is None
     assert result["recommendation"] is None
+
+
+
+def test_complete_action_evidence_resolves_asset_and_timing_contract_rules():
+    candidate = _candidate()
+    candidate["operational_evidence"] = {
+        "named_asset_or_party": "Flexible demand site A",
+        "authority_status": "confirmed",
+        "permission_status": "confirmed",
+        "availability_status": "available",
+        "response_time_minutes": 10.0,
+        "sustain_duration_minutes": 60.0,
+        "capability_mw": 10.0,
+        "side_effects_review_status": "reviewed",
+        "evidence_reference": "synthetic operator evidence",
+        "available_at": "2026-09-28T23:40:00Z",
+        "max_age_seconds": 3600,
+        "valid_until": "2026-09-29T01:00:00Z",
+    }
+    result = evaluate_operator_case(
+        _request(action_candidates=[candidate]),
+        _case(), _crosswalk(), planned_outage=Asset("branch", "1:3:1"),
+    )
+
+    bundle = next(
+        item for item in result["bundle_options"]
+        if item["action_instance_ids"] == ["illustrative-flex-1"]
+    )
+    assert bundle["action_specific"]["asset_capability"]["status"] == "PASS"
+    assert bundle["action_specific"]["timing"]["status"] == "PASS"
+    assert (
+        bundle["intervals"][0]["safety"]["families"]["transmission"]
+        ["checks"]["time_to_relief"]["status"]
+        == "PASS"
+    )
+    assert "asset_capability" not in bundle["missing_required_safety_rules"]
+    assert "timing" not in bundle["missing_required_safety_rules"]
 
 
 def test_no_action_candidates_leaves_baseline_as_only_bundle_option():
@@ -149,7 +194,13 @@ def test_operator_evaluation_exposes_redispatch_and_mixed_bundle():
     )
     assert redispatch_eval["modeled_capture_upper_bound_mwh"] == pytest.approx(0.0)
     assert "reserve" in redispatch_eval["required_safety_rules"]
-    assert "reserve" in redispatch_eval["missing_required_safety_rules"]
+    assert "reserve" not in redispatch_eval["missing_required_safety_rules"]
+    assert redispatch_eval["missing_required_safety_families"] == []
+    assert (
+        redispatch_eval["safety_families"]["high_frequency_minimum_generation"]
+        ["overall"]
+        == "UNKNOWN"
+    )
 
     mixed = next(
         item for item in result["bundle_options"]

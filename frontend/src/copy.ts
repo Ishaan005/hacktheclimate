@@ -57,14 +57,16 @@ export const STATE_COPY = {
 // Scenario workspace (UX plan phase 1).
 export const WORKSPACE_COPY = {
   advisory: 'Advisory',
-  advisoryNote: 'Recommends an operator instruction. Does not send instructions to assets.',
+  advisoryNote: 'Shows modeled candidates and evidence-gated recommendations. Does not send instructions to assets.',
   illustrative: 'Illustrative',
   illustrativeNote: 'Illustrative scenario: invented values for layout. Not a model result.',
+  demo: 'Demo planning case',
+  demoNote: 'Synthetic operating conditions. Network effects are calculated by the backend DC solver; the avoided dispatch-down outcome is a demo assumption, not a validated forecast.',
   live: 'Solver result',
   situationLabel: 'Describe the situation',
-  situationHint: 'Name the area, asset, limit and time, or ask for dispatch-down risk. The workspace returns the recommended next action or the risk estimate.',
+  situationHint: 'Name the area, asset, limit and time, or ask for dispatch-down risk. The workspace shows a screened candidate, missing evidence, or a risk estimate.',
   situationSubmit: 'Find next action',
-  situationPlaceholder: 'e.g. line overload in the west after the outage',
+  situationPlaceholder: 'e.g. planned outage in the west; Ballylickey wind constrained for the next 2 hours',
   solvingTitle: 'Finding the next action…',
   solvingConsequence: 'No action is shown until the result arrives.',
   noMatchTitle: 'No scenario found for this description',
@@ -103,6 +105,7 @@ export const WORKSPACE_COPY = {
   bindingTitle: 'Binding condition',
   bindingNone: 'No binding condition identified',
   actionTitle: 'Recommended action',
+  modeledCandidateTitle: 'Modeled candidate',
   actionNone: 'No recommended action',
   actionStepsTitle: 'Action steps',
   actionCostsTitle: 'Costs',
@@ -170,7 +173,7 @@ export const REVIEW_COPY = {
 } as const;
 
 export const EXTRACTION_LABEL = {
-  llm: 'Read by the language model',
+  llm: 'Read by the EZBreezy model',
   rules: 'Read by keyword rules',
   fixture: 'Illustrative',
   manual: 'Automatic reading unavailable',

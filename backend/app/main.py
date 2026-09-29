@@ -23,6 +23,7 @@ from .proxy import add_pressure_proxy
 
 from .constraints.routes import router as constraint_router
 from .intake import router as intake_router
+from .workspace import router as workspace_router
 
 try:  # chat is optional: install requirements-chat.txt to enable it
     from .chat.routes import router as chat_router
@@ -38,6 +39,7 @@ app.include_router(decision_router)
 app.include_router(dispatch_down_router)
 app.include_router(constraint_router)
 app.include_router(intake_router)
+app.include_router(workspace_router)
 if chat_router is not None:
     app.include_router(chat_router)
 DATA = Path("data/processed/canonical_ie.csv")

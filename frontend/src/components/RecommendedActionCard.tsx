@@ -7,6 +7,7 @@ import ActionTimeline from './ActionTimeline';
 type Props = {
   action: RecommendedAction | null;
   noActionReason: string | null;
+  presentation?: 'recommended' | 'modeled_candidate';
 };
 
 // Expands in place under the overview; the card grows to fit.
@@ -28,7 +29,7 @@ function ActionSteps({ steps }: { steps: ActionStep[] }) {
 
 // Overview only: the complete instruction, any conditional warning, the state
 // change and the schedule strip. The ordered steps sit in a dropdown list.
-function RecommendedActionCard({ action, noActionReason }: Props) {
+function RecommendedActionCard({ action, noActionReason, presentation = 'recommended' }: Props) {
   if (!action) {
     return (
       <section className="card card-action card-action-none" aria-labelledby="action-heading">
@@ -46,11 +47,13 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
       aria-labelledby="action-heading"
     >
       <h3 id="action-heading" className="card-kicker">
-        {WORKSPACE_COPY.actionTitle}
+        {presentation === 'modeled_candidate' ? WORKSPACE_COPY.modeledCandidateTitle : WORKSPACE_COPY.actionTitle}
         <span className="chip chip-neutral">{ACTION_FAMILY_LABEL[action.family]}</span>
         <span className={`chip ${conditional ? 'chip-unknown' : 'chip-neutral'}`}>{EXECUTABILITY_LABEL[action.executability]}</span>
       </h3>
-      <p className="instruction">{instructionText(action)}</p>
+      <p className="instruction">{presentation === 'modeled_candidate'
+        ? `Modeled bundle — ${action.assetName}: ${action.targetState} by ${formatTime(action.targetTime)}, through ${formatTime(action.effectiveUntil)}.`
+        : instructionText(action)}</p>
       {conditional && <p className="action-warning">{WORKSPACE_COPY.actionConditional}</p>}
       <p className="state-change">
         <span className="state-change-asset">{action.assetName} · {action.location}</span>
