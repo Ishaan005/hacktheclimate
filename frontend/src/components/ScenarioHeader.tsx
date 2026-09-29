@@ -27,7 +27,7 @@ function ScenarioHeader({ scenario }: { scenario: WorkspaceScenario }) {
       <label className="comparison-select">
         <span>{WORKSPACE_COPY.comparisonLabel}</span>
         <select defaultValue="baseline">
-          <option value="baseline">{WORKSPACE_COPY.comparisonBaseline}</option>
+          <option value="baseline">{demo ? 'Baseline vs demo candidate' : WORKSPACE_COPY.comparisonBaseline}</option>
         </select>
       </label>
     </header>

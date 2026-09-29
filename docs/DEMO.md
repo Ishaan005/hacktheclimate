@@ -4,6 +4,35 @@ The demo is intentionally narrow. It uses a small synthetic four-bus planning
 case packaged in the backend so a fresh clone can exercise the real DC solver,
 action contract and bundle engine without the external TYTFS working files.
 
+## Start the teammate demo
+
+Check out the `feat/golden-path-demo` branch (PR #60). Use Python 3.11 and
+Node 22. From the repository root, install once and run the preflight:
+
+```bash
+python3.11 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+cd frontend && npm ci && cd ..
+.venv/bin/python -m scripts.check_demo_ready
+```
+
+Start the API and UI in separate terminals from the repository root:
+
+```bash
+.venv/bin/python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+```
+
+```bash
+cd frontend
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+Open <http://127.0.0.1:5173/>. Keep the UI in its default API mode; fixture
+mode uses invented screen fixtures and does not run this backend path. No
+Azure credentials, external planning files or current GFS snapshot are needed
+for the two prompts below. If the page has an earlier case, enter either prompt
+in the top situation box to replace it.
+
 ## Hero prompt
 
 Paste this into the existing situation box:
@@ -18,6 +47,9 @@ The intake layer should extract:
 - affected area: West
 
 After fact review, **Evaluate actions** runs the backend-owned golden path.
+The review should show local network limit and planned outage, `next 2 hours`,
+and `West`. The screen should then say **Demo planning case** and **Modeled
+candidate**.
 
 Expected story:
 
@@ -42,6 +74,9 @@ Use:
 This resolves to T4. The additional synthetic circuit loss islands the West
 demo area, so the action disappears and the UI explains why no modeled
 candidate survives.
+
+Use this second case to show that a failed network screen removes the
+candidate. Re-enter the hero prompt to return to the positive case.
 
 ## Preflight
 

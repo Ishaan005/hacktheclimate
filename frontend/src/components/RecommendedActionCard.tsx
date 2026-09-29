@@ -51,7 +51,9 @@ function RecommendedActionCard({ action, noActionReason, presentation = 'recomme
         <span className="chip chip-neutral">{ACTION_FAMILY_LABEL[action.family]}</span>
         <span className={`chip ${conditional ? 'chip-unknown' : 'chip-neutral'}`}>{EXECUTABILITY_LABEL[action.executability]}</span>
       </h3>
-      <p className="instruction">{instructionText(action)}</p>
+      <p className="instruction">{presentation === 'modeled_candidate'
+        ? `Modeled bundle — ${action.assetName}: ${action.targetState} by ${formatTime(action.targetTime)}, through ${formatTime(action.effectiveUntil)}.`
+        : instructionText(action)}</p>
       {conditional && <p className="action-warning">{WORKSPACE_COPY.actionConditional}</p>}
       <p className="state-change">
         <span className="state-change-asset">{action.assetName} · {action.location}</span>

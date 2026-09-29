@@ -30,7 +30,9 @@ npm ci
 npm run dev
 ```
 
-The UI calls `/v1/operator/view` by default. Without its reviewed network inputs, it shows unavailable states. For layout work, use `VITE_API_MODE=fixture npm run dev`. See the [UI guide](frontend/README.md) for tests and the fixture boundary.
+The UI sends reviewed cases to `/v1/workspace/evaluate`. Without reviewed network inputs, ordinary cases show unavailable states. For layout work, use `VITE_API_MODE=fixture npm run dev`. See the [UI guide](frontend/README.md) for tests and the fixture boundary.
+
+For the self-contained teammate walkthrough, use the [golden-path demo](docs/DEMO.md) on the `feat/golden-path-demo` branch. It runs the intake, fact review, synthetic planning network and action-bundle calculation through the existing UI without Azure credentials or external planning files.
 
 ## API paths
 

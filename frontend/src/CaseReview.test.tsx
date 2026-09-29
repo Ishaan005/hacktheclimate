@@ -111,6 +111,12 @@ describe('fact review', () => {
     await screen.findByRole('region', { name: 'Next-hour dispatch-down risk' });
     expect(screen.queryByRole('region', { name: new RegExp(REVIEW_COPY.title) })).not.toBeInTheDocument();
   });
+
+  it('reviews the golden-path situation even though it asks to reduce dispatch-down', async () => {
+    render(<App />);
+    await describeSituation('Planned outage in the west is causing a line overload. High wind around Ballylickey is constrained for the next 2 hours. What can we do to reduce dispatch-down?');
+    expect(screen.queryByRole('region', { name: 'Next-hour dispatch-down risk' })).not.toBeInTheDocument();
+  });
 });
 
 describe('illustrative intake', () => {
