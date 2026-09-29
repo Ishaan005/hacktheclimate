@@ -91,15 +91,18 @@ const TIME_SOURCES: FactSource[] = ['operator', 'forecast'];
 const ASSET_SOURCES: FactSource[] = ['asset_register', 'operator'];
 
 // Facts every case needs before any action can be tested.
+// These two facts are needed to run the planning screen. Outcome forecasts
+// remain useful context, but missing outcome evidence must reach the backend
+// as UNKNOWN rather than preventing the operator from running the screen.
 export const SITUATION_FACTS: FactDefinition[] = [
   { key: 'event_window', label: 'Event window', kind: 'window', unit: null, priority: 1, sources: TIME_SOURCES },
   { key: 'affected_area', label: 'Affected area or constraint group', kind: 'text', unit: null, priority: 2, sources: ['operator', 'measured'] },
-  { key: 'expected_dispatch_down_mwh', label: 'Expected dispatch-down', kind: 'number', unit: 'MWh', priority: 3, sources: ['forecast'], min: 0, max: 5000, step: 1 },
-  { key: 'event_probability', label: 'Material-event probability', kind: 'number', unit: '%', priority: 4, sources: ['forecast'], min: 0, max: 100, step: 1 },
-  { key: 'forecast_range_mwh', label: 'Forecast range', kind: 'text', unit: 'MWh', priority: 5, sources: ['forecast'] },
 ];
 
 export const OPTIONAL_SITUATION_FACTS: FactDefinition[] = [
+  { key: 'expected_dispatch_down_mwh', label: 'Expected dispatch-down', kind: 'number', unit: 'MWh', priority: 3, sources: ['forecast'], min: 0, max: 5000, step: 1 },
+  { key: 'event_probability', label: 'Material-event probability', kind: 'number', unit: '%', priority: 4, sources: ['forecast'], min: 0, max: 100, step: 1 },
+  { key: 'forecast_range_mwh', label: 'Forecast range', kind: 'text', unit: 'MWh', priority: 5, sources: ['forecast'] },
   { key: 'constraint_share_pct', label: 'Constraint share of dispatch-down', kind: 'number', unit: '%', priority: 10, sources: ['forecast', 'measured'], min: 0, max: 100, step: 1 },
   { key: 'peak_half_hour_mw', label: 'Highest expected half-hour average reduction', kind: 'number', unit: 'MW', priority: 11, sources: ['forecast'], min: 0, max: 5000, step: 1 },
   { key: 'existing_instructions', label: 'Instructions already in force', kind: 'text', unit: null, priority: 12, sources: ['operator'] },
