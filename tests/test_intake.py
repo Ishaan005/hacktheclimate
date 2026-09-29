@@ -52,3 +52,19 @@ def test_llm_output_is_filtered(monkeypatch):
     assert case["scenarios"] == ["system_wide_curtailment"]
     assert set(case["facts"]) == {"affected_area"}
     assert set(case["proposedAction"]["facts"]) == {"scheduled_output_mw"}
+
+
+def test_rules_extract_demo_area_and_relative_window(monkeypatch):
+    case = client(monkeypatch).post("/v1/intake", json={
+        "description": (
+            "Planned outage in the west is causing a line overload. "
+            "High wind around Ballylickey is constrained for the next 2 hours."
+        ),
+        "created_at": "2026-09-29T12:00:00Z",
+    }).json()["case"]
+    assert case["scenarios"] == [
+        "local_network_constraint",
+        "planned_outage_exposure",
+    ]
+    assert case["facts"]["affected_area"]["value"] == "West"
+    assert case["facts"]["event_window"]["value"] == "next 2 hours"
