@@ -18,6 +18,11 @@ from fastapi import APIRouter
 from pydantic import Field
 
 from .decision.contracts import Contract, DecisionCase, EvidenceValue
+from .demo_cases import (
+    evaluate_west_outage_demo,
+    fallback_west_outage_demo,
+    matches_west_outage_demo,
+)
 from .network import load_case
 from .network_actions import load_action_candidates
 from .network_forecast import (
@@ -406,6 +411,15 @@ def _evaluate_live_case(case_payload: dict[str, Any]) -> dict[str, Any]:
                 "T1–T4, H1–H4 or SNSP scenarios. No action was evaluated."
             ),
         )
+
+    # Explicit golden-path demo: only Ballylickey + outage descriptions
+    # use the packaged synthetic network. All normal cases continue to the
+    # configured planning inputs below.
+    if matches_west_outage_demo(case_payload):
+        try:
+            return evaluate_west_outage_demo(case_payload, scenario_ids)
+        except Exception:
+            return fallback_west_outage_demo(case_payload, scenario_ids)
 
     now = datetime.now(timezone.utc)
     try:
