@@ -8,16 +8,23 @@ npm ci
 npm run dev
 ```
 
-The screen is one input field. The operator describes the situation and the
-workspace shows the returned scenario: binding condition, recommended action,
-baseline vs post-action outcome and guardrails. The recommended action carries
-`steps`: the ordered actions the operator takes, shown in a dropdown list. An
-LLM scenario solver will supply that scenario; until it is linked, live mode says the solver is not
-connected. Connect it in `solveSituation` in `src/api.ts`, which must return a
-`SolverResult` (see `src/types.ts`) or `null` for no match. A result is either a
-`scenario` or a `dispatch_down_risk` view for a UTC half-hour; the latter shows
-the next-hour card and day chart from `/v1/dispatch-down/forecast` and
-`/v1/dispatch-down/forecast/day` (historical January 2026 replay).
+The screen is one input field. The operator describes the situation, reviews
+the extracted facts, and the workspace shows the returned scenario: binding
+condition, recommended action when one is evidence-supported, baseline vs
+post-action outcome and guardrails.
+
+Live mode uses the existing UI as the contract:
+
+- `POST /v1/intake` extracts only operator-stated facts (LLM with rule fallback)
+  into the current fact-review case.
+- `POST /v1/workspace/evaluate` accepts that reviewed case, runs the configured
+  decision/network/action backend, and returns the existing `WorkspaceScenario`
+  shape.
+
+Missing planning files, unresolved scenario detail, unsupported safety checks,
+or unvalidated avoided-energy estimates return a live workspace with no
+recommended action and explicit reasons. Direct dispatch-down/chat questions
+keep their existing routes.
 
 For layout work without backend inputs, use the offline fixture explicitly:
 
