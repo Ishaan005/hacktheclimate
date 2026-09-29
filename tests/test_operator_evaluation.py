@@ -9,10 +9,11 @@ from backend.app.decision import DecisionCase, EvidenceValue
 from backend.app.network_scenarios import Asset
 from backend.app.operator_evaluation import OperatorEvaluationRequest, evaluate_operator_case
 from test_network_forecast import _case, _crosswalk, _rows
+from test_action_bundles import _redispatch_candidate
 from test_network_safety_actions import _candidate
 
 
-def _request(*, evidence: bool = True) -> OperatorEvaluationRequest:
+def _request(*, evidence: bool = True, action_candidates=None) -> OperatorEvaluationRequest:
     rows = _rows()
     for row in rows:
         row["recoverable_renewable_mw"] = {"South-West": {"wind": 10.0}}
@@ -38,7 +39,9 @@ def _request(*, evidence: bool = True) -> OperatorEvaluationRequest:
         forecast_available_at=as_of - timedelta(minutes=5),
         forecast_version="synthetic-test-1",
         forecast_evidence_reference="synthetic unit test",
-        forecast_rows=rows, action_candidates=[_candidate()], evidence=values,
+        forecast_rows=rows,
+        action_candidates=[_candidate()] if action_candidates is None else action_candidates,
+        evidence=values,
     )
 
 
@@ -86,3 +89,73 @@ def test_mismatched_or_late_forecast_is_rejected():
         row["issue_time"] = "2026-09-28T23:50:00Z"
     with pytest.raises(ValidationError, match="later than the request"):
         OperatorEvaluationRequest.model_validate(payload)
+
+
+def test_evaluation_includes_baseline_and_shared_budget_bundles():
+    second = _candidate().copy()
+    second["action_id"] = "illustrative-flex-2"
+    result = evaluate_operator_case(
+        _request(action_candidates=[_candidate(), second]),
+        _case(), _crosswalk(), planned_outage=Asset("branch", "1:3:1"),
+    )
+    assert result["baseline_bundle"]["bundle_id"] == "BASELINE"
+    assert result["baseline_bundle"]["modeled_capture_upper_bound_mwh"] == 0
+    assert result["baseline_bundle"]["expected_dispatch_down_mwh"] == pytest.approx(1056)
+
+    pair = next(
+        bundle for bundle in result["bundle_options"]
+        if len(bundle["action_instance_ids"]) == 2
+    )
+    assert pair["modeled_capture_upper_bound_mwh"] == pytest.approx(10.0)
+    assert pair["expected_avoided_dispatch_down_mwh"] is None
+    assert "asset_capability" in pair["missing_required_safety_rules"]
+    # A modeled breach wins over unresolved contract checks: FAIL must not be
+    # softened to UNKNOWN just because asset capability/timing are also missing.
+    assert pair["safety_overall"] == "FAIL"
+    assert result["best_screening_pass_bundle"] is None
+    assert result["recommendation"] is None
+
+
+def test_no_action_candidates_leaves_baseline_as_only_bundle_option():
+    result = evaluate_operator_case(
+        _request(action_candidates=[]),
+        _case(), _crosswalk(), planned_outage=Asset("branch", "1:3:1"),
+    )
+    assert [bundle["bundle_id"] for bundle in result["bundle_options"]] == ["BASELINE"]
+    assert result["best_modeled_capture_bundle"] == "BASELINE"
+    assert result["best_screening_pass_bundle"] is None
+    assert any("No scenario-valid planning-supported action candidates" in reason
+               for reason in result["blocking_reasons"])
+
+
+def test_operator_evaluation_exposes_redispatch_and_mixed_bundle():
+    flex = _candidate()
+    redispatch = _redispatch_candidate()
+    result = evaluate_operator_case(
+        _request(action_candidates=[flex, redispatch]),
+        _case(), _crosswalk(), planned_outage=Asset("branch", "1:3:1"),
+    )
+
+    eligible = {item["action_id"]: item for item in result["eligible_actions"]}
+    assert eligible["GENERATOR_REDISPATCH"]["execution_status"] == "planning_supported"
+    assert not any(
+        item["action_id"] == "GENERATOR_REDISPATCH"
+        for item in result["unavailable_actions"]
+    )
+
+    redispatch_eval = next(
+        item for item in result["planning_action_evaluations"]
+        if item["action_instance_ids"] == ["redispatch-1"]
+    )
+    assert redispatch_eval["modeled_capture_upper_bound_mwh"] == pytest.approx(0.0)
+    assert "reserve" in redispatch_eval["required_safety_rules"]
+    assert "reserve" in redispatch_eval["missing_required_safety_rules"]
+
+    mixed = next(
+        item for item in result["bundle_options"]
+        if set(item["action_instance_ids"]) == {"illustrative-flex-1", "redispatch-1"}
+    )
+    assert set(mixed["contract_action_ids"]) == {"FLEX_LOAD", "GENERATOR_REDISPATCH"}
+    assert mixed["modeled_capture_upper_bound_mwh"] == pytest.approx(10.0)
+    assert mixed["expected_avoided_dispatch_down_mwh"] is None
+    assert result["recommendation"] is None

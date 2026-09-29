@@ -25,6 +25,7 @@ def test_t1_resolver_returns_only_contract_actions_and_supported_executor():
     assert "FLEX_LOAD" in by_id
     assert "RESERVE_RAMP_ACTION" not in by_id
     assert by_id["FLEX_LOAD"].execution_status == "planning_supported"
+    assert by_id["GENERATOR_REDISPATCH"].execution_status == "planning_supported"
     assert by_id["NETWORK_SWITCHING"].execution_status == "not_supported"
     assert "network_loading" in by_id["FLEX_LOAD"].required_safety_rules
 
@@ -57,3 +58,22 @@ def test_planning_readiness_requires_parameters_and_evidence():
 def test_unknown_scenario_cannot_enter_action_resolution():
     with pytest.raises(ValueError, match="unknown locked scenario"):
         resolve_action_ids(["made-up-scenario"])
+
+
+def test_redispatch_planning_readiness_requires_explicit_physical_caps():
+    parameters = {
+        "source_asset_id", "replacement_asset_id",
+        "source_bus_id", "replacement_bus_id",
+        "power_mw",
+        "source_down_headroom_mw", "replacement_up_headroom_mw",
+        "source_ramp_limit_mw", "replacement_ramp_limit_mw",
+        "available_from", "available_until",
+        "review_status", "evidence_reference",
+    }
+    action = next(item for item in resolve_action_ids(
+        ["T1"], available_parameters=parameters,
+    ) if item.action_id == "GENERATOR_REDISPATCH")
+    assert action.planning_ready
+    assert action.missing_parameters == []
+    assert action.missing_evidence_fields == []
+    assert "reserve" in action.required_safety_rules

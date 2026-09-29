@@ -8,11 +8,13 @@ from typing import Any
 from pydantic import Field, model_validator
 
 from backend.app.decision import (
-    DecisionCase, EvidenceValue, calculate_current_plan, load_action_catalogue,
-    load_contract_manifest, load_demo_policy, resolve_action_ids, resolve_case_context,
+    DecisionCase, EvidenceValue, calculate_current_plan, generate_action_bundles,
+    load_action_catalogue, load_contract_manifest, load_demo_policy,
+    resolve_action_ids, resolve_case_context,
 )
 from backend.app.decision.contracts import Contract, utc
 from backend.app.network import NetworkCase
+from backend.app.network_actions import screen_action_bundles
 from backend.app.network_forecast import _parse_time, validate_forecast_rows
 from backend.app.network_scenarios import Asset
 from backend.app.operator_view import build_operator_view
@@ -53,9 +55,6 @@ def _safety_result(payload: dict[str, Any]) -> SafetyResult:
 
 
 def _candidate_contract_action_id(candidate: dict[str, Any]) -> str:
-    # The existing network candidate schema predates the decision contract and
-    # can only express paired flexible demand + renewable output. Preserve that
-    # input shape while allowing future executors to identify their action family.
     return str(candidate.get("contract_action_id") or "FLEX_LOAD")
 
 
@@ -85,12 +84,12 @@ def _resolve_operator_actions(
         catalogue=catalogue,
         available_evidence_fields=base_evidence,
     )
-    broad_by_id = {item.action_id: item for item in broad}
     candidates_by_family: dict[str, list[dict[str, Any]]] = {}
     candidate_rejections: list[dict[str, Any]] = []
+    known_action_ids = {action.action_id for action in catalogue.actions}
     for candidate in request.action_candidates:
         family = _candidate_contract_action_id(candidate)
-        if family not in {action.action_id for action in catalogue.actions}:
+        if family not in known_action_ids:
             candidate_rejections.append({
                 "action_id": str(candidate.get("action_id", "")),
                 "contract_action_id": family,
@@ -165,6 +164,20 @@ def _resolve_operator_actions(
     }
 
 
+def _selected_contingency(view: dict[str, Any]) -> Asset | None:
+    first_network = view["forecast"][0]["network"]
+    if first_network["worst_contingency"] is None:
+        return None
+    return Asset(
+        first_network["worst_contingency_type"],
+        first_network["worst_contingency"],
+    )
+
+
+def _decision_safety_label(status: str) -> str:
+    return "FAIL" if status == "BREACH" else status
+
+
 def evaluate_operator_case(
     request: OperatorEvaluationRequest,
     case: NetworkCase,
@@ -172,7 +185,7 @@ def evaluate_operator_case(
     *,
     planned_outage: Asset,
 ) -> dict[str, Any]:
-    """Return baseline, scenario-valid action effects, and evidence-gated rankings."""
+    """Return baseline, scenario-valid actions, combined bundles and evidence gates."""
     context = resolve_case_context(
         request.decision_case, request.evidence,
         required_fields=("constraint_mwh", "curtailment_mwh"),
@@ -180,8 +193,15 @@ def evaluate_operator_case(
     resolved_actions, planning_candidates, unavailable_actions, action_contract = (
         _resolve_operator_actions(request, context)
     )
+    # build_operator_view retains the original flex-load individual-action
+    # contract. Heterogeneous planning actions are evaluated by the bundle
+    # executor below; keep this legacy view limited to FLEX_LOAD instances.
+    legacy_flex_candidates = [
+        candidate for candidate in planning_candidates
+        if _candidate_contract_action_id(candidate) == "FLEX_LOAD"
+    ]
     view = build_operator_view(
-        case, request.forecast_rows, reviewed_crosswalk, planning_candidates,
+        case, request.forecast_rows, reviewed_crosswalk, legacy_flex_candidates,
         action_catalog_available=bool(planning_candidates),
         planned_outage=planned_outage,
     )
@@ -209,7 +229,7 @@ def evaluate_operator_case(
 
     family_by_instance = {
         str(candidate["action_id"]): _candidate_contract_action_id(candidate)
-        for candidate in planning_candidates
+        for candidate in legacy_flex_candidates
     }
     resolved_by_id = {item.action_id: item for item in resolved_actions}
     actions = []
@@ -222,7 +242,81 @@ def evaluate_operator_case(
             "required_safety_rules": resolution.required_safety_rules,
         })
 
-    exploratory = sorted(
+    bundle_generation = generate_action_bundles(planning_candidates)
+    non_baseline = [
+        bundle.model_dump(mode="json")
+        for bundle in bundle_generation.bundles
+        if not bundle.is_baseline
+    ]
+    bundle_screen = screen_action_bundles(
+        case, request.forecast_rows, reviewed_crosswalk, planning_candidates,
+        non_baseline,
+        planned_outage=planned_outage,
+        selected_contingency=_selected_contingency(view),
+    ) if non_baseline else {
+        "evaluated": [],
+        "ranked_screening_pass_bundles": [],
+        "best_screening_pass_bundle": None,
+    }
+    bundle_contract = {
+        bundle.bundle_id: bundle for bundle in bundle_generation.bundles
+    }
+
+    baseline_bundle = {
+        "bundle_id": "BASELINE",
+        "label": "Keep current plan",
+        "action_instance_ids": [],
+        "contract_action_ids": [],
+        "is_baseline": True,
+        "safety_overall": _decision_safety_label(baseline.safety.overall),
+        "modeled_capture_upper_bound_mwh": 0.0,
+        "expected_avoided_dispatch_down_mwh": 0.0,
+        "expected_dispatch_down_mwh": baseline.expected_dispatch_down_mwh,
+        "required_safety_rules": [rule.rule_id for rule in baseline.safety.rules],
+        "missing_required_safety_rules": [],
+    }
+
+    # The network action screen directly evaluates these six rule families.
+    # Asset capability and timing remain decision-contract requirements and
+    # therefore keep a bundle UNKNOWN until separate evidence is wired in.
+    directly_screened_rules = {
+        "network_loading", "islanding", "renewable_share",
+        "voltage", "inertia", "rocof",
+    }
+    bundle_options = [baseline_bundle]
+    for evaluation in bundle_screen["evaluated"]:
+        definition = bundle_contract[evaluation["bundle_id"]]
+        required_rules = sorted({
+            rule
+            for family in definition.contract_action_ids
+            for rule in resolved_by_id[family].required_safety_rules
+        })
+        missing_rule_checks = sorted(set(required_rules) - directly_screened_rules)
+        safety = evaluation["safety_overall"]
+        if safety != "FAIL" and missing_rule_checks:
+            safety = "UNKNOWN"
+        bundle_options.append({
+            **evaluation,
+            "contract_action_ids": definition.contract_action_ids,
+            "is_baseline": False,
+            "required_safety_rules": required_rules,
+            "missing_required_safety_rules": missing_rule_checks,
+            "safety_overall": safety,
+            "expected_dispatch_down_mwh": None,
+        })
+
+    exploratory_bundles = sorted(
+        bundle_options,
+        key=lambda item: (-item["modeled_capture_upper_bound_mwh"], item["bundle_id"]),
+    )
+    screening_pass_bundles = [
+        item for item in exploratory_bundles if item["safety_overall"] == "PASS"
+    ]
+    best_screening_pass_bundle = (
+        screening_pass_bundles[0]["bundle_id"] if screening_pass_bundles else None
+    )
+
+    exploratory_actions = sorted(
         actions,
         key=lambda action: (-action["modeled_capture_upper_bound_mwh"], action["action_id"]),
     )
@@ -233,10 +327,12 @@ def evaluate_operator_case(
         blockers.append("Current-plan constraint and curtailment MWh are not both available for all 48 intervals")
     if not baseline.safety.safety_gate_passed:
         blockers.append(f"Current-plan safety gate is {baseline.safety.overall}")
-    if not actions:
+    if not planning_candidates:
         blockers.append("No scenario-valid planning-supported action candidates were supplied")
     if any(action["safety_overall"] != "PASS" for action in actions):
         blockers.append("One or more evaluated actions lack a full safety PASS")
+    if not best_screening_pass_bundle:
+        blockers.append("No baseline or action bundle has a complete safety PASS")
     blockers.append("No validated locational model converts network effects into expected avoided dispatch-down MWh")
 
     return {
@@ -252,14 +348,37 @@ def evaluate_operator_case(
             "forecast_evidence_reference": request.forecast_evidence_reference,
         },
         "current_plan": baseline.model_dump(mode="json"),
+        "baseline_bundle": baseline_bundle,
         "forecast": view["forecast"],
         "actions": actions,
+        "bundle_options": bundle_options,
+        "planning_action_evaluations": [
+            item for item in bundle_options
+            if not item["is_baseline"] and len(item["action_instance_ids"]) == 1
+        ],
+        "rejected_bundles": bundle_generation.rejected,
+        "ranked_modeled_capture_bundles": [
+            {
+                "bundle_id": item["bundle_id"],
+                "action_instance_ids": item["action_instance_ids"],
+                "modeled_capture_upper_bound_mwh": item["modeled_capture_upper_bound_mwh"],
+                "safety_overall": item["safety_overall"],
+            }
+            for item in exploratory_bundles
+        ],
+        "best_modeled_capture_bundle": (
+            exploratory_bundles[0]["bundle_id"] if exploratory_bundles else "BASELINE"
+        ),
+        "ranked_screening_pass_bundles": [
+            item["bundle_id"] for item in screening_pass_bundles
+        ],
+        "best_screening_pass_bundle": best_screening_pass_bundle,
         "ranked_modeled_capture_bounds": [
             {"action_id": action["action_id"],
              "contract_action_id": action["contract_action_id"],
              "modeled_capture_upper_bound_mwh": action["modeled_capture_upper_bound_mwh"],
              "safety_overall": action["safety_overall"]}
-            for action in exploratory
+            for action in exploratory_actions
         ],
         "ranked_expected_avoided_dispatch_down": [],
         "recommendation": None,
