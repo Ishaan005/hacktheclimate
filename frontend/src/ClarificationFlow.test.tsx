@@ -109,6 +109,10 @@ describe('solver follow-up questions', () => {
         description: 'there is a problem',
         threadId: null,
         caseSummary: expect.stringContaining('Reviewed facts:'),
+        operatorCase: expect.objectContaining({
+          originalText: 'there is a problem',
+          scenarios: ['local_network_constraint'],
+        }),
         answers: [
           { round: 1, questionId: 'limit', value: 'low_voltage' },
           { round: 1, questionId: 'area', value: ['north_west'] },
