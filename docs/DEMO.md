@@ -37,7 +37,7 @@ Expected story:
 
 Use:
 
-> Planned outage near Ballylickey plus another credible circuit loss creates an N-1 overload for the next 2 hours.
+> Planned outage in the west near Ballylickey plus another credible circuit loss creates an N-1 overload for the next 2 hours.
 
 This resolves to T4. The additional synthetic circuit loss islands the West
 demo area, so the action disappears and the UI explains why no modeled
