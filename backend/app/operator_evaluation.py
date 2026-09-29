@@ -279,7 +279,7 @@ def evaluate_operator_case(
         planned_outage=planned_outage,
         selected_contingency=_selected_contingency(view),
         timing_verified_by_bundle={
-            bundle_id: result.timing_verified
+            bundle_id: result.relief_timing_verified
             for bundle_id, result in bundle_operational.items()
         },
     ) if non_baseline else {
