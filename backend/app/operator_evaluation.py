@@ -193,8 +193,15 @@ def evaluate_operator_case(
     resolved_actions, planning_candidates, unavailable_actions, action_contract = (
         _resolve_operator_actions(request, context)
     )
+    # build_operator_view retains the original flex-load individual-action
+    # contract. Heterogeneous planning actions are evaluated by the bundle
+    # executor below; keep this legacy view limited to FLEX_LOAD instances.
+    legacy_flex_candidates = [
+        candidate for candidate in planning_candidates
+        if _candidate_contract_action_id(candidate) == "FLEX_LOAD"
+    ]
     view = build_operator_view(
-        case, request.forecast_rows, reviewed_crosswalk, planning_candidates,
+        case, request.forecast_rows, reviewed_crosswalk, legacy_flex_candidates,
         action_catalog_available=bool(planning_candidates),
         planned_outage=planned_outage,
     )
@@ -222,7 +229,7 @@ def evaluate_operator_case(
 
     family_by_instance = {
         str(candidate["action_id"]): _candidate_contract_action_id(candidate)
-        for candidate in planning_candidates
+        for candidate in legacy_flex_candidates
     }
     resolved_by_id = {item.action_id: item for item in resolved_actions}
     actions = []
@@ -320,7 +327,7 @@ def evaluate_operator_case(
         blockers.append("Current-plan constraint and curtailment MWh are not both available for all 48 intervals")
     if not baseline.safety.safety_gate_passed:
         blockers.append(f"Current-plan safety gate is {baseline.safety.overall}")
-    if not actions:
+    if not planning_candidates:
         blockers.append("No scenario-valid planning-supported action candidates were supplied")
     if any(action["safety_overall"] != "PASS" for action in actions):
         blockers.append("One or more evaluated actions lack a full safety PASS")
@@ -345,6 +352,10 @@ def evaluate_operator_case(
         "forecast": view["forecast"],
         "actions": actions,
         "bundle_options": bundle_options,
+        "planning_action_evaluations": [
+            item for item in bundle_options
+            if not item["is_baseline"] and len(item["action_instance_ids"]) == 1
+        ],
         "rejected_bundles": bundle_generation.rejected,
         "ranked_modeled_capture_bundles": [
             {
