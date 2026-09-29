@@ -71,6 +71,19 @@ SCENARIO_PATTERNS: list[tuple[str, re.Pattern]] = [
     ("planned_outage_exposure", re.compile(r"\b(planned outage|outage|maintenance)\b", re.I)),
 ]
 WINDOW = re.compile(r"\b(\d{1,2}:\d{2})\s*(?:-|–|—|to|until)\s*(\d{1,2}:\d{2})\b", re.I)
+RELATIVE_WINDOW = re.compile(r"\b(?:for\s+)?the\s+next\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?)\b", re.I)
+AREA_PATTERNS: list[tuple[str, re.Pattern]] = [
+    ("North-west", re.compile(r"\bnorth[- ]?west\b", re.I)),
+    ("South-west", re.compile(r"\bsouth[- ]?west\b", re.I)),
+    ("South-east", re.compile(r"\bsouth[- ]?east\b", re.I)),
+    ("North-east", re.compile(r"\bnorth[- ]?east\b", re.I)),
+    ("Midlands", re.compile(r"\bmidlands?\b", re.I)),
+    ("Dublin", re.compile(r"\bdublin\b", re.I)),
+    ("West", re.compile(r"\bwest(?:ern)?\b", re.I)),
+    ("South", re.compile(r"\bsouth(?:ern)?\b", re.I)),
+    ("North", re.compile(r"\bnorth(?:ern)?\b", re.I)),
+    ("All-island", re.compile(r"\b(all[- ]island|system[- ]wide)\b", re.I)),
+]
 ASSET = re.compile(r"\b(Battery|Storage|Generator|Unit|Load|Flexible load) [A-Z0-9]+\b")
 NUMBER_FACTS: dict[str, list[tuple[str, re.Pattern]]] = {
     "storage_charging": [
@@ -92,6 +105,14 @@ def _rules_situation(text: str) -> dict[str, Any]:
     facts: dict[str, Any] = {}
     if match := WINDOW.search(text):
         facts["event_window"] = f"{match.group(1)}–{match.group(2)}"
+    elif match := RELATIVE_WINDOW.search(text):
+        amount = float(match.group(1))
+        label = int(amount) if amount.is_integer() else amount
+        facts["event_window"] = f"next {label} hours"
+    for label, pattern in AREA_PATTERNS:
+        if pattern.search(text):
+            facts["affected_area"] = label
+            break
     return {"scenarios": scenarios, "facts": facts}
 
 
