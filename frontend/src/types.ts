@@ -399,7 +399,7 @@ export type ActionImpact = {
   estimatedAvoidedEmissionsTco2e: number | null;
 };
 
-export type ScenarioSource = 'illustrative' | 'live';
+export type ScenarioSource = 'illustrative' | 'live' | 'demo';
 // placeholder workspace scenario
 export type WorkspaceScenario = {
   id: string;
@@ -413,6 +413,9 @@ export type WorkspaceScenario = {
   keywords: string[];
   binding: BindingCondition | null;
   action: RecommendedAction | null;
+  // Demo cases can show the strongest modeled candidate without claiming it
+  // is a validated operational recommendation.
+  actionPresentation?: 'recommended' | 'modeled_candidate';
   noActionReason: string | null;
   baseline: OutcomeState;
   postAction: OutcomeState | null;
