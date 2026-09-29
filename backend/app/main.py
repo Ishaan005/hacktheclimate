@@ -19,6 +19,7 @@ from .network_actions import load_action_candidates
 from .network_forecast import DEFAULT_CASE_DIR, DEFAULT_CROSSWALK_PATH, DEFAULT_INPUT_PATH, DEFAULT_PLANNED_OUTAGE, load_forecast_inputs, load_reviewed_crosswalk
 from .operator_view import build_operator_view
 from .operator_evaluation import OperatorEvaluationRequest, evaluate_operator_case
+from .workspace import router as workspace_router
 from .proxy import add_pressure_proxy
 
 from .constraints.routes import router as constraint_router
@@ -36,6 +37,7 @@ app.include_router(demo_router)
 app.include_router(decision_router)
 app.include_router(dispatch_down_router)
 app.include_router(constraint_router)
+app.include_router(workspace_router)
 if chat_router is not None:
     app.include_router(chat_router)
 DATA = Path("data/processed/canonical_ie.csv")
