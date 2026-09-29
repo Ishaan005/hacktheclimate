@@ -100,10 +100,44 @@ const FACT_LABELS: Record<string, string> = {
   credible_failure: 'Credible failure', measured_frequency_hz: 'Measured frequency',
   effective_high_frequency_limit_hz: 'Effective high-frequency limit',
   snsp_ratio_pct: 'All-island SNSP', effective_snsp_limit_pct: 'Effective SNSP limit',
+  all_island_snsp: 'All-island SNSP', net_interconnector_transfer_mw: 'Net interconnector transfer (MW, + import)',
 };
 
-function label(id: string): string {
-  return FACT_LABELS[id] ?? id.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+// Unit suffixes become a bracketed unit; grid terms keep their usual case.
+const UNIT_SUFFIX: Record<string, string> = { mw: 'MW', mwh: 'MWh', pct: '%', hz: 'Hz', seconds: 's', minutes: 'min' };
+const TERMS: Record<string, string> = { snsp: 'SNSP', rocof: 'RoCoF', hvdc: 'HVDC', wdt: 'WDT', tso: 'TSO', min: 'minimum' };
+
+export function label(id: string): string {
+  if (FACT_LABELS[id]) return FACT_LABELS[id];
+  const words = id.split('_');
+  const unit = UNIT_SUFFIX[words[words.length - 1]];
+  if (unit) words.pop();
+  if (words[0] === 'planning') words.splice(0, 1, 'Planning case:');
+  const text = words.map((word) => TERMS[word] ?? word).join(' ');
+  const sentence = text.charAt(0).toUpperCase() + text.slice(1);
+  return unit ? `${sentence} (${unit})` : sentence;
+}
+
+// One wording for every value the assessment did not supply, so the
+// comparison lists it once.
+const NOT_VALIDATED = 'The assessment has not established this value.';
+
+// File paths and exception text are for the log, not the operator. Each
+// distinct detail is logged once.
+const loggedDetails = new Set<string>();
+
+export function operatorReason(reason: string | null): string | null {
+  if (!reason) return reason;
+  if (/errno|no such file|traceback|\/users\/|[a-z]:\\/i.test(reason)) {
+    if (!loggedDetails.has(reason)) {
+      loggedDetails.add(reason);
+      console.error('Assessment detail:', reason);
+    }
+    return reason.toLowerCase().startsWith('planning')
+      ? 'Planning-case inputs are not available on this server.'
+      : 'An input needed for this check is not available on this server.';
+  }
+  return reason;
 }
 
 function nextHalfHour(now: Date): Date {
@@ -208,7 +242,9 @@ function factView(fact: BackendFact): SituationFact {
     value: typeof fact.value === 'boolean' ? String(fact.value) : fact.value,
     unit: fact.unit, source: fact.source,
     timestamp: fact.valid_at ?? fact.observed_at ?? fact.issued_at ?? fact.available_at,
-    origin: fact.source_type === 'measurement' ? 'measured' : fact.source_type === 'forecast' ? 'forecast'
+    // A missing fact has no origin: nothing supplied it.
+    origin: fact.state === 'missing' && !fact.source_type ? null
+      : fact.source_type === 'measurement' ? 'measured' : fact.source_type === 'forecast' ? 'forecast'
       : fact.source_type === 'operator' ? 'operator' : 'inferred',
     state: fact.state, family: fact.family, conflictNote: alternatives,
     editable: fact.state !== 'current' || fact.source_type !== 'measurement', editedFrom: null };
@@ -219,7 +255,7 @@ function checkView(check: BackendCheck): SafetyCheck {
     label: label(check.check_id), family: check.family === 'action' || check.family === 'intake' ? 'cross_family' : check.family,
     value: display(check.value, check.unit), limit: display(check.effective_limit, check.unit),
     margin: display(check.margin, check.unit), worstTime: check.worst_time,
-    worstFailure: check.worst_failure, source: check.source, result: status(check.status), reason: check.reason };
+    worstFailure: check.worst_failure, source: check.source, result: status(check.status), reason: operatorReason(check.reason) ?? '' };
 }
 
 function established(item: BackendBenefit | undefined, unit: string, reason: string): Established {
@@ -232,7 +268,7 @@ function outcome(column: OutcomeState['column'], value: BackendColumn, window: B
   const reason = available ? null : 'No plan entered for this column.';
   const metric = (amount: number | null, unit: string) => established(
     amount === null ? undefined : { value: amount, unit, method: null, source: null, reason: '' }, unit,
-    'Not established by a validated assessment');
+    NOT_VALIDATED);
   return { column, available, unavailableReason: reason, windowStart: window.starts_at,
     windowEnd: window.ends_at, includesActiveInstructions: true, safety: status(value.safety.status),
     worstMargin: value.worst_limit_margin === null ? null : `${value.worst_limit_margin}`,
@@ -290,7 +326,7 @@ function backendPlanView(
     origin,
     steps,
     label: planLabel(value.plan_label),
-    labelReason: value.safety.reason,
+    labelReason: operatorReason(value.safety.reason) ?? '',
   };
 }
 
@@ -308,14 +344,15 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
     firstPerStep.add(stepId);
     return { ...checkView(check), stepId, goNoGo };
   });
-  const facts = raw.facts.map(factView);
+  // Instructions in force have their own list, so they are not a fact row.
+  const facts = raw.facts.filter((fact) => fact.field !== 'active_instructions').map(factView);
   const dataStatus: DataStatus = facts.some((fact) => fact.state === 'conflicting') ? 'conflicting'
     : facts.some((fact) => fact.state === 'stale') ? 'stale'
     : facts.some((fact) => fact.state === 'missing') ? 'missing' : 'current';
   const proposedPlan = backendPlanView(proposal, 'proposed', 'Backend proposal');
   const altPlan = backendPlanView(alternative, 'operator', request.alternative?.name ?? 'Operator alternative');
   const benefits = proposal.benefits;
-  const reason = 'Not established by validated case-level outcome evidence';
+  const reason = NOT_VALIDATED;
   return {
     validated: false,
     context: { view: request.view, location: request.view === 'site' ? site?.name ?? raw.location ?? 'Site not selected' : 'All-island',
@@ -333,7 +370,7 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
       text: item.instruction_id, asset: 'Unspecified asset', issuedAt: item.starts_at,
       effectiveUntil: item.ends_at, source: item.evidence_reference })),
     edits: request.edits,
-    overall: { result: status(selected.safety.status), reason: selected.safety.reason,
+    overall: { result: status(selected.safety.status), reason: operatorReason(selected.safety.reason) ?? '',
       missingEvidence: selected.safety.missing_checks.map(label) },
     familyChecks, crossChecks, actionChecks,
     allIslandChecks: request.view === 'site' ? familyChecks.filter((check) => check.family !== 'transmission') : [],
@@ -361,8 +398,8 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
       ruleVersion: raw.evidence.safety_policy_version,
       modelVersions: raw.evidence.model_version ? [raw.evidence.model_version] : [],
       limitsUsed: [], credibleFailuresUsed: [], actionDecisions: [],
-      assumptions: raw.evidence.assumptions,
-      uncertainty: [raw.evidence.reason, raw.evidence.audit_persisted ? '' : 'Assessment fingerprint is not a stored audit record.'].filter(Boolean),
+      assumptions: raw.evidence.assumptions.map((item) => operatorReason(item) ?? item),
+      uncertainty: [operatorReason(raw.evidence.reason) ?? '', raw.evidence.audit_persisted ? '' : 'Assessment fingerprint is not a stored audit record.'].filter(Boolean),
       missingChecks: raw.evidence.missing_checks.map(label),
       assessedAt: raw.assessed_at, auditId: raw.evidence.audit_persisted ? raw.evidence.audit_id : null,
       feedFreshness: [],

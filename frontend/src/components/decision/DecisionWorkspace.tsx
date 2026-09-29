@@ -4,6 +4,7 @@ import { displayOverall } from '../../decision/rules';
 import { useDecisionWorkspace } from '../../decision/useDecisionWorkspace';
 import StatusMessage from '../StatusMessage';
 import ComparisonPanel from './ComparisonPanel';
+import DecisionSummary from './DecisionSummary';
 import EvidenceDrawer from './EvidenceDrawer';
 import PlanPanel from './PlanPanel';
 import SafetyPanel from './SafetyPanel';
@@ -12,9 +13,9 @@ import SituationTable from './SituationTable';
 import TopBar from './TopBar';
 import './DecisionWorkspace.css';
 
-// Top bar → search → facts → safety (left) and plan (right) → comparison →
-// evidence. Safety comes first on every row: the plan and its benefits are
-// read against it. The screen shows a backend assessment and never sends an
+// Top bar → search → summary → safety (left) and plan (right) → comparison
+// → situation facts → evidence. Safety comes first on every row: the plan
+// and its benefits are read against it. The screen shows a backend assessment and never sends an
 // instruction.
 function DecisionWorkspace() {
   const workspace = useDecisionWorkspace();
@@ -50,20 +51,22 @@ function DecisionWorkspace() {
       />
     );
   } else if (assessment && overall) {
+    const plan = alternative ?? assessment.proposed;
+    // DesignersGuide order: binding condition, action and security first;
+    // value next; supporting facts and evidence last, on expansion.
     body = (
       <>
-        <SituationTable
-          facts={facts}
-          conditions={assessment.conditions}
-          activeInstructions={assessment.activeInstructions}
-          edits={edits}
-          stale={stale}
-          onEdit={workspace.editFact}
-          onRerun={workspace.rerun}
-        />
+        {/* Out of date is its own banner above the summary, said once. */}
+        {stale && (
+          <div className="decision-stale" role="status">
+            <span>{DECISION_COPY.summaryStale}</span>
+            <button type="button" className="button-primary" onClick={workspace.rerun}>{DECISION_COPY.rerun}</button>
+          </div>
+        )}
+        <DecisionSummary assessment={assessment} overall={overall} plan={plan} stale={stale} />
         <div className="decision-panels">
           <div className="decision-panel decision-panel-safety">
-            <SafetyPanel assessment={assessment} overall={overall} plan={alternative ?? assessment.proposed} view={view} stale={stale} />
+            <SafetyPanel assessment={assessment} overall={overall} plan={plan} view={view} />
           </div>
           <div className="decision-panel decision-panel-plan">
             <PlanPanel
@@ -72,11 +75,17 @@ function DecisionWorkspace() {
               stale={stale}
               onEditStep={workspace.editAlternativeStep}
               onSetAlternative={workspace.setAlternativePlan}
-              onRerun={workspace.rerun}
             />
           </div>
         </div>
-        <ComparisonPanel outcomes={assessment.outcomes} benefits={assessment.benefits} view={view} stale={stale} />
+        <ComparisonPanel outcomes={assessment.outcomes} benefits={assessment.benefits} view={view} />
+        <SituationTable
+          facts={facts}
+          conditions={assessment.conditions}
+          activeInstructions={assessment.activeInstructions}
+          edits={edits}
+          onEdit={workspace.editFact}
+        />
         <EvidenceDrawer evidence={assessment.evidence} edits={edits} validated={assessment.validated} sourceKind={assessment.context.sourceKind} />
       </>
     );

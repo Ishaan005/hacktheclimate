@@ -3,7 +3,7 @@
 export const DECISION_COPY = {
   title: 'Operator decision workspace',
   advisoryNote: 'Helps you review a proposed plan. This app does not send instructions to the grid.',
-  fixtureNote: 'Offline sample: a historical demonstration with invented values. Not a live or validated assessment.',
+  fixtureNote: 'Offline sample: a historical demonstration with invented values.',
   idleTitle: 'No situation assessed yet',
   idleConsequence: 'Describe the situation and press Assess. No safety result or plan is shown until an assessment returns.',
   assessingTitle: 'Assessing the situation…',
@@ -13,6 +13,13 @@ export const DECISION_COPY = {
   errorTitle: 'The assessment did not load',
   errorConsequence: 'No safety result is shown. Try again.',
   rerun: 'Rerun assessment',
+  summaryTitle: 'Decision summary',
+  summaryBinding: 'What is limiting',
+  summaryNoBinding: 'No limiting condition named',
+  summarySafety: 'Overall safety',
+  summaryPlan: 'Proposed plan',
+  summaryNoPlan: 'No proposed plan',
+  summaryStale: 'Inputs or the plan changed after this assessment. The results below are out of date.',
   newSituation: 'New situation',
   // Names of the panel regions, used by tests to find them.
   safetyRegion: 'Safety',

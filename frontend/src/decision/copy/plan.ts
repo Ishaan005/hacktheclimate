@@ -1,7 +1,7 @@
 // Words for the plan panel (UI brief section 5). Plain operator language.
 // MW is a power change at the limiting location; never call it energy saved.
 
-import type { PermissionRoute, PermissionState, PlanStep } from '../types';
+import type { PermissionRoute, PermissionState, PlanStep, SafetyResult } from '../types';
 
 export const PLAN_COPY = {
   title: 'Proposed action plan',
@@ -9,13 +9,23 @@ export const PLAN_COPY = {
   proposedHeading: 'Proposed plan',
   alternativeHeading: 'Operator alternative',
   noPlan: 'No proposed plan',
+  // Short on purpose: the safety panel already gives the full reason.
+  noPlanReason: {
+    pass: 'The assessment found no action to propose.',
+    fail: 'A safety check fails. See Safety.',
+    unknown: 'Safety checks are incomplete. See Safety.',
+  } satisfies Record<SafetyResult, string>,
+  buildAlternative: 'Build an operator alternative',
+  buildAlternativeHint: 'Choose the first action. You can add more steps after.',
+  createAlternative: 'Create alternative',
+  addStepLabel: 'Add a step',
+  addStep: 'Add step',
   noSteps: 'This plan has no steps.',
   labelTitle: 'Plan label',
   editAsAlternative: 'Edit as alternative',
   editNote: 'Your changes go into a separate alternative. The proposal stays unchanged for comparison.',
   discardAlternative: 'Discard alternative',
   removeStep: 'Remove step',
-  rerun: 'Rerun assessment',
   alternativeNote: 'Edits make the assessment out of date. Rerun it to check the whole combination again.',
   stepTitle: 'Step',
   notAvailable: 'Not available',
@@ -23,13 +33,12 @@ export const PLAN_COPY = {
   unknownCheck: 'Unlisted check',
   removedStep: 'a step no longer in this plan',
   fields: {
-    instruction: 'What is instructed',
-    executor: 'Who does it',
+    executor: 'Who',
     permission: 'Permission',
     startTime: 'Starts',
     effectTime: 'Effect arrives',
     duration: 'Lasts',
-    mwEffect: 'MW change at limiting location',
+    mwEffect: 'MW at limiting location',
     blocking: 'Still blocked by',
     dependsOn: 'Starts after',
   },

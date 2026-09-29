@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { ACTION_KIND_LABEL } from '../../decision/actionLabels';
 import { PERMISSION_STATE_LABEL, PLAN_COPY, ROLE_LABEL, permissionText } from '../../decision/copy/plan';
-import { RESULT_LABEL, STALE_NOTE } from '../../decision/copy/shared';
+import { RESULT_LABEL } from '../../decision/copy/shared';
 import { planLabel } from '../../decision/rules';
 import { copyAsAlternative } from '../../decision/useDecisionWorkspace';
 import type { ActionKind, Assessment, PermissionState, Plan, PlanStep, SafetyCheck } from '../../decision/types';
@@ -15,7 +15,6 @@ type Props = {
   stale: boolean;
   onEditStep: (stepId: string, changes: Partial<PlanStep>) => void;
   onSetAlternative: (plan: Plan | null) => void;
-  onRerun: () => void;
 };
 
 const ROLE_ORDER: Record<PlanStep['role'], number> = { main: 0, supporting: 1, parallel: 2 };
@@ -57,7 +56,33 @@ function stepHeading(step: PlanStep, index: number): string {
   return `${PLAN_COPY.stepTitle} ${index + 1} · ${ROLE_LABEL[step.role]} · ${ACTION_KIND_LABEL[step.kind]}`;
 }
 
-// Timing, blockers and dependencies, shared by both read-only and edited steps.
+// Permission decides how a step looks. Anything not yet accepted or cleared
+// is amber and a refusal is red, so a conditional step never looks as ready
+// as a direct or confirmed one.
+type PermissionTone = 'ready' | 'conditional' | 'refused';
+
+function permissionTone(step: PlanStep): PermissionTone {
+  if (step.permissionRoute === 'direct' || step.permissionState === 'confirmed') return 'ready';
+  return step.permissionState === 'refused' ? 'refused' : 'conditional';
+}
+
+const PERMISSION_CHIP: Record<PermissionTone, string> = {
+  ready: 'chip',
+  conditional: 'chip chip-unknown',
+  refused: 'chip chip-breach',
+};
+
+function PermissionChip({ step }: { step: PlanStep }) {
+  const state = step.permissionRoute === 'direct' ? '' : ` · ${PERMISSION_STATE_LABEL[step.permissionState]}`;
+  return (
+    <span className={`${PERMISSION_CHIP[permissionTone(step)]} plan-permission-chip`}>
+      {permissionText(step.permissionRoute, step.permissionParty)}{state}
+    </span>
+  );
+}
+
+// Who, permission, timing and MW, then blockers and dependencies. Edited
+// steps show only the fields that are not already inputs.
 function StepFacts({ step, plan, checks, readOnlyCore }: { step: PlanStep; plan: Plan; checks: Map<string, SafetyCheck>; readOnlyCore: boolean }) {
   const blocking = blockers(step, checks);
   const after = dependencies(step, plan);
@@ -65,45 +90,34 @@ function StepFacts({ step, plan, checks, readOnlyCore }: { step: PlanStep; plan:
     <>
       <dl className="fields plan-step-fields">
         {readOnlyCore && (
-          <>
-            <div className="plan-field-wide">
-              <dt>{PLAN_COPY.fields.instruction}</dt>
-              <dd className="plan-instruction">{step.instruction}</dd>
-            </div>
-            <div>
-              <dt>{PLAN_COPY.fields.executor}</dt>
-              <dd>{step.executor}</dd>
-            </div>
-          </>
+          <div>
+            <dt>{PLAN_COPY.fields.executor}</dt>
+            <dd>{step.executor || PLAN_COPY.notAvailable}</dd>
+          </div>
         )}
-        <div>
+        <div className="plan-field-permission">
           <dt>{PLAN_COPY.fields.permission}</dt>
-          <dd>
-            {permissionText(step.permissionRoute, step.permissionParty)}
-            {step.permissionRoute !== 'direct' && (
-              <span className={`plan-permission-state plan-permission-${step.permissionState}`}> · {PERMISSION_STATE_LABEL[step.permissionState]}</span>
-            )}
-          </dd>
+          <dd><PermissionChip step={step} /></dd>
         </div>
         {readOnlyCore && (
           <div>
             <dt>{PLAN_COPY.fields.startTime}</dt>
-            <dd className="mono">{time(step.startTime)}</dd>
+            <dd>{time(step.startTime)}</dd>
           </div>
         )}
         <div>
           <dt>{PLAN_COPY.fields.effectTime}</dt>
-          <dd className="mono">{time(step.effectTime)}</dd>
+          <dd>{time(step.effectTime)}</dd>
         </div>
         {readOnlyCore && (
           <>
             <div>
               <dt>{PLAN_COPY.fields.duration}</dt>
-              <dd className="mono">{formatNumber(step.durationMinutes, 'min')}</dd>
+              <dd>{formatNumber(step.durationMinutes, 'min')}</dd>
             </div>
             <div>
               <dt>{PLAN_COPY.fields.mwEffect}</dt>
-              <dd className="mono" title={PLAN_COPY.mwHint}>{formatSigned(step.mwEffect, 'MW')}</dd>
+              <dd title={PLAN_COPY.mwHint}>{formatSigned(step.mwEffect, 'MW')}</dd>
             </div>
           </>
         )}
@@ -121,11 +135,15 @@ function StepFacts({ step, plan, checks, readOnlyCore }: { step: PlanStep; plan:
   );
 }
 
+// Read-only step: the instruction first, as the operator would say it.
 function StepCard({ step, index, plan, checks }: { step: PlanStep; index: number; plan: Plan; checks: Map<string, SafetyCheck> }) {
   const headingId = `${plan.id}-${step.id}-heading`;
   return (
-    <li className={`plan-step plan-step-${step.role}`} aria-labelledby={headingId}>
-      <h4 id={headingId} className="plan-step-head">{stepHeading(step, index)}</h4>
+    <li className={`plan-step plan-step-${permissionTone(step)}`} aria-labelledby={headingId}>
+      <div>
+        <h4 id={headingId} className="plan-step-instruction">{step.instruction || PLAN_COPY.notAvailable}</h4>
+        <p className="plan-step-meta">{stepHeading(step, index)}</p>
+      </div>
       <StepFacts step={step} plan={plan} checks={checks} readOnlyCore />
     </li>
   );
@@ -200,10 +218,10 @@ function EditableStep({ step, index, plan, checks, onEditStep, onRemove }: EditP
   const headingId = `${plan.id}-${step.id}-heading`;
   const edit = (changes: Partial<PlanStep>) => onEditStep(step.id, changes);
   return (
-    <li className={`plan-step plan-step-${step.role} plan-step-editable`} aria-labelledby={headingId}>
+    <li className={`plan-step plan-step-${permissionTone(step)} plan-step-editable`} aria-labelledby={headingId}>
       <div className="plan-step-bar">
-        <h4 id={headingId} className="plan-step-head">{stepHeading(step, index)}</h4>
-        <button type="button" className="button-secondary" onClick={() => onRemove(step.id)}>{PLAN_COPY.removeStep}</button>
+        <h4 id={headingId} className="plan-step-meta">{stepHeading(step, index)}</h4>
+        <button type="button" className="button-ghost plan-button-remove" onClick={() => onRemove(step.id)}>{PLAN_COPY.removeStep}</button>
       </div>
       <div className="plan-edit-grid">
         <label className="field plan-field-wide">
@@ -256,9 +274,20 @@ function LabelLine({ plan, assessment, stale }: { plan: Plan; assessment: Assess
   );
 }
 
+function ActionKindSelect({ id, value, hintId, onChange }: { id: string; value: ActionKind; hintId?: string; onChange: (kind: ActionKind) => void }) {
+  return (
+    <select id={id} className="input" value={value} aria-describedby={hintId}
+      onChange={(event) => onChange(event.target.value as ActionKind)}>
+      {(Object.keys(ACTION_KIND_LABEL) as ActionKind[]).map((kind) => (
+        <option key={kind} value={kind}>{ACTION_KIND_LABEL[kind]}</option>
+      ))}
+    </select>
+  );
+}
+
 // Right panel: the proposed plan, read-only, and an optional operator
 // alternative beside it. Nothing here sends an instruction.
-function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternative, onRerun }: Props) {
+function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternative }: Props) {
   const proposed = assessment.proposed;
   const checks = allChecks(assessment);
   const [newKind, setNewKind] = useState<ActionKind>('local_storage_or_demand');
@@ -283,26 +312,36 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
     onSetAlternative({ ...alternative, steps: alternative.steps.filter((step) => step.id !== stepId) });
   }
 
+  // The proposal's label sits beside the panel title; the alternative
+  // carries its own label in its section.
+  const proposedLabel = proposed ? planLabel(proposed, assessment, stale) : null;
+
   return (
-    <section className="plan-panel" aria-labelledby="plan-panel-heading">
-      <header className="plan-panel-header">
-        <h2 id="plan-panel-heading">{PLAN_COPY.title}</h2>
-        <p className="plan-no-send">{PLAN_COPY.noSendNote}</p>
+    <section className="card plan-panel" aria-labelledby="plan-panel-heading">
+      <header className="panel-header plan-panel-header">
+        <div>
+          <h2 id="plan-panel-heading" className="panel-title">{PLAN_COPY.title}</h2>
+          <p className="panel-meta plan-no-send">{PLAN_COPY.noSendNote}</p>
+        </div>
+        {proposedLabel && (
+          <span>
+            <span className="visually-hidden">{PLAN_COPY.labelTitle}: </span>
+            <PlanLabelChip label={proposedLabel.label} />
+          </span>
+        )}
       </header>
 
-      {stale && (
-        <div className="plan-stale" role="status">
-          <p>{STALE_NOTE}</p>
-          <button type="button" className="button-primary" onClick={onRerun}>{PLAN_COPY.rerun}</button>
-        </div>
-      )}
-
       <section className="plan-section" aria-labelledby="plan-proposed-heading">
-        <h3 id="plan-proposed-heading" className="card-kicker">{PLAN_COPY.proposedHeading}</h3>
-        {proposed ? (
+        {/* Named for screen readers always; shown only beside an alternative. */}
+        <h3 id="plan-proposed-heading" className={alternative ? 'panel-section-title' : 'visually-hidden'}>
+          {PLAN_COPY.proposedHeading}
+        </h3>
+        {proposed && proposedLabel ? (
           <>
-            <p className="plan-name">{proposed.name}</p>
-            <LabelLine plan={proposed} assessment={assessment} stale={stale} />
+            <div>
+              <p className="plan-name">{proposed.name}</p>
+              <p className="plan-label-reason">{proposedLabel.reason}</p>
+            </div>
             {proposed.steps.length ? (
               <ol className="plan-steps">
                 {sortSteps(proposed.steps).map((step, index) => (
@@ -310,7 +349,7 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
                 ))}
               </ol>
             ) : (
-              <p>{PLAN_COPY.noSteps}</p>
+              <p className="plan-empty">{PLAN_COPY.noSteps}</p>
             )}
             {!alternative && (
               <div className="plan-actions">
@@ -323,18 +362,15 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
           </>
         ) : (
           <>
-            <p className="card-headline">{PLAN_COPY.noPlan}</p>
-            <p>{assessment.overall.reason}</p>
+            <p className="plan-empty">{PLAN_COPY.noPlan}. {PLAN_COPY.noPlanReason[assessment.overall.result]}</p>
             {!alternative && (
-              <div className="plan-actions">
-                <label className="field-label" htmlFor="alternative-action-kind">Action to assess</label>
-                <select id="alternative-action-kind" className="input" value={newKind}
-                  onChange={(event) => setNewKind(event.target.value as ActionKind)}>
-                  {(Object.keys(ACTION_KIND_LABEL) as ActionKind[]).map((kind) => (
-                    <option key={kind} value={kind}>{ACTION_KIND_LABEL[kind]}</option>
-                  ))}
-                </select>
-                <button type="button" className="button-secondary" onClick={addStep}>Create alternative</button>
+              <div className="field plan-build">
+                <label className="field-label" htmlFor="alternative-action-kind">{PLAN_COPY.buildAlternative}</label>
+                <span id="alternative-action-kind-hint" className="field-hint">{PLAN_COPY.buildAlternativeHint}</span>
+                <div className="plan-build-row">
+                  <ActionKindSelect id="alternative-action-kind" hintId="alternative-action-kind-hint" value={newKind} onChange={setNewKind} />
+                  <button type="button" className="button-secondary" onClick={addStep}>{PLAN_COPY.createAlternative}</button>
+                </div>
               </div>
             )}
           </>
@@ -344,8 +380,10 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
       {alternative && (
         <section className="plan-section plan-section-alternative" aria-labelledby="plan-alternative-heading">
           <div className="plan-step-bar">
-            <h3 id="plan-alternative-heading" className="card-kicker">{PLAN_COPY.alternativeHeading}</h3>
-            <button type="button" className="button-secondary" onClick={() => onSetAlternative(null)}>{PLAN_COPY.discardAlternative}</button>
+            <h3 id="plan-alternative-heading" className="panel-section-title">{PLAN_COPY.alternativeHeading}</h3>
+            <button type="button" className="button-ghost plan-button-remove" onClick={() => onSetAlternative(null)}>
+              {PLAN_COPY.discardAlternative}
+            </button>
           </div>
           <LabelLine plan={alternative} assessment={assessment} stale={stale} />
           <p className="field-hint">{PLAN_COPY.alternativeNote}</p>
@@ -364,17 +402,14 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
               ))}
             </ol>
           ) : (
-            <p>{PLAN_COPY.noSteps}</p>
+            <p className="plan-empty">{PLAN_COPY.noSteps}</p>
           )}
-          <div className="plan-actions">
-            <label className="field-label" htmlFor="alternative-add-kind">Add a step</label>
-            <select id="alternative-add-kind" className="input" value={newKind}
-              onChange={(event) => setNewKind(event.target.value as ActionKind)}>
-              {(Object.keys(ACTION_KIND_LABEL) as ActionKind[]).map((kind) => (
-                <option key={kind} value={kind}>{ACTION_KIND_LABEL[kind]}</option>
-              ))}
-            </select>
-            <button type="button" className="button-secondary" onClick={addStep}>Add step</button>
+          <div className="field plan-build">
+            <label className="field-label" htmlFor="alternative-add-kind">{PLAN_COPY.addStepLabel}</label>
+            <div className="plan-build-row">
+              <ActionKindSelect id="alternative-add-kind" value={newKind} onChange={setNewKind} />
+              <button type="button" className="button-secondary" onClick={addStep}>{PLAN_COPY.addStep}</button>
+            </div>
           </div>
         </section>
       )}

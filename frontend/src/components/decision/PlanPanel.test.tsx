@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { PLAN_COPY } from '../../decision/copy/plan';
 import { PLAN_LABEL, STALE_NOTE } from '../../decision/copy/shared';
 import { fixtureAssessment } from '../../decision/fixture';
+import { planLabel } from '../../decision/rules';
 import type { Assessment, Plan, PlanStep, SafetyCheck } from '../../decision/types';
 import { copyAsAlternative } from '../../decision/useDecisionWorkspace';
 import PlanPanel from './PlanPanel';
@@ -10,13 +11,17 @@ import PlanPanel from './PlanPanel';
 type RenderOptions = { alternative?: Plan | null; stale?: boolean };
 
 function renderPanel(assessment: Assessment, { alternative = null, stale = false }: RenderOptions = {}) {
-  const handlers = { onEditStep: vi.fn(), onSetAlternative: vi.fn(), onRerun: vi.fn() };
+  const handlers = { onEditStep: vi.fn(), onSetAlternative: vi.fn() };
   render(<PlanPanel assessment={assessment} alternative={alternative} stale={stale} {...handlers} />);
   return handlers;
 }
 
 function proposedSection() {
   return screen.getByRole('region', { name: PLAN_COPY.proposedHeading });
+}
+
+function panel() {
+  return screen.getByRole('region', { name: PLAN_COPY.title });
 }
 
 const pass = <T extends SafetyCheck>(check: T): T => ({ ...check, result: 'pass' });
@@ -65,7 +70,7 @@ describe('plan panel', () => {
     const section = proposedSection();
     expect(within(section).getByText('−32 MW')).toBeInTheDocument();
     expect(within(section).getByText('−12 MW')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: PLAN_COPY.title }).textContent).not.toMatch(/MWh|energy saved/i);
+    expect(panel().textContent).not.toMatch(/MWh|energy saved/i);
   });
 
   it('shows who does each step, permission, timing and blockers', () => {
@@ -95,7 +100,7 @@ describe('plan panel', () => {
       familyChecks: fixtureAssessment.familyChecks.map((check, i) => (i === 0 ? { ...check, result: 'fail' } : check)),
     };
     renderPanel(failing);
-    expect(within(proposedSection()).getByText(PLAN_LABEL.unsafe)).toBeInTheDocument();
+    expect(within(panel()).getByText(PLAN_LABEL.unsafe)).toBeInTheDocument();
     expect(screen.queryByText(PLAN_LABEL.actionable)).not.toBeInTheDocument();
   });
 
@@ -106,28 +111,27 @@ describe('plan panel', () => {
       familyChecks: clean.familyChecks.map((check, i) => (i === 0 ? { ...check, result: 'unknown' } : check)),
     };
     renderPanel(unknown);
-    expect(within(proposedSection()).getByText(PLAN_LABEL.insufficient_evidence)).toBeInTheDocument();
+    expect(within(panel()).getByText(PLAN_LABEL.insufficient_evidence)).toBeInTheDocument();
     expect(screen.queryByText(PLAN_LABEL.actionable)).not.toBeInTheDocument();
   });
 
   it('stays Conditional until acceptance is recorded, then shows Actionable', () => {
     renderPanel(cleanAssessment('pending'));
-    expect(within(proposedSection()).getByText(PLAN_LABEL.conditional)).toBeInTheDocument();
+    expect(within(panel()).getByText(PLAN_LABEL.conditional)).toBeInTheDocument();
     expect(within(proposedSection()).getByText(/Waiting for Tynagh generator owner to accept/)).toBeInTheDocument();
     expect(screen.queryByText(PLAN_LABEL.actionable)).not.toBeInTheDocument();
   });
 
   it('shows Actionable once the other party has confirmed', () => {
     renderPanel(cleanAssessment('confirmed'));
-    expect(within(proposedSection()).getByText(PLAN_LABEL.actionable)).toBeInTheDocument();
+    expect(within(panel()).getByText(PLAN_LABEL.actionable)).toBeInTheDocument();
   });
 
-  it('is not Actionable while stale, and offers a rerun', () => {
-    const { onRerun } = renderPanel(cleanAssessment('confirmed'), { stale: true });
-    expect(screen.getByText(STALE_NOTE)).toBeInTheDocument();
+  it('is not Actionable while stale, and leaves the out-of-date notice to the summary', () => {
+    renderPanel(cleanAssessment('confirmed'), { stale: true });
     expect(screen.queryByText(PLAN_LABEL.actionable)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: PLAN_COPY.rerun }));
-    expect(onRerun).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(STALE_NOTE)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /rerun/i })).not.toBeInTheDocument();
   });
 
   it('creates an operator alternative and leaves the proposal unchanged', () => {
@@ -179,10 +183,61 @@ describe('plan panel', () => {
     expect(screen.getByText(PLAN_COPY.noSendNote)).toBeInTheDocument();
   });
 
-  it('explains when there is no proposed plan', () => {
+  it('explains when there is no proposed plan in one short line', () => {
     renderPanel({ ...fixtureAssessment, proposed: null });
-    expect(screen.getByText(PLAN_COPY.noPlan)).toBeInTheDocument();
-    expect(screen.getByText(fixtureAssessment.overall.reason)).toBeInTheDocument();
+    const line = screen.getByText(new RegExp(`^${PLAN_COPY.noPlan}\\.`));
+    expect(line).toHaveTextContent(PLAN_COPY.noPlanReason[fixtureAssessment.overall.result]);
+    expect(screen.getAllByText(new RegExp(PLAN_COPY.noPlan))).toHaveLength(1);
+    // The safety panel gives the full reason; the plan panel does not repeat it.
+    expect(panel().textContent).not.toContain(fixtureAssessment.overall.reason);
     expect(screen.queryByRole('button', { name: PLAN_COPY.editAsAlternative })).not.toBeInTheDocument();
+  });
+
+  it('offers a labelled operator alternative when there is no proposed plan', () => {
+    const { onSetAlternative } = renderPanel({ ...fixtureAssessment, proposed: null });
+    const select = screen.getByRole('combobox', { name: PLAN_COPY.buildAlternative });
+    fireEvent.change(select, { target: { value: 'paired_redispatch' } });
+    const create = screen.getByRole('button', { name: PLAN_COPY.createAlternative });
+    expect(create).toHaveClass('button-secondary');
+    fireEvent.click(create);
+    const created = onSetAlternative.mock.calls[0][0] as Plan;
+    expect(created.origin).toBe('operator');
+    expect(created.steps.map((step) => step.kind)).toEqual(['paired_redispatch']);
+  });
+
+  it('puts the panel title and the proposal label in one header', () => {
+    renderPanel(fixtureAssessment);
+    const heading = screen.getByRole('heading', { level: 2, name: PLAN_COPY.title });
+    expect(heading).toHaveClass('panel-title');
+    const header = heading.closest('.panel-header') as HTMLElement;
+    const { label } = planLabel(fixtureAssessment.proposed as Plan, fixtureAssessment, false);
+    expect(within(header).getByText(PLAN_LABEL[label])).toBeInTheDocument();
+    expect(within(header).getByText(PLAN_COPY.noSendNote)).toHaveClass('panel-meta');
+  });
+
+  it('leads each step with its instruction and marks pending permission', () => {
+    renderPanel(fixtureAssessment);
+    const [main, supporting] = within(proposedSection()).getAllByRole('listitem');
+    expect(within(main).getByRole('heading', { level: 4 })).toHaveTextContent('Reduce Wind Farm A by 40 MW; increase Tynagh CCGT by 40 MW.');
+    expect(main).toHaveClass('plan-step-conditional');
+    expect(within(main).getByText('Needs acceptance by Tynagh generator owner · Pending')).toHaveClass('chip-unknown');
+    expect(supporting).not.toHaveClass('plan-step-conditional');
+    expect(within(supporting).getByText('Direct instruction')).not.toHaveClass('chip-unknown');
+    for (const label of Object.values(PLAN_COPY.fields).slice(0, 6)) {
+      expect(within(main).getByText(label)).toBeInTheDocument();
+    }
+  });
+
+  it('has at most one primary button, and removal is never primary', () => {
+    const alternative = copyAsAlternative(fixtureAssessment.proposed);
+    const { container } = render(
+      <PlanPanel assessment={fixtureAssessment} alternative={alternative} stale onEditStep={vi.fn()} onSetAlternative={vi.fn()} />,
+    );
+    expect(container.querySelectorAll('.button-primary').length).toBeLessThanOrEqual(1);
+    for (const name of [PLAN_COPY.removeStep, PLAN_COPY.discardAlternative]) {
+      for (const button of screen.getAllByRole('button', { name })) {
+        expect(button).not.toHaveClass('button-primary');
+      }
+    }
   });
 });

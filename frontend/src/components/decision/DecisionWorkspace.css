@@ -3,13 +3,16 @@
 
 .decision-workspace {
   display: grid;
-  gap: var(--space-16);
+  gap: var(--space-24);
+  /* A grid item otherwise grows to its widest table instead of letting the
+     table scroll on narrow screens. */
+  min-width: 0;
 }
 
 .decision-panels {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-16);
+  gap: var(--space-24);
   align-items: start;
 }
 
@@ -20,5 +23,107 @@
 @media (max-width: 880px) {
   .decision-panels {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Decision summary: binding condition, safety, plan ---- */
+
+.decision-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-16) var(--space-24);
+  border-left: 4px solid var(--color-accent);
+}
+
+.decision-summary-item {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.decision-summary-label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.decision-summary-value {
+  margin: 0;
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+}
+
+.decision-summary-value .chip {
+  font-size: var(--font-size-14);
+}
+
+.decision-summary-reason {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+  line-height: var(--line-height-default);
+}
+
+.decision-summary-conditions {
+  display: grid;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.decision-summary-conditions li {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-default);
+}
+
+.decision-summary-family {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-regular);
+}
+
+.decision-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-16);
+  padding: var(--space-12) var(--space-16);
+  border: 1px solid var(--color-warning);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+  font-size: var(--font-size-14);
+}
+
+@media (max-width: 880px) {
+  .decision-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The plan stays in view while the longer safety column scrolls. */
+@media (min-width: 881px) {
+  .decision-panel-plan {
+    position: sticky;
+    top: var(--space-16);
+  }
+}
+
+/* Narrow screens: the summary above already shows overall safety, so the
+   plan comes next and the full safety list follows (UX plan: keep the
+   recommended action near the top). */
+@media (max-width: 880px) {
+  .decision-panel-plan {
+    order: -1;
   }
 }

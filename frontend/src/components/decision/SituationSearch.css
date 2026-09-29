@@ -2,8 +2,6 @@
    it does not depend on the older workspace stylesheet. */
 
 .situation-search {
-  display: grid;
-  gap: var(--space-12);
   min-width: 0;
 }
 
@@ -112,16 +110,12 @@
   outline-offset: 1px;
 }
 
-/* ---- Example situations ---- */
+/* ---- Example situations, inside the card under the input ---- */
 
-.search-examples summary {
-  width: fit-content;
-  color: var(--color-accent);
-  font-size: var(--font-size-14);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
+.search-examples {
+  margin-top: var(--space-4);
 }
 
-.search-examples[open] summary {
+.search-examples[open] > summary {
   margin-bottom: var(--space-8);
 }

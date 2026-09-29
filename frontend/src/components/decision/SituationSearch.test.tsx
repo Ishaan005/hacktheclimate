@@ -57,6 +57,16 @@ describe('situation search', () => {
     expect(input()).toHaveValue(`${SUGGESTIONS[0].text} ${SUGGESTIONS[SUGGESTIONS.length - 1].text}`);
   });
 
+  it('keeps the example situations inside the search card, under the input', () => {
+    render(<SituationSearch onAssess={vi.fn()} />);
+    const form = input().closest('form') as HTMLElement;
+    const summary = screen.getByText(SEARCH_COPY.examplesSummary);
+    const disclosure = summary.closest('details') as HTMLElement;
+    expect(form).toContainElement(disclosure);
+    expect(disclosure).toHaveClass('disclosure');
+    expect(input().compareDocumentPosition(disclosure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('disables assessment while busy', () => {
     render(<SituationSearch onAssess={vi.fn()} busy />);
     fireEvent.change(input(), { target: { value: 'SNSP near limit' } });

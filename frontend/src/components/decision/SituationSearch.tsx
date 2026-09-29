@@ -46,11 +46,12 @@ function SituationSearch({ onAssess, busy = false }: Props) {
             {busy ? SEARCH_COPY.assessing : SEARCH_COPY.assess}
           </button>
         </div>
+        {/* Examples sit inside the card; picking one only fills the box. */}
+        <details className="disclosure search-examples">
+          <summary>{SEARCH_COPY.examplesSummary}</summary>
+          <SuggestionList exclude={[]} onPick={pick} />
+        </details>
       </form>
-      <details className="search-examples">
-        <summary>{SEARCH_COPY.examplesSummary}</summary>
-        <SuggestionList exclude={[]} onPick={pick} />
-      </details>
     </section>
   );
 }

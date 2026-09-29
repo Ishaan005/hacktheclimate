@@ -25,11 +25,13 @@ function TextList({ items }: { items: string[] }) {
   );
 }
 
+// One row of the two-column layout: title left, content right. Stacks on
+// narrow screens.
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="evidence-section">
-      <h4 className="evidence-heading">{title}</h4>
-      {children}
+      <h3 className="evidence-heading">{title}</h3>
+      <div className="evidence-content">{children}</div>
     </section>
   );
 }
@@ -47,14 +49,14 @@ function EvidenceDrawer({ evidence, edits, validated, sourceKind }: Props) {
   return (
     <details className="card evidence-drawer">
       <summary className="evidence-summary">
-        <span className="evidence-summary-title">{EVIDENCE_COPY.summary}</span>
-        <span className="evidence-summary-hint">{EVIDENCE_COPY.summaryHint}</span>
+        <span className="panel-title evidence-summary-title">{EVIDENCE_COPY.summary}</span>
+        <span className="panel-meta">{EVIDENCE_COPY.summaryHint}</span>
       </summary>
       <div className="evidence-body">
         <Section title={EVIDENCE_COPY.sourceTitle}>
           <p className="evidence-source">
             <span className={`chip ${sourceKind === 'live' ? 'chip-advisory' : 'chip-unknown'}`}>{SOURCE_KIND_LABEL[sourceKind]}</span>
-            <span>{validated ? EVIDENCE_COPY.validated : EVIDENCE_COPY.notValidated}</span>
+            {validated && <span>{EVIDENCE_COPY.validated}</span>}
           </p>
           <dl className="evidence-fields">
             <div>

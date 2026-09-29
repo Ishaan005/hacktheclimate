@@ -14,6 +14,7 @@ describe('EvidenceDrawer', () => {
     renderDrawer();
     const details = screen.getByText('Show the evidence').closest('details') as HTMLDetailsElement;
     expect(details).not.toHaveAttribute('open');
+    expect(screen.getByText('Show the evidence')).toHaveClass('panel-title');
   });
 
   it('lists the audit ID, rule version and why an action was rejected', () => {
@@ -31,7 +32,7 @@ describe('EvidenceDrawer', () => {
     expect(failureRow).toHaveTextContent('Edited by operator');
     expect(screen.getByText('SCADA', { exact: false }).closest('li')).toHaveTextContent('Missing');
     expect(screen.getByText('Historical demonstration')).toBeInTheDocument();
-    expect(screen.getByText(/Not a validated assessment/)).toBeInTheDocument();
+    expect(screen.queryByText(/validated/i)).toBeNull();
     expect(screen.getByText('No operator edits.')).toBeInTheDocument();
   });
 });
