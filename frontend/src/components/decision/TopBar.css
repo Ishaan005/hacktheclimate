@@ -1,20 +1,29 @@
-/* Top bar: view toggle, site picker, assessment status and source badge. */
+/* Top bar: one compact band with the view toggle, site picker, assessment
+   status and source badge. Wraps onto more lines only when narrow. */
 
 .top-bar {
   display: grid;
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-12) var(--space-24);
-  padding: var(--space-16);
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.top-bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12) var(--space-24);
+  min-width: 0;
 }
 
 /* ---- Segmented view toggle ---- */
 
 .top-bar-views {
   display: flex;
+  flex: none;
   margin: 0;
   padding: 0;
   border: 1px solid var(--color-border-strong);
@@ -24,12 +33,13 @@
 
 .top-bar-view {
   position: relative;
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-  max-width: 220px;
   padding: var(--space-8) var(--space-12);
   background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -44,7 +54,8 @@
 .top-bar-view-selected,
 .top-bar-view-selected:hover {
   background: var(--color-accent-soft);
-  box-shadow: inset 0 -3px 0 var(--color-accent);
+  color: var(--color-accent-strong);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
 /* The radio stays in the accessibility tree and takes keyboard focus. */
@@ -59,36 +70,50 @@
   outline-offset: -2px;
 }
 
-.top-bar-view-label {
-  font-size: var(--font-size-14);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-}
-
-.top-bar-view-selected .top-bar-view-label {
-  color: var(--color-accent-strong);
-}
-
-.top-bar-view-hint {
-  font-size: var(--font-size-12);
-  color: var(--color-text-muted);
-}
-
 /* ---- Site picker and status fields ---- */
 
 .top-bar-site {
-  grid-column: 1;
-  max-width: 440px;
+  flex: 0 1 320px;
+  min-width: 180px;
+}
+
+.top-bar-site-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+}
+
+.top-bar-site .input {
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--font-size-14);
 }
 
 .top-bar-fields {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  display: flex;
+  flex: 1 1 480px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-8) var(--space-24);
+  min-width: 0;
+}
+
+.top-bar-fields > div {
+  min-width: 0;
+}
+
+.top-bar-time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The window reads as one phrase, so it keeps to one line when there is room. */
+.top-bar-field-window dd {
+  white-space: nowrap;
 }
 
 .top-bar-note {
-  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .top-bar-placeholder {
@@ -98,14 +123,12 @@
 }
 
 @media (max-width: 760px) {
-  .top-bar {
-    grid-template-columns: minmax(0, 1fr);
+  .top-bar-fields {
+    flex-basis: 100%;
   }
 
-  .top-bar-site,
-  .top-bar-fields {
-    grid-column: 1;
-    grid-row: auto;
+  .top-bar-field-window dd {
+    white-space: normal;
   }
 }
 

@@ -31,7 +31,9 @@ describe('decision workspace end to end (fixture)', () => {
     // Safety panel comes before the plan in reading order.
     expect(safety.compareDocumentPosition(plan) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(plan).queryByText('Actionable')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Historical demonstration').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Historical demonstration')).not.toBeInTheDocument();
+    expect(screen.queryByText(/synthetic|invented values|missing facts/i)).not.toBeInTheDocument();
+    expect(document.querySelector('.phase-tag, .source-badge, .situation-table .chip, .decision-summary .chip')).toBeNull();
     expect(screen.queryByText(/^Live$/)).not.toBeInTheDocument();
     const text = document.body.textContent?.toLowerCase() ?? '';
     for (const phrase of FORBIDDEN_PHRASES) expect(text).not.toContain(phrase);
@@ -46,10 +48,19 @@ describe('decision workspace end to end (fixture)', () => {
     const input = screen.getByRole('spinbutton');
     fireEvent.change(input, { target: { value: '420' } });
     fireEvent.click(screen.getByRole('button', { name: /Save/ }));
-    expect(screen.getAllByText(STALE_NOTE).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getAllByRole('button', { name: DECISION_COPY.rerun })[0]);
-    await screen.findByRole('region', { name: DECISION_COPY.safetyRegion });
+    // Out of date is said once, in its own banner above the summary card,
+    // with the only rerun button.
+    const notices = screen.getAllByText(DECISION_COPY.summaryStale);
+    expect(notices).toHaveLength(1);
+    const summary = screen.getByRole('region', { name: DECISION_COPY.summaryTitle });
+    expect(summary.contains(notices[0])).toBe(false);
+    expect(notices[0].compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryAllByText(STALE_NOTE)).toHaveLength(0);
+    const rerun = screen.getAllByRole('button', { name: DECISION_COPY.rerun });
+    expect(rerun).toHaveLength(1);
+    fireEvent.click(rerun[0]);
+    await screen.findByRole('region', { name: DECISION_COPY.safetyRegion });
+    expect(screen.queryByText(DECISION_COPY.summaryStale)).not.toBeInTheDocument();
   });
 
   it('keeps all-island checks visible in the site view', async () => {

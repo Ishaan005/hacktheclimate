@@ -56,7 +56,7 @@ export function displayOverall(
     };
   }
   if (overall.result === 'pass' && !assessment.validated) {
-    return { result: 'unknown', reason: 'Not a validated assessment. Demonstration results cannot pass.', missingEvidence: [] };
+    return { result: 'unknown', reason: 'Pass needs an operational assessment with every required check connected.', missingEvidence: [] };
   }
   return overall;
 }

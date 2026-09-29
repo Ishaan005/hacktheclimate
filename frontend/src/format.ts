@@ -66,3 +66,12 @@ export function formatTimeRange(start: string, end: string): string {
 export function formatDayTime(iso: string | null): string {
   return iso ? dateTimeFormat.format(parseUtc(iso)) : COPY.notAvailable;
 }
+
+// A window on one day shows the day once: "24 Jan, 16:00–18:00 UTC". A window
+// across days names both: "29 Sept, 16:30 – 30 Sept, 16:30 UTC".
+export function formatWindow(start: string, end: string): string {
+  const sameDay = parseUtc(start).toISOString().slice(0, 10) === parseUtc(end).toISOString().slice(0, 10);
+  return sameDay
+    ? `${formatDayTime(start)}–${formatTime(end)} UTC`
+    : `${formatDayTime(start)} – ${formatDayTime(end)} UTC`;
+}

@@ -1,64 +1,88 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { fixtureAssessment } from '../../decision/fixture';
-import type { OutcomeState } from '../../decision/types';
+import type { Benefits, Established, OutcomeState } from '../../decision/types';
 import ComparisonPanel from './ComparisonPanel';
 
 const { outcomes, benefits } = fixtureAssessment;
 
-function renderPanel(overrides: { outcomes?: OutcomeState[]; stale?: boolean; demo?: boolean } = {}) {
+function renderPanel(overrides: { outcomes?: OutcomeState[]; benefits?: Benefits } = {}) {
   return render(
-    <ComparisonPanel outcomes={overrides.outcomes ?? outcomes} benefits={benefits} view="national" stale={overrides.stale ?? false} demo={overrides.demo ?? false} />,
+    <ComparisonPanel
+      outcomes={overrides.outcomes ?? outcomes}
+      benefits={overrides.benefits ?? benefits}
+      view="national"
+    />,
   );
 }
 
-function headerTexts(): string[] {
+function headerCells(): HTMLElement[] {
   const head = screen.getByRole('table').querySelector('thead') as HTMLElement;
-  return within(head).getAllByRole('columnheader').map((cell) => cell.textContent ?? '');
+  return within(head).getAllByRole('columnheader');
 }
 
 function card(label: string): HTMLElement {
   return screen.getByText(label, { selector: 'dt' }).closest('.established-card') as HTMLElement;
 }
 
+function row(label: string): HTMLElement {
+  return screen.getByRole('rowheader', { name: label }).closest('tr') as HTMLElement;
+}
+
+const missing = (unit: string, reason: string): Established => (
+  { value: null, lower: null, upper: null, unit, method: null, source: null, notEstablishedReason: reason }
+);
+
+const noBenefits: Benefits = {
+  avoidedDispatchDownMwh: missing('MWh', 'No validated outcome evidence.'),
+  siteRiskProbability: missing('%', 'No validated site model.'),
+  siteRiskExpectedMwh: missing('MWh', 'No validated site model.'),
+  nationalContext: null,
+  netSystemResourceCostEur: { ...missing('EUR', 'No prices.'), perspective: null },
+  grossMarketOpportunityEur: missing('EUR', 'No route.'),
+  netFinancialValueEur: { ...missing('EUR', 'No revenue.'), perspective: null },
+  carbonEffectTco2e: missing('tCO2e', 'Not modelled.'),
+};
+
 describe('ComparisonPanel', () => {
-  it('shows evaluated plan columns in order and marks the baseline', () => {
+  it('shows the four plan columns in order and marks the baseline', () => {
     renderPanel();
-    const headers = headerTexts().slice(1);
-    expect(headers).toHaveLength(3);
+    expect(screen.getByRole('heading', { level: 2, name: 'Compare outcomes' })).toBeInTheDocument();
+    const headers = headerCells().slice(1).map((cell) => cell.textContent ?? '');
+    expect(headers).toHaveLength(4);
     expect(headers[0]).toMatch(/^Current plan/);
     expect(headers[1]).toMatch(/^No new instruction/);
     expect(headers[1]).toMatch(/Baseline for claimed improvements/);
     expect(headers[2]).toMatch(/^Proposed plan/);
-    expect(headers.join(' ')).not.toMatch(/Operator alternative/);
+    expect(headers[3]).toMatch(/^Operator alternative/);
   });
 
-  it('omits an unevaluated operator alternative', () => {
+  it('shows no reasons or footnotes for missing values', () => {
     renderPanel();
-    expect(screen.queryByRole('columnheader', { name: /Operator alternative/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Notes' })).not.toBeInTheDocument();
+    expect(document.querySelector('sup')).toBeNull();
+    for (const reason of ['No operator alternative entered.', 'No new instruction.', 'No curtailment model for this window.']) {
+      expect(screen.queryByText(reason)).not.toBeInTheDocument();
+    }
+    // A column with no plan shows a dash in each cell and nothing under its header.
+    expect(headerCells()[4]).toHaveTextContent(/^Operator alternative$/);
+    expect(within(row('Safety result')).getAllByText('—')).toHaveLength(1);
   });
 
   it('never shows a missing value as zero MWh', () => {
     renderPanel();
     expect(screen.queryByText(/^0 MWh/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('rowheader', { name: 'Curtailed (MWh)' })).not.toBeInTheDocument();
+    const curtailed = row('Curtailed (MWh)');
+    expect(within(curtailed).getAllByText('Not established')).toHaveLength(4);
   });
 
-  it('shows constrained energy without an invented curtailed value', () => {
+  it('keeps constrained and curtailed as separate rows', () => {
     renderPanel();
-    const constrained = screen.getByRole('rowheader', { name: 'Constrained (MWh)' }).closest('tr') as HTMLElement;
-    expect(constrained).toBeInTheDocument();
+    const constrained = row('Constrained (MWh)');
+    expect(constrained).not.toBe(row('Curtailed (MWh)'));
     expect(within(constrained).getByText('62 MWh')).toBeInTheDocument();
     expect(within(constrained).getByText('(40–90)')).toBeInTheDocument();
-  });
-
-  it('keeps an explicit zero when curtailment is actually supplied', () => {
-    const withZero = outcomes.map((outcome) => outcome.column === 'current'
-      ? { ...outcome, curtailedMwh: { ...outcome.curtailedMwh, value: 0, source: 'Reviewed source' } }
-      : outcome);
-    renderPanel({ outcomes: withZero });
-    const curtailed = screen.getByRole('rowheader', { name: 'Curtailed (MWh)' }).closest('tr') as HTMLElement;
-    expect(within(curtailed).getByText('0 MWh')).toBeInTheDocument();
+    expect(within(constrained).getAllByText('Planning-case replay · Demonstration')).toHaveLength(3);
   });
 
   it('puts safety rows above dispatch-down rows', () => {
@@ -68,34 +92,45 @@ describe('ComparisonPanel', () => {
     expect(rows.indexOf('Time to breach (min)')).toBeLessThan(rows.indexOf('Constrained (MWh)'));
   });
 
-  it('does not let a plan with unknown safety claim its benefits', () => {
+  it('names both days for a multi-day window', () => {
+    const day = outcomes.map((outcome) => ({ ...outcome, windowStart: '2026-09-29T16:30:00Z', windowEnd: '2026-09-30T16:30:00Z' }));
+    renderPanel({ outcomes: day });
+    const meta = document.querySelector('.panel-meta') as HTMLElement;
+    expect(meta).toHaveTextContent(/29 Sept.*30 Sept/);
+    expect(meta).not.toHaveTextContent('UTC UTC');
+  });
+
+  it('greys numbers that cannot be claimed without a cannot-claim message', () => {
     renderPanel();
+    expect(screen.queryByText(/Cannot be claimed/)).not.toBeInTheDocument();
     const avoided = card('Avoided dispatch-down');
-    expect(avoided).toHaveTextContent('Cannot be claimed: required safety check is Unknown');
-    // The number stays visible as context.
     expect(within(avoided).getByText('40 MWh')).toBeInTheDocument();
-    expect(avoided).toHaveTextContent('A MW × time upper bound is not proven saved energy.');
+    expect(avoided).toHaveClass('established-card-greyed');
+    expect(card('Carbon effect')).not.toHaveClass('established-card-greyed');
+  });
+
+  it('collapses benefits to one line when nothing is established and safety is unknown', () => {
+    renderPanel({ benefits: noBenefits });
+    expect(screen.getByText(/^Benefits not established\./)).toHaveTextContent('required safety result is Unknown');
+    expect(screen.queryByText(/Cannot be claimed/)).not.toBeInTheDocument();
+    const details = screen.getByText('Show benefit details').closest('details') as HTMLDetailsElement;
+    expect(details).not.toHaveAttribute('open');
+    expect(within(details).getByText('Avoided dispatch-down', { selector: 'dt' })).toBeInTheDocument();
   });
 
   it('allows benefits once the proposed plan passes safety', () => {
     const passing = outcomes.map((outcome) => (outcome.column === 'proposed' ? { ...outcome, safety: 'pass' as const } : outcome));
     renderPanel({ outcomes: passing });
-    expect(card('Avoided dispatch-down')).not.toHaveTextContent('Cannot be claimed');
+    expect(screen.queryByText(/Cannot be claimed/)).not.toBeInTheDocument();
+    expect(card('Avoided dispatch-down')).not.toHaveClass('established-card-greyed');
   });
 
-  it('shows available national context without empty site and money cards', () => {
+  it('labels the national estimate as context when site risk is not established', () => {
     renderPanel();
-    expect(screen.queryByText('Site dispatch-down risk')).not.toBeInTheDocument();
-    expect(screen.getByText('National context only, not a site outcome')).toBeInTheDocument();
-    expect(screen.queryByText('Gross market opportunity')).not.toBeInTheDocument();
-  });
-
-  it('uses one demo caveat and leaves detailed context in the evidence drawer', () => {
-    renderPanel({ demo: true });
-    expect(screen.getByText('Modeled outcome context')).toBeInTheDocument();
-    expect(screen.getByText('Demo estimate only. Safety is not approved for this action.')).toBeInTheDocument();
-    expect(card('Modeled dispatch-down difference')).not.toHaveTextContent('Cannot be claimed');
-    expect(screen.queryByText('National context only, not a site outcome')).not.toBeInTheDocument();
+    const site = card('Site dispatch-down risk');
+    expect(site).toHaveTextContent('Not established');
+    expect(site).toHaveTextContent('National context only, not a site outcome');
+    expect(card('Gross market opportunity')).toHaveTextContent('Estimate, not TSO profit.');
   });
 
   it('warns when a column uses a different window', () => {
@@ -106,9 +141,9 @@ describe('ComparisonPanel', () => {
     expect(alert).toHaveTextContent('not comparable');
   });
 
-  it('has no window warning when all columns match, and shows the stale note', () => {
-    renderPanel({ stale: true });
+  it('has no window warning when all columns match', () => {
+    renderPanel();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(/Rerun the assessment/);
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });

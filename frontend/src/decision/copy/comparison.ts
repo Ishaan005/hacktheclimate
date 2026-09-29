@@ -16,10 +16,10 @@ export const COMPARISON_COPY = {
   title: 'Compare outcomes',
   measure: 'Measure',
   baselineTag: 'Baseline for claimed improvements',
-  window: (range: string) => `All columns cover ${range} UTC, including instructions already in force.`,
+  // formatWindow already ends in UTC.
+  window: (range: string) => `All columns cover ${range}, including instructions already in force`,
   mismatch: (columns: string) =>
     `Window mismatch: ${columns} use a different time window or leave out active instructions. Those columns are not comparable.`,
-  notEvaluated: 'Not evaluated',
   safetyGroup: 'Safety and response',
   dispatchDownGroup: 'Remaining dispatch-down',
   rows: {
@@ -31,7 +31,7 @@ export const COMPARISON_COPY = {
     constrained: 'Constrained (MWh)',
     curtailed: 'Curtailed (MWh)',
   },
-  noReason: 'No reason given.',
+  unavailableCell: 'Not established: column not evaluated',
   method: 'Method',
   source: 'Source',
   range: 'Range',
@@ -39,9 +39,10 @@ export const COMPARISON_COPY = {
 
 export const BENEFIT_COPY = {
   title: 'Benefits of the proposed plan',
-  cannotClaim: (result: string) => `Cannot be claimed: required safety check is ${result}`,
-  contextOnly: 'Shown as context only.',
-  cannotClaimNote: 'A plan with a failed or unknown safety check cannot win on benefits.',
+  noneEstablished: (result: string) =>
+    `Benefits not established. The proposed plan's required safety result is ${result}, so no benefit can be claimed.`,
+  noneEstablishedNoPlan: 'Benefits not established. No proposed plan has been assessed, so no benefit can be claimed.',
+  showDetails: 'Show benefit details',
   avoided: 'Avoided dispatch-down',
   avoidedDetail: 'No new instruction minus proposed plan.',
   avoidedNote: 'A MW × time upper bound is not proven saved energy.',

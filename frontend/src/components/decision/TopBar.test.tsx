@@ -42,7 +42,21 @@ describe('top bar', () => {
     expect(screen.getByText(site.limitingRoute)).toBeInTheDocument();
   });
 
-  it('labels the fixture as a historical demonstration, never live', () => {
+  it('keeps the view toggle and the status fields in one band, with no spacer', () => {
+    const { container } = render(
+      <TopBar context={fixtureAssessment.context} view="national" siteId={null} validated={false} onViewChange={vi.fn()} />,
+    );
+    const toggle = screen.getByRole('group', { name: TOP_BAR_COPY.viewLegend });
+    const fields = screen.getByText(TOP_BAR_COPY.window).closest('dl') as HTMLElement;
+    expect(toggle.parentElement).toBe(fields.parentElement);
+    // Nothing else in the header: no empty row under the toggle.
+    const header = container.firstElementChild as HTMLElement;
+    expect(header.children).toHaveLength(1);
+    // View hints are descriptions, not visible text lines.
+    expect(screen.getByRole('radio', { name: TOP_BAR_COPY.viewLabel.national })).toHaveAccessibleDescription(TOP_BAR_COPY.viewHint.national);
+  });
+
+  it('keeps the demonstration header focused on location and time', () => {
     const { container } = render(
       <TopBar
         context={fixtureAssessment.context}
@@ -52,9 +66,8 @@ describe('top bar', () => {
         onViewChange={vi.fn()}
       />,
     );
-    const badge = container.querySelector('.source-badge');
-    expect(badge).toHaveTextContent(SOURCE_KIND_LABEL.historical_demo);
-    expect(badge?.textContent).not.toMatch(/live/i);
+    expect(container.querySelector('.source-badge')).toBeNull();
+    expect(within(container).queryByText(SOURCE_KIND_LABEL.historical_demo)).toBeNull();
     expect(within(container).queryByText(/^Live/)).toBeNull();
     expect(within(container).queryByText(TOP_BAR_COPY.dataStatus)).not.toBeInTheDocument();
     expect(within(container).getByText('Assessment time')).toBeInTheDocument();
@@ -82,7 +95,7 @@ describe('source badge', () => {
     const { container } = render(<SourceBadge kind="live" validated={false} />);
     const badge = container.firstElementChild as HTMLElement;
     expect(validatedText).toBe(SOURCE_KIND_LABEL.live);
-    expect(badge).toHaveTextContent(TOP_BAR_COPY.liveNotValidated);
+    expect(badge).toHaveTextContent(TOP_BAR_COPY.liveFeed);
     expect(badge.textContent).not.toBe(validatedText);
     expect(badge.className).not.toBe(validatedClass);
     expect(badge).not.toHaveClass('source-badge-live');

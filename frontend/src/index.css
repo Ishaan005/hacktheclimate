@@ -135,6 +135,9 @@ code {
 }
 
 .table-scroll {
+  /* Positioned so visually hidden (absolute) text inside the table stays
+     inside the scroll area instead of widening the page. */
+  position: relative;
   overflow-x: auto;
 }
 
@@ -292,6 +295,56 @@ thead th {
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
+}
+
+/* Panel anatomy (DesignersGuide: title row, optional chip, content,
+   metadata). Every top-level workspace section uses these. */
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-12);
+  margin-bottom: var(--space-12);
+}
+
+.panel-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-18);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.panel-meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+}
+
+.panel-section-title {
+  margin: var(--space-16) 0 var(--space-8);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Disclosure summary used for secondary detail (DesignersGuide:
+   progressive disclosure). */
+.disclosure > summary {
+  width: fit-content;
+  padding: var(--space-4) 0;
+  color: var(--color-accent);
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.disclosure > summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .card-kicker {

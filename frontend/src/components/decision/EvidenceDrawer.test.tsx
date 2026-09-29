@@ -6,7 +6,7 @@ import EvidenceDrawer from './EvidenceDrawer';
 const { evidence, edits, validated, context } = fixtureAssessment;
 
 function renderDrawer() {
-  return render(<EvidenceDrawer evidence={evidence} edits={edits} validated={validated} sourceKind={context.sourceKind} nationalContext={fixtureAssessment.benefits.nationalContext} />);
+  return render(<EvidenceDrawer evidence={evidence} edits={edits} validated={validated} sourceKind={context.sourceKind} />);
 }
 
 describe('EvidenceDrawer', () => {
@@ -14,6 +14,7 @@ describe('EvidenceDrawer', () => {
     renderDrawer();
     const details = screen.getByText('Show the evidence').closest('details') as HTMLDetailsElement;
     expect(details).not.toHaveAttribute('open');
+    expect(screen.getByText('Show the evidence')).toHaveClass('panel-title');
   });
 
   it('lists the audit ID, rule version and why an action was rejected', () => {
@@ -31,8 +32,7 @@ describe('EvidenceDrawer', () => {
     expect(failureRow).toHaveTextContent('Edited by operator');
     expect(screen.getByText('SCADA', { exact: false }).closest('li')).toHaveTextContent('Missing');
     expect(screen.getByText('Historical demonstration')).toBeInTheDocument();
-    expect(screen.getByText(/Not a validated assessment/)).toBeInTheDocument();
+    expect(screen.queryByText(/validated/i)).toBeNull();
     expect(screen.queryByText('No operator edits.')).not.toBeInTheDocument();
-    expect(screen.getByText('National forecast context')).toBeInTheDocument();
   });
 });

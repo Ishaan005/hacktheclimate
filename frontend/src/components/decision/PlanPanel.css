@@ -4,52 +4,30 @@
   container-type: inline-size;
   display: grid;
   gap: var(--space-16);
-  min-width: 0;
-  padding: var(--space-16) var(--space-20);
-  border: 1px solid var(--color-border-strong);
-  background: var(--color-surface);
+  align-content: start;
 }
 
-.plan-panel-header h2 {
-  font-size: var(--font-size-20);
+.plan-panel-header {
+  align-items: flex-start;
+  margin-bottom: 0;
 }
 
 .plan-no-send {
   margin: var(--space-4) 0 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-13);
-}
-
-.plan-stale {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-12);
-  padding: var(--space-12) var(--space-16);
-  border: 1px solid var(--color-warning);
-  border-radius: var(--radius-sm);
-  background: var(--color-warning-soft);
-  color: var(--color-warning-text);
-  font-weight: var(--font-weight-semibold);
-}
-
-.plan-stale p {
-  margin: 0;
 }
 
 .plan-section {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-12);
   min-width: 0;
 }
 
 .plan-section-alternative {
   padding-top: var(--space-16);
-  border-top: 1px solid var(--color-border-strong);
+  border-top: 1px solid var(--color-border);
 }
 
-.plan-section .card-kicker {
+.plan-section .panel-section-title {
   margin: 0;
 }
 
@@ -69,8 +47,18 @@
 }
 
 .plan-label-reason {
+  margin: var(--space-2) 0 0;
   color: var(--color-text-muted);
+  font-size: var(--font-size-14);
 }
+
+.plan-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-14);
+}
+
+/* ---- Step cards: instruction, then a compact fields grid ---- */
 
 .plan-steps {
   display: grid;
@@ -80,6 +68,8 @@
   list-style: none;
 }
 
+/* Neutral edge for direct or confirmed steps; amber until accepted or
+   cleared; red when refused. */
 .plan-step {
   display: grid;
   gap: var(--space-12);
@@ -91,17 +81,34 @@
   background: var(--color-surface);
 }
 
-.plan-step-main {
-  border-left-color: var(--color-accent);
+.plan-step-conditional {
+  border-left-color: var(--color-warning);
+}
+
+.plan-step-refused {
+  border-left-color: var(--color-danger);
 }
 
 .plan-step-editable {
   background: var(--color-surface-muted);
 }
 
-.plan-step-head {
+.plan-step-instruction {
   margin: 0;
-  font-size: var(--font-size-14);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-default);
+}
+
+.plan-step-meta {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-regular);
+}
+
+.plan-step-bar .plan-step-meta {
+  margin: 0;
   font-weight: var(--font-weight-semibold);
 }
 
@@ -113,25 +120,36 @@
   gap: var(--space-8);
 }
 
-.plan-field-wide {
-  grid-column: 1 / -1;
+.plan-step-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8) var(--space-16);
 }
 
-.plan-instruction {
-  font-size: var(--font-size-16);
+.plan-step-fields dt {
+  font-size: var(--font-size-13);
 }
 
-.plan-permission-pending,
-.plan-permission-unknown {
-  color: var(--color-warning-text);
+.plan-step-fields dd {
+  font-variant-numeric: tabular-nums;
 }
 
-.plan-permission-refused {
-  color: var(--color-danger);
+.plan-field-permission {
+  grid-column: span 2;
 }
 
-.plan-permission-confirmed {
-  color: var(--color-success);
+/* Party names can be long, so this chip wraps. */
+.plan-permission-chip {
+  white-space: normal;
+}
+
+@container (max-width: 420px) {
+  .plan-step-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .plan-field-permission {
+    grid-column: 1 / -1;
+  }
 }
 
 .plan-step-links {
@@ -152,6 +170,12 @@
   color: var(--color-text-muted);
 }
 
+/* ---- Operator alternative editing ---- */
+
+.plan-field-wide {
+  grid-column: 1 / -1;
+}
+
 .plan-edit-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -162,8 +186,31 @@
   resize: vertical;
 }
 
+/* Remove and Discard: quiet, but clearly not a confirm action. */
+.plan-button-remove {
+  color: var(--color-danger);
+}
+
+.plan-button-remove:hover {
+  background: var(--color-danger-soft);
+}
+
 .plan-actions {
   display: grid;
   justify-items: start;
   gap: var(--space-4);
+}
+
+.plan-build-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-4);
+}
+
+.plan-build-row .input {
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 360px;
 }

@@ -77,7 +77,8 @@ export type SituationFact = {
   unit: string | null;
   source: string | null;
   timestamp: string | null;
-  origin: FactOrigin;
+  // Null when nothing supplied the fact.
+  origin: FactOrigin | null;
   state: DataStatus;
   // Which family table this row belongs to; 'general' rows show for all.
   family: ScenarioFamily | 'general';

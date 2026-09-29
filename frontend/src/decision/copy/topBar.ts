@@ -24,6 +24,7 @@ export const TOP_BAR_COPY = {
   noAssessment: 'No assessment yet',
   noSite: 'No site selected',
   siteAllIslandNote: 'All-island limits that affect this site still apply. The safety panel shows them.',
-  // Live feed that the backend has not validated. Never the same as Live.
-  liveNotValidated: 'Live — not validated',
+  // A live feed without a full assessment keeps its own label and tone, so it
+  // never carries the same badge as a fully assessed live result.
+  liveFeed: 'Live feed',
 };

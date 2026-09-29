@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { fromBackendAssessment, toBackendRequest } from './backend';
+import { describe, expect, it, vi } from 'vitest';
+import { fromBackendAssessment, label, operatorReason, toBackendRequest } from './backend';
 import type { BackendAssessment } from './backend';
 import type { AssessmentRequest } from './api';
 
@@ -110,7 +110,7 @@ describe('backend workspace adapter', () => {
     expect(assessment.validated).toBe(false);
     expect(assessment.benefits.nationalContext).toContain('12.5 MWh per half-hour');
     expect(assessment.facts.find((fact) => fact.id === 'planning_rate_a_mva')).toMatchObject({
-      label: 'Planning case rate A (MVA proxy)', value: 55, origin: 'planning', state: 'modeled',
+      label: 'Rate A (MVA proxy)', value: 55, origin: 'planning', state: 'modeled',
     });
     expect(assessment.overall.result).toBe('fail');
     expect(assessment.alternative?.label).toBe('unsafe');
@@ -123,5 +123,23 @@ describe('backend workspace adapter', () => {
     expect(assessment.outcomes.every((item) => item.windowStart === '2026-09-29T15:30:00Z')).toBe(true);
     expect(assessment.benefits.avoidedDispatchDownMwh.value).toBeNull();
     expect(assessment.evidence.auditId).toBeNull();
+  });
+});
+
+describe('operator-facing text', () => {
+  it('turns backend field IDs into readable labels with units', () => {
+    expect(label('demand_mw')).toBe('Demand (MW)');
+    expect(label('wind_generation_mw')).toBe('Wind generation (MW)');
+    expect(label('all_island_snsp')).toBe('All-island SNSP');
+    expect(label('rocof_and_stability')).toBe('RoCoF and stability');
+    expect(label('planning_min_generation')).toBe('Minimum generation');
+    expect(label('snsp_ratio_pct')).toBe('All-island SNSP');
+  });
+
+  it('keeps file paths and exception text off the screen', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(operatorReason("Planning evaluation unavailable: [Errno 2] No such file or directory: '/Users/x/data.json'"))
+      .toBe('Planning-case inputs are not available on this server.');
+    expect(operatorReason('Operational assessment is not connected')).toBe('Operational assessment is not connected');
   });
 });

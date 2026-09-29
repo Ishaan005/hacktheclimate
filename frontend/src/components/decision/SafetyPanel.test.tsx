@@ -1,35 +1,78 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { SAFETY_COPY } from '../../decision/copy/safety';
 import { STALE_NOTE } from '../../decision/copy/shared';
 import { fixtureAssessment } from '../../decision/fixture';
-import type { Assessment, ViewMode } from '../../decision/types';
+import type { Assessment, SafetyCheck, ViewMode } from '../../decision/types';
 import SafetyPanel from './SafetyPanel';
 
-function renderPanel(assessment: Assessment = fixtureAssessment, view: ViewMode = 'national', stale = false) {
+function renderPanel(assessment: Assessment = fixtureAssessment, view: ViewMode = 'national') {
   return render(
-    <SafetyPanel assessment={assessment} overall={assessment.overall} plan={assessment.proposed} view={view} stale={stale} />,
+    <SafetyPanel assessment={assessment} overall={assessment.overall} plan={assessment.proposed} view={view} />,
   );
 }
 
 function row(container: HTMLElement, checkId: string): HTMLElement {
-  const found = container.querySelector<HTMLElement>(`tr[data-check-id="${checkId}"]`);
+  const found = container.querySelector<HTMLElement>(`li[data-check-id="${checkId}"]`);
   if (!found) throw new Error(`No row for ${checkId}`);
   return found;
 }
 
+function unknownCheck(id: string, reason: string): SafetyCheck {
+  return {
+    id, label: `Check ${id}`, family: 'transmission', value: null, limit: null, margin: null,
+    worstTime: null, worstFailure: null, source: null, result: 'unknown', reason,
+  };
+}
+
 describe('safety panel', () => {
-  it('shows Unknown without repeating empty evidence fields in the main panel', () => {
-    renderPanel(fixtureAssessment, 'national', true);
-    const overall = screen.getByText(SAFETY_COPY.overallLabel, { selector: '.safety-overall-label' }).closest('.safety-overall') as HTMLElement;
-    expect(within(overall).getByText('Unknown')).toBeInTheDocument();
-    expect(within(overall).queryByText(SAFETY_COPY.missingEvidence)).not.toBeInTheDocument();
-    expect(within(overall).getByText(STALE_NOTE)).toBeInTheDocument();
-    expect(within(overall).getByText('Planning result only. Operational safety still needs verification.')).toBeInTheDocument();
-    expect(within(overall).queryByText(SAFETY_COPY.notValidated)).not.toBeInTheDocument();
-    const details = within(overall).getByText('Why safety is Unknown').closest('details');
-    expect(details).not.toHaveAttribute('open');
-    expect(within(details as HTMLElement).getByText('Actual flow on limiting route')).toBeInTheDocument();
+  it('shows the overall result in the header with its reason and no evidence list or validation warning', () => {
+    renderPanel(fixtureAssessment, 'national');
+    const panel = screen.getByRole('region', { name: SAFETY_COPY.title });
+    const header = within(panel).getByRole('heading', { level: 2, name: SAFETY_COPY.title }).parentElement as HTMLElement;
+    expect(within(header).getByText('Unknown')).toBeInTheDocument();
+    expect(within(panel).getByText(fixtureAssessment.overall.reason)).toBeInTheDocument();
+    expect(within(panel).queryByText(STALE_NOTE)).not.toBeInTheDocument();
+    for (const item of fixtureAssessment.overall.missingEvidence) {
+      expect(within(panel).queryByText(item)).toBeNull();
+    }
+    expect(panel.textContent).not.toMatch(/validated/i);
+  });
+
+  it('displays the overall result exactly as given', () => {
+    render(
+      <SafetyPanel
+        assessment={fixtureAssessment}
+        overall={{ result: 'fail', reason: 'Given by the caller.', missingEvidence: [] }}
+        plan={null}
+        view="national"
+      />,
+    );
+    const header = screen.getByRole('heading', { level: 2, name: SAFETY_COPY.title }).parentElement as HTMLElement;
+    expect(within(header).getByText('Fail')).toBeInTheDocument();
+    expect(screen.getByText('Given by the caller.')).toBeInTheDocument();
+    expect(screen.getByText(SAFETY_COPY.noPlan)).toBeInTheDocument();
+  });
+
+  it('shows one constraint family at a time from a menu that states every family result', () => {
+    const { container } = renderPanel();
+    const menu = screen.getByRole('combobox', { name: SAFETY_COPY.familyMenuLabel });
+    const options = within(menu).getAllByRole('option').map((option) => option.textContent);
+    expect(options).toEqual(['Transmission constraint (1 unknown, 2 pass)', 'SNSP (1 unknown, 1 pass)']);
+    expect(container.querySelector('li[data-check-id="fc-flow"]')).not.toBeNull();
+    expect(container.querySelector('li[data-check-id="fc-snsp"]')).toBeNull();
+    fireEvent.change(menu, { target: { value: 'snsp' } });
+    expect(container.querySelector('li[data-check-id="fc-snsp"]')).not.toBeNull();
+    expect(container.querySelector('li[data-check-id="fc-flow"]')).toBeNull();
+  });
+
+  it('opens on the first family with a failed check', () => {
+    const { container } = renderPanel({
+      ...fixtureAssessment,
+      familyChecks: fixtureAssessment.familyChecks.map((check) => (check.id === 'fc-snsp' ? { ...check, result: 'fail' } : check)),
+    });
+    expect(screen.getByRole('combobox', { name: SAFETY_COPY.familyMenuLabel })).toHaveValue('snsp');
+    expect(container.querySelector('li[data-check-id="fc-snsp"]')).not.toBeNull();
   });
 
   it('shows Fail on a failing family check', () => {
@@ -40,10 +83,47 @@ describe('safety panel', () => {
     expect(within(row(container, 'fc-flow')).getByText('Fail')).toBeInTheDocument();
   });
 
+  it('sorts fail rows before unknown and pass within a family', () => {
+    const { container } = renderPanel({
+      ...fixtureAssessment,
+      familyChecks: fixtureAssessment.familyChecks.map((check) => (check.id === 'fc-relief' ? { ...check, result: 'fail' } : check)),
+    });
+    const family = container.querySelector('[data-family="transmission"]') as HTMLElement;
+    const ids = [...family.querySelectorAll('li[data-check-id]')].map((item) => item.getAttribute('data-check-id'));
+    expect(ids).toEqual(['fc-relief', 'fc-n1', 'fc-flow']);
+  });
+
   it('shows the worst credible failure for transmission checks', () => {
     const { container } = renderPanel();
-    const cell = row(container, 'fc-n1').querySelector(`td[data-label="${SAFETY_COPY.columns.worstFailure}"]`);
-    expect(cell).toHaveTextContent('Flagford–Srananagh 220 kV');
+    const failure = row(container, 'fc-n1').querySelector('[data-field="worstFailure"]');
+    expect(failure).toHaveTextContent(SAFETY_COPY.fields.worstFailure);
+    expect(failure).toHaveTextContent('Flagford–Srananagh 220 kV');
+  });
+
+  it('omits null fields and never renders them as 0', () => {
+    const { container } = renderPanel();
+    const partial = row(container, 'fc-n1');
+    expect(partial.querySelector('[data-field="value"]')).toBeNull();
+    expect(partial.querySelector('[data-field="margin"]')).toBeNull();
+    expect(partial.querySelector('[data-field="limit"]')).toHaveTextContent('431 MVA');
+    fireEvent.change(screen.getByRole('combobox', { name: SAFETY_COPY.familyMenuLabel }), { target: { value: 'snsp' } });
+    const empty = row(container, 'fc-stability');
+    expect(empty.querySelector('.safety-check-figures')).toBeNull();
+    expect(empty.querySelector('.safety-check-meta')).toBeNull();
+    expect(empty).not.toHaveTextContent('Not available');
+    expect(empty).not.toHaveTextContent('0');
+    expect(within(empty).getByText('Unknown')).toBeInTheDocument();
+  });
+
+  it('states a shared unknown reason once and keeps every check listed', () => {
+    const reason = 'Validated assessment not connected';
+    const shared = ['x1', 'x2', 'x3'].map((id) => unknownCheck(id, reason));
+    const { container } = renderPanel({ ...fixtureAssessment, familyChecks: [...fixtureAssessment.familyChecks, ...shared] });
+    expect(screen.getAllByText(new RegExp(reason))).toHaveLength(1);
+    expect(screen.getByText(`${SAFETY_COPY.sharedReason(3)} ${reason}`)).toBeInTheDocument();
+    for (const check of shared) {
+      expect(within(row(container, check.id)).getByText('Unknown')).toBeInTheDocument();
+    }
   });
 
   it('shows all-island limits in site view only', () => {
@@ -64,21 +144,14 @@ describe('safety panel', () => {
       actionChecks: [range, match, ...rest, { ...match, id: 'ac-other-plan', stepId: 'step-9', label: 'Check for another plan' }],
     };
     const { container } = renderPanel(assessment);
-    expect(container.querySelector('tr[data-check-id="ac-other-plan"]')).toBeNull();
+    expect(container.querySelector('li[data-check-id="ac-other-plan"]')).toBeNull();
     expect(screen.queryByText('Check for another plan')).toBeNull();
     expect(container.querySelectorAll('details.safety-step')).toHaveLength(2);
     const step = container.querySelector('details[data-step-id="step-1"]') as HTMLElement;
-    const rows = step.querySelectorAll('tbody tr');
+    const rows = step.querySelectorAll('li[data-check-id]');
     expect(rows[0]).toHaveAttribute('data-check-id', 'ac-redispatch-match');
+    expect(within(rows[0] as HTMLElement).getByText(SAFETY_COPY.goNoGo)).toBeInTheDocument();
     expect(rows[1]).toHaveAttribute('data-check-id', 'ac-redispatch-range');
     expect(screen.getByText(SAFETY_COPY.actionChecksNote)).toBeInTheDocument();
-  });
-
-  it('uses a neutral dash for a partial check and omits an entirely empty check', () => {
-    const { container } = renderPanel();
-    const cell = row(container, 'fc-n1').querySelector(`td[data-label="${SAFETY_COPY.columns.value}"]`);
-    expect(cell).toHaveTextContent('—');
-    expect(cell).not.toHaveTextContent('0');
-    expect(container.querySelector('tr[data-check-id="fc-stability"]')).toBeNull();
   });
 });

@@ -290,7 +290,7 @@ def _check(check_id: str, family: str, reason: str, *, action_step_id: str | Non
 
 
 def _family_check(check_id: str, family: str, facts: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    check = _check(check_id, family, "Validated operational assessment and effective rule are not connected")
+    check = _check(check_id, family, "Operational assessment and effective rule are not connected")
     pair = CHECK_FACTS.get(check_id)
     if pair is None:
         return check
@@ -415,7 +415,7 @@ def _refresh_state_safety(state: dict[str, Any]) -> None:
         label = "Actionable" if state["permission_state"] == "confirmed" else "Conditional"
     else:
         status = "UNKNOWN"
-        reason = "Required validated safety checks are unavailable"
+        reason = "Required safety checks are unavailable"
         label = "Insufficient evidence"
     state["safety"] = {
         "status": status,
@@ -489,7 +489,7 @@ def _benefits() -> dict[str, Any]:
     return {name: {"value": None, "unit": "MWh" if name.endswith("mwh") else
                     "EUR" if name.endswith("eur") else "tCO2e" if name == "carbon_tco2e" else None,
                     "method": None, "uncertainty": None, "source": None,
-                    "reason": "Not established by validated case-level outcome evidence"}
+                    "reason": "Not established by case-level outcome evidence"}
             for name in names}
 
 
@@ -516,7 +516,7 @@ def _plan_state(name: str, plan: Plan, family_checks: list[dict[str, Any]],
         if "H2" in scenario_ids and step.action_id in {"GENERATOR_REDISPATCH", "UNIT_COMMITMENT"}:
             extras.append("unit_count_and_inertia_through_changeover")
         for check_id in extras:
-            checks.append(_check(check_id, "action", "Scenario-specific validated evidence is not connected", action_step_id=step.step_id))
+            checks.append(_check(check_id, "action", "Scenario-specific evidence is not connected", action_step_id=step.step_id))
         checks.append(_check("permission", "action",
                              "Permission denied" if step.permission == "denied" else
                              "Permission awaits acceptance" if step.permission == "pending" else
@@ -533,7 +533,7 @@ def _plan_state(name: str, plan: Plan, family_checks: list[dict[str, Any]],
                         "unknown" if any(step.permission == "unknown" for step in plan.steps) else "confirmed")
     return {"state": name, "window": window, "plan": plan.model_dump(mode="json"),
             "active_instructions": active_instructions, "permission_state": permission_state,
-            "safety": {"status": safety, "reason": "Required validated safety checks are unavailable" if safety == "UNKNOWN" else "A required check failed",
+            "safety": {"status": safety, "reason": "Required safety checks are unavailable" if safety == "UNKNOWN" else "A required check failed",
                        "missing_checks": [c["check_id"] for c in checks if c["status"] == "UNKNOWN"]},
             "plan_label": label, "checks": checks,
             "delivered_relief_mw": None, "response_time_seconds": None,

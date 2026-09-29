@@ -14,7 +14,6 @@ export const EVIDENCE_COPY = {
   summaryHint: 'Sources, versions, limits and reasons behind this result',
   sourceTitle: 'Data source',
   validated: 'Validated assessment.',
-  notValidated: 'Not a validated assessment. Do not rely on it for a live decision.',
   inputsTitle: 'Inputs used',
   inputColumns: { label: 'Input', source: 'Source', time: 'Time (UTC)', edited: 'Operator edit' },
   editedFlag: 'Edited by operator',

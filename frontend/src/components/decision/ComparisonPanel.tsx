@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { BENEFIT_COPY, COLUMN_LABEL, COLUMN_ORDER, COMPARISON_COPY } from '../../decision/copy/comparison';
-import { NOT_ESTABLISHED, RESULT_LABEL, STALE_NOTE } from '../../decision/copy/shared';
+import { NOT_ESTABLISHED, RESULT_LABEL } from '../../decision/copy/shared';
 import { canClaimBenefit, outcomeFor, windowMismatches } from '../../decision/rules';
-import type { Benefits, ComparisonColumn, Established, OutcomeState, SafetyResult, ViewMode } from '../../decision/types';
-import { formatDayTime, formatEur, formatTime, parseUtc } from '../../format';
+import type { Benefits, ComparisonColumn, Established, OutcomeState, ViewMode } from '../../decision/types';
+import { formatEur, formatWindow } from '../../format';
 import { ResultChip } from './ResultChip';
 import './ComparisonPanel.css';
 
@@ -26,17 +26,16 @@ function hasValue(value: Established): value is Established & { value: number } 
   return value.value !== null && Number.isFinite(value.value);
 }
 
-// Value, range and method; or Not established with the reason. Null is
-// never shown as zero.
-function EstablishedValue({ value }: { value: Established }) {
-  if (!hasValue(value)) {
-    return (
-      <>
-        <span className="established-value established-missing">{NOT_ESTABLISHED}</span>
-        <span className="established-note">{value.notEstablishedReason ?? COMPARISON_COPY.noReason}</span>
-      </>
-    );
-  }
+function Missing() {
+  return (
+    <span className="established-value">
+      <span className="established-missing">{NOT_ESTABLISHED}</span>
+    </span>
+  );
+}
+
+// Value with range and basis. Null is never shown as zero.
+function ValueWithBasis({ value, requireRange = false }: { value: Established & { value: number }; requireRange?: boolean }) {
   const range = value.lower !== null && value.upper !== null
     ? `(${formatBare(value.lower, value.unit)}–${formatBare(value.upper, value.unit)})`
     : null;
@@ -47,6 +46,7 @@ function EstablishedValue({ value }: { value: Established }) {
         {formatWithUnit(value.value, value.unit)}
         {range && <span className="established-range"> {range}</span>}
       </span>
+      {!range && requireRange && <span className="established-note">{COMPARISON_COPY.range}: {NOT_ESTABLISHED.toLowerCase()}</span>}
       {basis && <span className="established-note">{basis}</span>}
     </>
   );
@@ -58,26 +58,22 @@ type CardProps = {
   label: string;
   entries: CardEntry[];
   details?: string[];
-  // Set when the proposed plan's safety is not a pass: numbers stay visible,
-  // greyed, as context only.
-  blockedBy: SafetyResult | null;
+  // Numbers stay readable but faint: context only, not a claim.
+  greyed?: boolean;
+  requireRange?: boolean;
   children?: ReactNode;
 };
 
-export function EstablishedCard({ label, entries, details = [], blockedBy, children }: CardProps) {
+export function EstablishedCard({ label, entries, details = [], greyed = false, requireRange, children }: CardProps) {
   return (
-    <div className={`metric established-card${blockedBy ? ' established-card-blocked' : ''}`}>
-      <dt className="metric-label established-card-label">{label}</dt>
-      {blockedBy && (
-        <dd className="established-card-claim">
-          {BENEFIT_COPY.cannotClaim(RESULT_LABEL[blockedBy])}
-          <span className="established-note">{BENEFIT_COPY.contextOnly}</span>
-        </dd>
-      )}
+    <div className={`metric established-card${greyed ? ' established-card-greyed' : ''}`}>
+      <dt className="metric-label">{label}</dt>
       {entries.map((entry, index) => (
         <dd key={entry.name ?? index} className="established-card-entry">
           {entry.name && <span className="established-card-name">{entry.name}</span>}
-          <EstablishedValue value={entry.value} />
+          {hasValue(entry.value)
+            ? <ValueWithBasis value={entry.value} requireRange={requireRange} />
+            : <Missing />}
         </dd>
       ))}
       {children}
@@ -86,43 +82,67 @@ export function EstablishedCard({ label, entries, details = [], blockedBy, child
   );
 }
 
-type RowSpec = { label: string; hasData: (outcome: OutcomeState) => boolean; render: (outcome: OutcomeState) => ReactNode };
+// A row either reads an Established value or renders its own cell.
+type RowSpec = {
+  label: string;
+  value?: (outcome: OutcomeState) => Established;
+  render?: (outcome: OutcomeState) => ReactNode;
+};
 
 const SAFETY_ROWS: RowSpec[] = [
-  { label: COMPARISON_COPY.rows.safety, hasData: () => true, render: (outcome) => <ResultChip result={outcome.safety} prefix={`${COLUMN_LABEL[outcome.column]} safety result`} /> },
+  { label: COMPARISON_COPY.rows.safety, render: (outcome) => <ResultChip result={outcome.safety} prefix={`${COLUMN_LABEL[outcome.column]} safety result`} /> },
   {
     label: COMPARISON_COPY.rows.worstMargin,
-    hasData: (outcome) => outcome.worstMargin !== null,
     render: (outcome) => outcome.worstMargin
       ? <span className="established-value">{outcome.worstMargin}</span>
-      : <span className="established-value established-missing">{NOT_ESTABLISHED}</span>,
+      : <Missing />,
   },
-  { label: COMPARISON_COPY.rows.deliveredRelief, hasData: (outcome) => hasValue(outcome.deliveredReliefMw), render: (outcome) => <EstablishedValue value={outcome.deliveredReliefMw} /> },
-  { label: COMPARISON_COPY.rows.responseTime, hasData: (outcome) => hasValue(outcome.responseTimeMinutes), render: (outcome) => <EstablishedValue value={outcome.responseTimeMinutes} /> },
-  { label: COMPARISON_COPY.rows.timeToBreach, hasData: (outcome) => hasValue(outcome.timeToBreachMinutes), render: (outcome) => <EstablishedValue value={outcome.timeToBreachMinutes} /> },
+  { label: COMPARISON_COPY.rows.deliveredRelief, value: (outcome) => outcome.deliveredReliefMw },
+  { label: COMPARISON_COPY.rows.responseTime, value: (outcome) => outcome.responseTimeMinutes },
+  { label: COMPARISON_COPY.rows.timeToBreach, value: (outcome) => outcome.timeToBreachMinutes },
 ];
 
 // Constrained and curtailed stay separate rows: they are different causes.
 const DISPATCH_DOWN_ROWS: RowSpec[] = [
-  { label: COMPARISON_COPY.rows.constrained, hasData: (outcome) => hasValue(outcome.constrainedMwh), render: (outcome) => <EstablishedValue value={outcome.constrainedMwh} /> },
-  { label: COMPARISON_COPY.rows.curtailed, hasData: (outcome) => hasValue(outcome.curtailedMwh), render: (outcome) => <EstablishedValue value={outcome.curtailedMwh} /> },
+  { label: COMPARISON_COPY.rows.constrained, value: (outcome) => outcome.constrainedMwh },
+  { label: COMPARISON_COPY.rows.curtailed, value: (outcome) => outcome.curtailedMwh },
 ];
 
-function RowGroup({ title, rows, columns }: { title: string; rows: RowSpec[]; columns: OutcomeState[] }) {
-  if (!rows.length) return null;
+type Columns = (OutcomeState | undefined)[];
+
+type GroupProps = { title: string; rows: RowSpec[]; columns: Columns };
+
+function RowGroup({ title, rows, columns }: GroupProps) {
   return (
     <tbody>
       <tr className="comparison-group">
-        <th scope="colgroup" colSpan={columns.length + 1}>{title}</th>
+        <th scope="colgroup" colSpan={columns.length + 1} className="panel-section-title">{title}</th>
       </tr>
       {rows.map((row) => (
         <tr key={row.label}>
           <th scope="row">{row.label}</th>
-          {columns.map((outcome) => (
-            <td key={outcome.column} className={outcome.column === BASELINE ? 'comparison-baseline' : undefined}>
-              {row.hasData(outcome) ? row.render(outcome) : <span aria-label={NOT_ESTABLISHED}>—</span>}
-            </td>
-          ))}
+          {columns.map((outcome, index) => {
+            let cell: ReactNode;
+            if (!outcome?.available) {
+              // No plan in this column: a dash, not a value.
+              cell = (
+                <>
+                  <span className="established-missing comparison-dash" aria-hidden="true">—</span>
+                  <span className="visually-hidden">{NOT_ESTABLISHED}</span>
+                </>
+              );
+            } else if (row.value) {
+              const value = row.value(outcome);
+              cell = hasValue(value) ? <ValueWithBasis value={value} /> : <Missing />;
+            } else {
+              cell = row.render?.(outcome);
+            }
+            return (
+              <td key={COLUMN_ORDER[index]} className={COLUMN_ORDER[index] === BASELINE ? 'comparison-baseline' : undefined}>
+                {cell}
+              </td>
+            );
+          })}
         </tr>
       ))}
     </tbody>
@@ -133,121 +153,174 @@ type Props = {
   outcomes: OutcomeState[];
   benefits: Benefits;
   view: ViewMode;
-  stale: boolean;
   demo?: boolean;
 };
 
-// Four plan states over one window. Safety rows come first; benefit cards
+// Four plan states over one window. Safety rows come first; benefits
 // follow and cannot be claimed unless the proposed plan passes safety.
-function ComparisonPanel({ outcomes, benefits, view, stale, demo = false }: Props) {
-  const columns = COLUMN_ORDER.map((column) => outcomeFor(outcomes, column)).filter((outcome): outcome is OutcomeState => outcome?.available === true);
-  const reference = columns[0];
-  const mismatched = windowMismatches(columns);
+function ComparisonPanel({ outcomes, benefits, view, demo = false }: Props) {
+  const columns = COLUMN_ORDER.map((column) => outcomeFor(outcomes, column));
+  const reference = columns.find((outcome) => outcome?.available);
+  const mismatched = windowMismatches(outcomes);
+
   const proposed = outcomeFor(outcomes, 'proposed');
-  const blockedBy: SafetyResult | null = canClaimBenefit(proposed)
-    ? null
-    : proposed?.available && proposed.safety === 'fail' ? 'fail' : 'unknown';
+  const claimable = canClaimBenefit(proposed);
+  const blockedResult = RESULT_LABEL[proposed?.available && proposed.safety === 'fail' ? 'fail' : 'unknown'];
   const siteRisk = [benefits.siteRiskProbability, benefits.siteRiskExpectedMwh];
   const siteEstablished = siteRisk.some(hasValue);
-  const benefitAvailable = [benefits.avoidedDispatchDownMwh, ...siteRisk, benefits.netSystemResourceCostEur,
-    benefits.grossMarketOpportunityEur, benefits.netFinancialValueEur, benefits.carbonEffectTco2e].some(hasValue);
-  const safetyRows = SAFETY_ROWS.filter((row) => columns.some(row.hasData));
-  const dispatchRows = DISPATCH_DOWN_ROWS.filter((row) => columns.some(row.hasData));
-  const windowText = reference && parseUtc(reference.windowStart).toISOString().slice(0, 10) === parseUtc(reference.windowEnd).toISOString().slice(0, 10)
-    ? `${formatDayTime(reference.windowStart)}–${formatTime(reference.windowEnd)}`
-    : reference ? `${formatDayTime(reference.windowStart)} – ${formatDayTime(reference.windowEnd)}` : null;
+  const benefitValues = [
+    benefits.avoidedDispatchDownMwh,
+    ...siteRisk,
+    benefits.netSystemResourceCostEur,
+    benefits.grossMarketOpportunityEur,
+    benefits.netFinancialValueEur,
+    benefits.carbonEffectTco2e,
+  ];
+  const noneEstablished = !benefitValues.some(hasValue);
+  const collapsed = !claimable && noneEstablished;
+  // Only cards with a number are greyed; a missing value has nothing to grey.
+  const greyed = (...values: Established[]) => !claimable && values.some(hasValue);
 
-  if (!columns.length && !benefitAvailable && (!benefits.nationalContext || demo)) return null;
+  if (demo) {
+    const available = columns.filter((item): item is OutcomeState => item !== undefined && item.available);
+    const rows = [...SAFETY_ROWS, ...DISPATCH_DOWN_ROWS].filter((row) =>
+      row.value && available.some((item) => hasValue(row.value!(item))));
+    const metrics = [
+      [BENEFIT_COPY.avoided, benefits.avoidedDispatchDownMwh],
+      [BENEFIT_COPY.systemCost, benefits.netSystemResourceCostEur],
+      [BENEFIT_COPY.marketOpportunity, benefits.grossMarketOpportunityEur],
+      [BENEFIT_COPY.financialValue, benefits.netFinancialValueEur],
+      [BENEFIT_COPY.carbon, benefits.carbonEffectTco2e],
+    ] as const;
+    const knownMetrics = metrics.filter((entry): entry is readonly [string, Established & { value: number }] => hasValue(entry[1]));
+    if (!rows.length && !knownMetrics.length) return null;
+    return (
+      <section className="card comparison-panel" aria-labelledby="comparison-heading">
+        <div className="panel-header"><h2 id="comparison-heading" className="panel-title">{COMPARISON_COPY.title}</h2></div>
+        {rows.length > 0 && <div className="table-scroll"><table className="comparison-table">
+          <thead><tr><th scope="col">{COMPARISON_COPY.measure}</th>{available.map((item) =>
+            <th scope="col" key={item.column}>{COLUMN_LABEL[item.column]}</th>)}</tr></thead>
+          <tbody>{rows.map((row) => <tr key={row.label}>
+            <th scope="row">{row.label}</th>
+            {available.map((item) => <td key={item.column}>{row.value && hasValue(row.value(item))
+              ? formatWithUnit(row.value(item).value!, row.value(item).unit) : '—'}</td>)}
+          </tr>)}</tbody>
+        </table></div>}
+        {knownMetrics.length > 0 && <dl className="metrics comparison-benefits">
+          {knownMetrics.map(([name, value]) => <div className="metric established-card" key={name}>
+            <dt className="metric-label">{name}</dt><dd className="established-value">{formatWithUnit(value.value, value.unit)}</dd>
+          </div>)}
+        </dl>}
+      </section>
+    );
+  }
+
+  const cards = (
+    <dl className="metrics comparison-benefits">
+      <EstablishedCard
+        label={BENEFIT_COPY.avoided}
+        entries={[{ value: benefits.avoidedDispatchDownMwh }]}
+        details={[BENEFIT_COPY.avoidedDetail, BENEFIT_COPY.avoidedNote]}
+        greyed={greyed(benefits.avoidedDispatchDownMwh)}
+        requireRange
+      />
+      <EstablishedCard
+        label={BENEFIT_COPY.siteRisk}
+        entries={siteEstablished ? [
+          { name: BENEFIT_COPY.siteProbability, value: benefits.siteRiskProbability },
+          { name: BENEFIT_COPY.siteExpected, value: benefits.siteRiskExpectedMwh },
+        ] : []}
+        details={view === 'national' ? [BENEFIT_COPY.siteNationalView] : []}
+        greyed={greyed(...siteRisk)}
+      >
+        {!siteEstablished && (
+          <dd className="established-card-entry">
+            <Missing />
+          </dd>
+        )}
+        {!siteEstablished && benefits.nationalContext && (
+          <dd className="established-card-context">
+            <span className="established-card-name">{BENEFIT_COPY.nationalContext}</span>
+            {benefits.nationalContext}
+          </dd>
+        )}
+      </EstablishedCard>
+      <EstablishedCard
+        label={BENEFIT_COPY.systemCost}
+        entries={[{ value: benefits.netSystemResourceCostEur }]}
+        details={[BENEFIT_COPY.perspective(benefits.netSystemResourceCostEur.perspective)]}
+        greyed={greyed(benefits.netSystemResourceCostEur)}
+      />
+      <EstablishedCard
+        label={BENEFIT_COPY.marketOpportunity}
+        entries={[{ value: benefits.grossMarketOpportunityEur }]}
+        details={[BENEFIT_COPY.marketNote]}
+        greyed={greyed(benefits.grossMarketOpportunityEur)}
+      />
+      <EstablishedCard
+        label={BENEFIT_COPY.financialValue}
+        entries={[{ value: benefits.netFinancialValueEur }]}
+        details={[BENEFIT_COPY.perspective(benefits.netFinancialValueEur.perspective), BENEFIT_COPY.financialNote]}
+        greyed={greyed(benefits.netFinancialValueEur)}
+      />
+      <EstablishedCard
+        label={BENEFIT_COPY.carbon}
+        entries={[{ value: benefits.carbonEffectTco2e }]}
+        details={[BENEFIT_COPY.carbonNote]}
+        greyed={greyed(benefits.carbonEffectTco2e)}
+        requireRange
+      />
+    </dl>
+  );
 
   return (
     <section className="card comparison-panel" aria-labelledby="comparison-heading">
-      <h3 id="comparison-heading" className="card-kicker">{COMPARISON_COPY.title}</h3>
-      {windowText && (
-        <p className="comparison-window">
-          {COMPARISON_COPY.window(windowText)}
-        </p>
-      )}
+      <div className="panel-header">
+        <h2 id="comparison-heading" className="panel-title">{COMPARISON_COPY.title}</h2>
+        {reference && (
+          <span className="panel-meta comparison-window">
+            {COMPARISON_COPY.window(formatWindow(reference.windowStart, reference.windowEnd))}
+          </span>
+        )}
+      </div>
       {mismatched.length > 0 && (
         <p className="comparison-warning" role="alert">
           {COMPARISON_COPY.mismatch(mismatched.map((column) => COLUMN_LABEL[column]).join(', '))}
         </p>
       )}
-      {stale && <p className="comparison-stale" role="status">{STALE_NOTE}</p>}
 
-      {columns.length > 0 && <div className="table-scroll">
+      <div className="table-scroll">
         <table className="comparison-table">
           <thead>
             <tr>
               <th scope="col">{COMPARISON_COPY.measure}</th>
-              {columns.map((outcome) => {
-                const column = outcome.column;
-                return (
-                  <th key={column} scope="col" className={column === BASELINE ? 'comparison-baseline' : undefined}>
-                    <span className="comparison-column-name">{COLUMN_LABEL[column]}</span>
-                    {column === BASELINE && <span className="comparison-baseline-tag">{COMPARISON_COPY.baselineTag}</span>}
-                  </th>
-                );
-              })}
+              {COLUMN_ORDER.map((column) => (
+                <th key={column} scope="col" className={column === BASELINE ? 'comparison-baseline' : undefined}>
+                  <span className="comparison-column-name">{COLUMN_LABEL[column]}</span>
+                  {column === BASELINE && <span className="comparison-baseline-tag">{COMPARISON_COPY.baselineTag}</span>}
+                </th>
+              ))}
             </tr>
           </thead>
-          <RowGroup title={COMPARISON_COPY.safetyGroup} rows={safetyRows} columns={columns} />
-          <RowGroup title={COMPARISON_COPY.dispatchDownGroup} rows={dispatchRows} columns={columns} />
+          <RowGroup title={COMPARISON_COPY.safetyGroup} rows={SAFETY_ROWS} columns={columns} />
+          <RowGroup title={COMPARISON_COPY.dispatchDownGroup} rows={DISPATCH_DOWN_ROWS} columns={columns} />
         </table>
-      </div>}
+      </div>
 
-      {(benefitAvailable || (benefits.nationalContext && !demo)) && <>
-      <h4 className="comparison-benefits-title">{demo ? 'Modeled outcome context' : BENEFIT_COPY.title}</h4>
-      {demo && benefitAvailable && <p className="comparison-warning">
-        {blockedBy ? 'Demo estimate only. Safety is not approved for this action.' : 'Demo estimate only; not an operationally validated benefit.'}
-      </p>}
-      {!demo && blockedBy && benefitAvailable && <p className="comparison-warning">{BENEFIT_COPY.cannotClaimNote}</p>}
-      <dl className="metrics comparison-benefits">
-        {hasValue(benefits.avoidedDispatchDownMwh) &&
-        <EstablishedCard
-          label={demo && blockedBy ? 'Modeled dispatch-down difference' : BENEFIT_COPY.avoided}
-          entries={[{ value: benefits.avoidedDispatchDownMwh }]}
-          details={demo ? [] : [BENEFIT_COPY.avoidedDetail, BENEFIT_COPY.avoidedNote]}
-          blockedBy={demo ? null : blockedBy}
-        />}
-        {siteEstablished && <EstablishedCard
-          label={BENEFIT_COPY.siteRisk}
-          entries={[
-            ...(hasValue(benefits.siteRiskProbability) ? [{ name: BENEFIT_COPY.siteProbability, value: benefits.siteRiskProbability }] : []),
-            ...(hasValue(benefits.siteRiskExpectedMwh) ? [{ name: BENEFIT_COPY.siteExpected, value: benefits.siteRiskExpectedMwh }] : []),
-          ]}
-          details={view === 'national' ? [BENEFIT_COPY.siteNationalView] : []}
-          blockedBy={demo ? null : blockedBy}
-        />}
-        {benefits.nationalContext && !demo && <div className="metric established-card">
-          <dt className="metric-label established-card-label">{BENEFIT_COPY.nationalContext}</dt>
-          <dd className="established-card-entry">{benefits.nationalContext}</dd>
-        </div>}
-        {hasValue(benefits.netSystemResourceCostEur) && <EstablishedCard
-          label={BENEFIT_COPY.systemCost}
-          entries={[{ value: benefits.netSystemResourceCostEur }]}
-          details={[BENEFIT_COPY.perspective(benefits.netSystemResourceCostEur.perspective)]}
-          blockedBy={demo ? null : blockedBy}
-        />}
-        {hasValue(benefits.grossMarketOpportunityEur) && <EstablishedCard
-          label={BENEFIT_COPY.marketOpportunity}
-          entries={[{ value: benefits.grossMarketOpportunityEur }]}
-          details={[BENEFIT_COPY.marketNote]}
-          blockedBy={demo ? null : blockedBy}
-        />}
-        {hasValue(benefits.netFinancialValueEur) && <EstablishedCard
-          label={BENEFIT_COPY.financialValue}
-          entries={[{ value: benefits.netFinancialValueEur }]}
-          details={[BENEFIT_COPY.perspective(benefits.netFinancialValueEur.perspective), BENEFIT_COPY.financialNote]}
-          blockedBy={demo ? null : blockedBy}
-        />}
-        {hasValue(benefits.carbonEffectTco2e) && <EstablishedCard
-          label={BENEFIT_COPY.carbon}
-          entries={[{ value: benefits.carbonEffectTco2e }]}
-          details={[BENEFIT_COPY.carbonNote]}
-          blockedBy={demo ? null : blockedBy}
-        />}
-      </dl>
-      </>}
+      <h3 className="comparison-benefits-title">{BENEFIT_COPY.title}</h3>
+      {collapsed ? (
+        <>
+          <p className="comparison-benefits-status">
+            {proposed?.available ? BENEFIT_COPY.noneEstablished(blockedResult) : BENEFIT_COPY.noneEstablishedNoPlan}
+          </p>
+          <details className="disclosure comparison-benefits-details">
+            <summary>{BENEFIT_COPY.showDetails}</summary>
+            {cards}
+          </details>
+        </>
+      ) : (
+        cards
+      )}
     </section>
   );
 }
