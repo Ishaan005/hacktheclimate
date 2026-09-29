@@ -26,6 +26,45 @@ function unknownCheck(id: string, reason: string): SafetyCheck {
 }
 
 describe('safety panel', () => {
+  it('shows available baseline and proposed metrics without empty check sections', () => {
+    const current = { ...fixtureAssessment.familyChecks[0], id: 'planning_line',
+      label: 'Transmission line loading', value: '109.1% of rate A', limit: '100% of rate A',
+      margin: '-5 MW', result: 'fail' as const };
+    const proposed = { ...current, value: '81.8% of rate A', margin: '+10 MW', result: 'pass' as const };
+    const assessment = { ...fixtureAssessment, currentChecks: [current], familyChecks: [proposed],
+      actionChecks: fixtureAssessment.actionChecks.map((check) => ({ ...check, value: null, margin: null })) };
+    const { container } = render(<SafetyPanel assessment={assessment} overall={assessment.overall}
+      plan={assessment.proposed} view="national" demo />);
+    const metric = container.querySelector('[data-metric-id="planning_line"]') as HTMLElement;
+    expect(metric).toHaveTextContent('109.1% of rate A');
+    expect(metric).toHaveTextContent('81.8% of rate A');
+    expect(metric).toHaveTextContent('Margin -5 MW');
+    expect(metric).toHaveTextContent('Margin +10 MW');
+    expect(metric).toHaveTextContent('Limit 100% of rate A');
+    expect(screen.queryByRole('heading', { name: SAFETY_COPY.actionChecksTitle })).toBeNull();
+  });
+
+  it('omits unquantified demo checks and hides old plan figures while edits are stale', () => {
+    const current = { ...fixtureAssessment.familyChecks[0], id: 'line', value: '0 MW', margin: null };
+    const unknown = { ...fixtureAssessment.familyChecks[0], id: 'snsp', value: null, margin: null, limit: '75%' };
+    const assessment = { ...fixtureAssessment, currentChecks: [current, unknown], familyChecks: [
+      { ...current, value: '10 MW' }, unknown,
+    ] };
+    const { container } = render(<SafetyPanel assessment={assessment} overall={assessment.overall}
+      plan={assessment.proposed} view="national" demo stale />);
+    expect(container.querySelector('[data-metric-id="line"]')).toHaveTextContent('0 MW');
+    expect(container.querySelector('[data-metric-id="line"]')).not.toHaveTextContent('10 MW');
+    expect(container.querySelector('[data-metric-id="snsp"]')).toBeNull();
+  });
+
+  it('shows one short empty state when the API has no quantified safety checks', () => {
+    const assessment = { ...fixtureAssessment, currentChecks: [], familyChecks: [], actionChecks: [] };
+    render(<SafetyPanel assessment={assessment} overall={assessment.overall}
+      plan={assessment.proposed} view="national" demo />);
+    expect(screen.getByText('No quantified safety checks for this case.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: SAFETY_COPY.actionChecksTitle })).toBeNull();
+  });
+
   it('shows the overall result in the header with its reason and no evidence list or validation warning', () => {
     renderPanel(fixtureAssessment, 'national');
     const panel = screen.getByRole('region', { name: SAFETY_COPY.title });

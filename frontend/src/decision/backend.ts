@@ -98,6 +98,7 @@ const FACT_LABELS: Record<string, string> = {
   active_instructions: 'Current instructions', limiting_equipment: 'Limiting equipment',
   normal_flow_mw: 'Normal route flow', normal_flow_limit_mw: 'Normal flow limit',
   planning_rate_a_mva: 'Rate A (MVA proxy)',
+  planning_transmission_line: 'Transmission line loading',
   post_failure_flow_mw: 'Post-failure flow', post_failure_limit_mw: 'Post-failure limit',
   credible_failure: 'Credible failure', measured_frequency_hz: 'Measured frequency',
   effective_high_frequency_limit_hz: 'Effective high-frequency limit',
@@ -336,7 +337,11 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
   const site = request.view === 'site' ? siteById(request.siteId) : undefined;
   const proposal = raw.comparisons.proposed_plan;
   const alternative = raw.comparisons.operator_alternative;
-  const selected = proposal.plan.steps.length ? proposal : alternative.plan.steps.length ? alternative : raw.comparisons.no_new_instruction;
+  const selected = request.alternative && alternative.plan.steps.length ? alternative
+    : proposal.plan.steps.length ? proposal : raw.comparisons.no_new_instruction;
+  const currentChecks = raw.comparisons.current_plan.checks
+    .filter((check) => check.family === 'transmission' || check.family === 'high_frequency_minimum_generation' || check.family === 'snsp')
+    .map(checkView);
   const familyChecks = selected.checks.filter((check) => check.family === 'transmission' || check.family === 'high_frequency_minimum_generation' || check.family === 'snsp').map(checkView);
   const crossChecks = selected.checks.filter((check) => check.family === 'cross_family' || check.family === 'intake').map(checkView);
   const firstPerStep = new Set<string>();
@@ -375,7 +380,7 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
     edits: request.edits,
     overall: { result: status(selected.safety.status), reason: operatorReason(selected.safety.reason) ?? '',
       missingEvidence: selected.safety.missing_checks.map(label) },
-    familyChecks, crossChecks, actionChecks,
+    currentChecks, familyChecks, crossChecks, actionChecks,
     allIslandChecks: request.view === 'site' ? familyChecks.filter((check) => check.family !== 'transmission') : [],
     proposed: proposedPlan,
     alternative: altPlan,

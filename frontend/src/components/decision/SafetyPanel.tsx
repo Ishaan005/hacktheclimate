@@ -16,6 +16,7 @@ type SafetyPanelProps = {
   plan: Plan | null;
   view: ViewMode;
   demo?: boolean;
+  stale?: boolean;
 };
 
 // Action checks carry goNoGo; other checks do not.
@@ -107,7 +108,7 @@ function CheckRow({ check, showReason, demo = false }: { check: Check; showReaso
 // check still gets its own row and chip.
 function CheckList({ checks, sort = true, demo = false }: { checks: Check[]; sort?: boolean; demo?: boolean }) {
   if (demo) return <ul className="safety-checks">{(sort ? byResult(checks) : checks)
-    .filter((check) => check.value !== null || check.result === 'fail')
+    .filter((check) => check.value !== null || check.margin !== null || check.result === 'fail')
     .map((check) => <CheckRow key={check.id} check={check} showReason={false} demo />)}</ul>;
   const ordered = sort ? byResult(checks) : checks;
   const counts = new Map<string, number>();
@@ -145,6 +146,52 @@ function CheckList({ checks, sort = true, demo = false }: { checks: Check[]; sor
           </li>
         )))}
     </ul>
+  );
+}
+
+function hasMetric(check: SafetyCheck | undefined): boolean {
+  return !!check && (check.value !== null || check.margin !== null);
+}
+
+// The API returns baseline and assessed-plan checks in separate columns.
+// Keep their values separate so a passing line check cannot imply that the
+// whole plan passed its other safety gates.
+function MetricComparison({ assessment, plan, stale }: { assessment: Assessment; plan: Plan | null; stale: boolean }) {
+  const current = assessment.currentChecks ?? [];
+  const assessed = stale || !plan ? [] : assessment.familyChecks;
+  const ids = [...new Set([...current, ...assessed].filter(hasMetric).map((check) => check.id))];
+  if (!ids.length) return <p className="safety-empty">No quantified safety checks for this case.</p>;
+  return (
+    <div className="safety-metrics">
+      {ids.map((id) => {
+        const before = current.find((check) => check.id === id);
+        const after = assessed.find((check) => check.id === id);
+        const check = before ?? after!;
+        const limit = after?.limit ?? before?.limit;
+        return (
+          <div key={id} className="safety-metric" data-metric-id={id}>
+            <div className="safety-metric-heading">
+              <strong>{check.label}</strong>
+              {limit != null && <span>Limit {limit}</span>}
+            </div>
+            <div className="safety-metric-values">
+              {before && hasMetric(before) && <div className="safety-metric-column">
+                <span className="safety-metric-caption">Current plan</span>
+                {before.value !== null && <strong className="mono">{before.value}</strong>}
+                {before.margin !== null && <span>Margin {before.margin}</span>}
+                <span>{RESULT_LABEL[before.result]}</span>
+              </div>}
+              {after && hasMetric(after) && <div className="safety-metric-column">
+                <span className="safety-metric-caption">{plan?.origin === 'operator' ? 'Operator alternative' : 'Proposed plan'}</span>
+                {after.value !== null && <strong className="mono">{after.value}</strong>}
+                {after.margin !== null && <span>Margin {after.margin}</span>}
+                <span>{RESULT_LABEL[after.result]}</span>
+              </div>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -199,7 +246,7 @@ function FamilyChecks({ assessment, families, demo = false }: { assessment: Asse
   );
 }
 
-function SafetyPanel({ assessment, overall, plan, view, demo = false }: SafetyPanelProps) {
+function SafetyPanel({ assessment, overall, plan, view, demo = false, stale = false }: SafetyPanelProps) {
   const id = useId();
   const families = familyOrder(assessment);
   const planChecks = plan ? checksForPlan(plan, assessment.actionChecks) : [];
@@ -214,10 +261,12 @@ function SafetyPanel({ assessment, overall, plan, view, demo = false }: SafetyPa
       </div>
       {!demo && <p className="safety-overall-reason">{overall.reason}</p>}
 
-      <FamilyChecks assessment={assessment} families={families} demo={demo} />
+      {demo && assessment.currentChecks
+        ? <MetricComparison assessment={assessment} plan={plan} stale={stale} />
+        : <FamilyChecks assessment={assessment} families={families} demo={demo} />}
 
       {/* Site view keeps the all-island limits in plain sight. */}
-      {view === 'site' && (
+      {view === 'site' && (!demo || !assessment.currentChecks) && (
         <section aria-labelledby={`${id}-island`}>
           <h3 id={`${id}-island`} className="panel-section-title">{SAFETY_COPY.allIslandTitle}</h3>
           {assessment.allIslandChecks.length
@@ -226,10 +275,10 @@ function SafetyPanel({ assessment, overall, plan, view, demo = false }: SafetyPa
         </section>
       )}
 
-      <section aria-labelledby={`${id}-action`}>
+      {(!demo || (!stale && plan?.steps.some((step) => planChecks.some((check) => check.stepId === step.id && hasMetric(check))))) && <section aria-labelledby={`${id}-action`}>
         <h3 id={`${id}-action`} className="panel-section-title">{SAFETY_COPY.actionChecksTitle}</h3>
         {!demo && <p className="safety-hint">{plan ? SAFETY_COPY.actionChecksNote : SAFETY_COPY.noPlan}</p>}
-        {plan?.steps.map((step, index) => {
+        {plan?.steps.filter((step) => !demo || planChecks.some((check) => check.stepId === step.id && hasMetric(check))).map((step, index) => {
           // Go/no-go first, then the rest in backend order.
           const checks = planChecks
             .filter((check) => check.stepId === step.id)
@@ -256,7 +305,7 @@ function SafetyPanel({ assessment, overall, plan, view, demo = false }: SafetyPa
             </details>
           );
         })}
-      </section>
+      </section>}
     </section>
   );
 }

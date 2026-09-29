@@ -124,6 +124,27 @@ describe('backend workspace adapter', () => {
     expect(assessment.benefits.avoidedDispatchDownMwh.value).toBeNull();
     expect(assessment.evidence.auditId).toBeNull();
   });
+
+  it('keeps baseline metrics separate from the assessed operator alternative, including zero', () => {
+    const raw = backendResponse();
+    raw.comparisons.current_plan = { ...baseline, checks: [{ ...baseline.checks[0],
+      check_id: 'planning_transmission_line', status: 'FAIL', value: '109.1% of rate A',
+      unit: null, effective_limit: '100% of rate A', margin: '-5 MW' }] };
+    raw.comparisons.proposed_plan = { ...baseline, plan: raw.comparisons.operator_alternative.plan,
+      checks: [{ ...baseline.checks[0], check_id: 'planning_transmission_line',
+        status: 'PASS', value: '81.8% of rate A', unit: null, effective_limit: '100% of rate A', margin: '+10 MW' }] };
+    raw.comparisons.operator_alternative = { ...raw.comparisons.operator_alternative,
+      checks: [{ ...baseline.checks[0], check_id: 'planning_transmission_line',
+        status: 'PASS', value: 0, unit: null, effective_limit: '100% of rate A', margin: '+20 MW' }] };
+    const assessment = fromBackendAssessment(raw, request());
+    expect(assessment.currentChecks).toEqual([expect.objectContaining({
+      id: 'planning_transmission_line', value: '109.1% of rate A', margin: '-5 MW', result: 'fail',
+    })]);
+    expect(assessment.familyChecks).toEqual([expect.objectContaining({
+      id: 'planning_transmission_line', value: '0', result: 'pass',
+    })]);
+    expect(assessment.overall.result).toBe('fail');
+  });
 });
 
 describe('operator-facing text', () => {
@@ -134,6 +155,7 @@ describe('operator-facing text', () => {
     expect(label('rocof_and_stability')).toBe('RoCoF and stability');
     expect(label('planning_min_generation')).toBe('Minimum generation');
     expect(label('snsp_ratio_pct')).toBe('All-island SNSP');
+    expect(label('planning_transmission_line')).toBe('Transmission line loading');
   });
 
   it('keeps file paths and exception text off the screen', () => {

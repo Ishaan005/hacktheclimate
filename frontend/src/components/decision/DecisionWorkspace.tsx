@@ -67,7 +67,7 @@ function DecisionWorkspace() {
         <DecisionSummary assessment={assessment} overall={overall} plan={plan} stale={stale} demo={demo} />
         <div className="decision-panels">
           <div className="decision-panel decision-panel-safety">
-            <SafetyPanel assessment={assessment} overall={overall} plan={plan} view={view} demo={demo} />
+            <SafetyPanel assessment={assessment} overall={overall} plan={plan} view={view} demo={demo} stale={stale} />
           </div>
           <div className="decision-panel decision-panel-plan">
             <PlanPanel

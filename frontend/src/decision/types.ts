@@ -295,6 +295,9 @@ export type Assessment = {
   activeInstructions: ActiveInstruction[];
   edits: OperatorEdit[];
   overall: OverallSafety;
+  // Baseline checks returned separately from the assessed plan. Absent in the
+  // offline layout fixture, which predates the four-column backend response.
+  currentChecks?: SafetyCheck[];
   familyChecks: SafetyCheck[];
   // Other affected limits, e.g. battery capacity promised for frequency.
   crossChecks: SafetyCheck[];
