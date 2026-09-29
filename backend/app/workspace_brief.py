@@ -9,13 +9,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
-from typing import Any, Literal
+from typing import Any, Literal, Mapping
 
 from fastapi import APIRouter, HTTPException
 from pydantic import Field, model_validator
 
 from .decision.contracts import Contract, DecisionCase, EvidenceValue, utc
 from .decision.scenarios import SCENARIO_IDS, load_scenario_catalogue
+from .workspace import _evaluate_live_case
 
 router = APIRouter(prefix="/v1/workspace", tags=["operator workspace"])
 
@@ -65,12 +66,27 @@ def _field_unit(field: str) -> str | None:
     return None
 
 
+class ConditionContext(Contract):
+    scenario_id: str = Field(min_length=1)
+    situation_key: str | None = None
+    reach: Literal["local_area", "shared_route", "wide_group"] | None = None
+    limiting_asset: str | None = None
+    outage_type: Literal["planned", "forced"] | None = None
+    time_setting: Literal["now", "forecast"] | None = None
+    snsp_drivers: list[str] = Field(default_factory=list)
+    jurisdiction: Literal["ireland", "northern_ireland", "both"] | None = None
+
+
 class PlanStep(Contract):
     step_id: str = Field(min_length=1)
     action_id: str = Field(min_length=1)
+    role: Literal["main", "supporting", "parallel"] = "main"
+    instruction: str | None = None
     asset_or_party: str | None = None
     executor: str | None = None
+    permission_route: Literal["direct", "needs_clearance", "needs_acceptance"] = "direct"
     permission: Literal["confirmed", "pending", "denied", "unknown"] = "unknown"
+    permission_party: str | None = None
     starts_at: datetime | None = None
     effect_at: datetime | None = None
     ends_at: datetime | None = None
@@ -104,6 +120,8 @@ class Plan(Contract):
 
 class WorkspaceAssessmentRequest(Contract):
     decision_case: DecisionCase
+    description: str = ""
+    conditions: list[ConditionContext] = Field(default_factory=list)
     view: Literal["national", "site"] = "national"
     site_id: str | None = None
     evidence: list[EvidenceValue] = Field(default_factory=list)
@@ -117,6 +135,11 @@ class WorkspaceAssessmentRequest(Contract):
         unknown = set(self.decision_case.scenario_ids) - SCENARIO_IDS
         if unknown:
             raise ValueError(f"unknown locked scenario IDs: {', '.join(sorted(unknown))}")
+        condition_ids = {item.scenario_id for item in self.conditions}
+        if condition_ids - SCENARIO_IDS:
+            raise ValueError("condition context contains an unknown locked scenario ID")
+        if condition_ids and condition_ids != set(self.decision_case.scenario_ids):
+            raise ValueError("condition context must match decision-case scenario IDs")
         return self
 
 
@@ -198,6 +221,162 @@ def _family_check(check_id: str, family: str, facts: dict[str, dict[str, Any]]) 
     if check_id == "credible_failure_flow" and facts.get("credible_failure", {}).get("state") == "current":
         check["worst_failure"] = facts["credible_failure"]["value"]
     return check
+
+
+def _legacy_case(request: WorkspaceAssessmentRequest) -> dict[str, Any]:
+    scenario_ids = set(request.decision_case.scenario_ids)
+    coarse: list[str] = []
+    if any(item.startswith("T") for item in scenario_ids):
+        coarse.append("local_network_constraint")
+    if scenario_ids & {"T3", "T4"}:
+        coarse.append("planned_outage_exposure")
+    if any(item.startswith("H") for item in scenario_ids) or "SNSP" in scenario_ids:
+        coarse.append("system_wide_curtailment")
+
+    facts: dict[str, dict[str, Any]] = {}
+    for item in request.evidence:
+        if item.value is not None:
+            facts[item.field] = {"value": item.value}
+    if request.decision_case.location and "affected_area" not in facts:
+        facts["affected_area"] = {"value": request.decision_case.location}
+    return {
+        "id": request.decision_case.case_id,
+        "originalText": request.description,
+        "scenarios": coarse,
+        "facts": facts,
+    }
+
+
+def _planning_plan(scenario: Mapping[str, Any]) -> Plan:
+    action = scenario.get("action")
+    if not isinstance(action, Mapping):
+        return Plan()
+    family = str(action.get("family") or "")
+    action_id = {
+        "flexible_demand": "FLEX_LOAD",
+        "battery_storage": "STORAGE_CHARGE",
+        "generator_redispatch": "GENERATOR_REDISPATCH",
+        "outage_review": "OUTAGE_RETURN",
+        "interconnector_transfer": "INTERCONNECTOR_TRANSFER",
+    }.get(family)
+    if action_id is None:
+        return Plan()
+
+    executability = str(action.get("executability") or "conditional")
+    permission = "confirmed" if executability == "executable" else "pending"
+    permission_route = "direct" if permission == "confirmed" else "needs_acceptance"
+    details = action.get("details") if isinstance(action.get("details"), Mapping) else {}
+    change_mw = details.get("changeMw")
+    delta = None
+    if isinstance(change_mw, (int, float)) and not isinstance(change_mw, bool):
+        delta = -abs(float(change_mw)) if action_id in {"FLEX_LOAD", "STORAGE_CHARGE"} else float(change_mw)
+    return Plan(steps=[PlanStep(
+        step_id="planner-main",
+        action_id=action_id,
+        role="main",
+        instruction=str(action.get("targetState") or action.get("assetName") or "Backend modeled candidate"),
+        asset_or_party=str(action.get("assetName")) if action.get("assetName") else None,
+        executor=str(action.get("assetName")) if action.get("assetName") else None,
+        permission_route=permission_route,
+        permission=permission,
+        permission_party="External asset owner" if permission == "pending" else None,
+        starts_at=action.get("startTime"),
+        effect_at=action.get("targetTime"),
+        ends_at=action.get("effectiveUntil"),
+        limiting_location_delta_mw=delta,
+    )])
+
+
+def _planner_check(item: Mapping[str, Any], phase: str) -> dict[str, Any]:
+    raw = str(item.get(phase) or "unknown")
+    status: CheckState = "PASS" if raw == "within_modelled_limit" else "FAIL" if raw == "breach" else "UNKNOWN"
+    name = str(item.get("name") or "planning_check")
+    family = (
+        "snsp" if name == "snsp" else
+        "high_frequency_minimum_generation" if name == "min_generation" else
+        "cross_family" if name == "scope" else
+        "transmission"
+    )
+    return {
+        "check_id": f"planning_{name}",
+        "family": family,
+        "action_step_id": None,
+        "status": status,
+        "value": None,
+        "unit": None,
+        "effective_limit": None,
+        "margin": item.get("margin"),
+        "worst_time": item.get("timestamp"),
+        "worst_failure": None,
+        "source": "existing planning evaluator",
+        "reason": str(item.get("note") or "Planning evaluator result"),
+    }
+
+
+def _refresh_state_safety(state: dict[str, Any]) -> None:
+    checks = state["checks"]
+    if any(item["status"] == "FAIL" for item in checks):
+        status: CheckState = "FAIL"
+        reason = "A required or modeled check failed"
+        label = "Unsafe"
+    elif checks and all(item["status"] == "PASS" for item in checks):
+        status = "PASS"
+        reason = "All connected checks passed"
+        label = "Actionable" if state["permission_state"] == "confirmed" else "Conditional"
+    else:
+        status = "UNKNOWN"
+        reason = "Required validated safety checks are unavailable"
+        label = "Insufficient evidence"
+    state["safety"] = {
+        "status": status,
+        "reason": reason,
+        "missing_checks": [item["check_id"] for item in checks if item["status"] == "UNKNOWN"],
+    }
+    state["plan_label"] = label
+
+
+def _apply_planning_preview(states_out: dict[str, dict[str, Any]], scenario: Mapping[str, Any]) -> None:
+    guardrails = scenario.get("guardrails")
+    if isinstance(guardrails, list):
+        for key in ("current_plan", "no_new_instruction"):
+            states_out[key]["checks"].extend(
+                _planner_check(item, "baseline") for item in guardrails if isinstance(item, Mapping)
+            )
+            _refresh_state_safety(states_out[key])
+        states_out["proposed_plan"]["checks"].extend(
+            _planner_check(item, "postAction") for item in guardrails if isinstance(item, Mapping)
+        )
+        _refresh_state_safety(states_out["proposed_plan"])
+
+    baseline = scenario.get("baseline") if isinstance(scenario.get("baseline"), Mapping) else {}
+    post = scenario.get("postAction") if isinstance(scenario.get("postAction"), Mapping) else {}
+    baseline_mwh = baseline.get("dispatchDownWasteMwh")
+    post_mwh = post.get("dispatchDownWasteMwh")
+    if isinstance(baseline_mwh, (int, float)) and not isinstance(baseline_mwh, bool):
+        for key in ("current_plan", "no_new_instruction"):
+            states_out[key]["benefits"]["constraint_mwh"] = {
+                "value": float(baseline_mwh), "unit": "MWh",
+                "method": "Existing backend planning/demo scenario",
+                "uncertainty": None, "source": "workspace/evaluate",
+                "reason": None,
+            }
+    if isinstance(post_mwh, (int, float)) and not isinstance(post_mwh, bool):
+        states_out["proposed_plan"]["benefits"]["constraint_mwh"] = {
+            "value": float(post_mwh), "unit": "MWh",
+            "method": "Existing backend planning/demo scenario",
+            "uncertainty": None, "source": "workspace/evaluate",
+            "reason": None,
+        }
+    if (
+        isinstance(baseline_mwh, (int, float)) and not isinstance(baseline_mwh, bool)
+        and isinstance(post_mwh, (int, float)) and not isinstance(post_mwh, bool)
+    ):
+        states_out["proposed_plan"]["benefits"]["avoided_dispatch_down_mwh"] = {
+            "value": float(baseline_mwh) - float(post_mwh), "unit": "MWh",
+            "method": "No-new-instruction minus modeled candidate in the existing backend scenario",
+            "uncertainty": None, "source": "workspace/evaluate",
+            "reason": None,
+        }
 
 
 def _benefits() -> dict[str, Any]:
@@ -288,28 +467,45 @@ def assess_workspace(request: WorkspaceAssessmentRequest) -> dict[str, Any]:
         checks = [_check("limiting_cause", "intake", "Cause unknown; select a locked scenario after reviewing facts")]
     window = {"starts_at": case.starts_at.isoformat(), "ends_at": case.ends_at.isoformat()}
     active_instructions = [item.model_dump(mode="json") for item in case.existing_instructions]
+    planning_scenario = _evaluate_live_case(_legacy_case(request)) if request.description.strip() else None
+    proposed_plan = request.proposed_plan
+    if planning_scenario and not proposed_plan.steps:
+        proposed_plan = _planning_plan(planning_scenario)
+
     empty = Plan()
     states_out = {
         "current_plan": _plan_state("current_plan", empty, checks, window, active_instructions, set(case.scenario_ids)),
         "no_new_instruction": _plan_state("no_new_instruction", empty, checks, window, active_instructions, set(case.scenario_ids)),
-        "proposed_plan": _plan_state("proposed_plan", request.proposed_plan, checks, window, active_instructions, set(case.scenario_ids)),
+        "proposed_plan": _plan_state("proposed_plan", proposed_plan, checks, window, active_instructions, set(case.scenario_ids)),
         "operator_alternative": _plan_state("operator_alternative", request.operator_alternative, checks, window, active_instructions, set(case.scenario_ids)),
     }
+    if planning_scenario:
+        _apply_planning_preview(states_out, planning_scenario)
     fingerprint = sha256(json.dumps(request.model_dump(mode="json"), sort_keys=True).encode()).hexdigest()
     now = datetime.now(timezone.utc).isoformat()
     return {"schema_version": 1, "case_id": case.case_id, "revision": fingerprint,
             "assessment_id": f"workspace-{fingerprint[:16]}", "assessed_at": now,
             "view": request.view, "location": request.site_id or case.location,
             "decision_time": case.as_of.isoformat(), "window": window,
-            "source_status": "no_live_connection", "data_status": "incomplete",
+            "source_status": (
+                "planning_case" if planning_scenario and planning_scenario.get("source") in {"demo", "planning_case"}
+                else "live" if planning_scenario and planning_scenario.get("source") == "live"
+                else "no_live_connection"
+            ), "data_status": "incomplete",
             "bindings": bindings, "facts": facts,
             "active_instructions": active_instructions,
             "comparisons": states_out,
             "evidence": {"scenario_catalogue_source": catalogue.source,
                          "scenario_catalogue_version": catalogue.schema_version,
                          "safety_policy_version": None, "model_version": None,
-                         "assumptions": [],
+                         "assumptions": (
+                             [str(planning_scenario.get("summary"))] if planning_scenario and planning_scenario.get("summary") else []
+                         ),
                          "missing_checks": sorted({c["check_id"] for state in states_out.values() for c in state["checks"] if c["status"] == "UNKNOWN"}),
                          "audit_id": f"workspace-{fingerprint[:16]}",
                          "audit_persisted": False,
-                         "reason": "No live operational feed or approved safety study is connected to this endpoint"}}
+                         "reason": (
+                             str(planning_scenario.get("noActionReason"))
+                             if planning_scenario and planning_scenario.get("noActionReason")
+                             else "No live operational feed or approved safety study is connected to this endpoint"
+                         )}}
