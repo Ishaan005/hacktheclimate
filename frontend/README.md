@@ -12,14 +12,13 @@ npm run dev
 
 The main screen follows the [UI brief](../docs/UI_BRIEF_2026-09-29.md). It has
 a top bar (national or site view, source badge), a free-text situation box
-with an Assess button, the situation table, safety checks (left),
+with an Assess button, a summary of what is limiting, safety checks (left),
 the proposed plan (right), a four-column comparison and an evidence drawer.
 The code is in `src/decision/` (types, display rules, locked scope, fixture,
 API) and `src/components/decision/`.
 
 In default API mode, the screen sends the operator's text as typed, locked
-scenario hints read from it (`hintsFor` in `src/decision/scope.ts`), operator
-fact edits and alternative steps to `POST /v1/workspace/assess`. Text with no
+scenario hints read from it (`hintsFor` in `src/decision/scope.ts`), and alternative steps to `POST /v1/workspace/assess`. Text with no
 scenario in scope shows Cause unknown and the facts needed. The adapter in
 `src/decision/backend.ts` maps the response into the screen's view model. The
 backend currently has no live operational feed or approved safety study, so

@@ -30,7 +30,7 @@ npm ci
 npm run dev
 ```
 
-The main decision workspace sends reviewed cases to `/v1/workspace/assess`. For a planning demo, the screen keeps only populated facts and concise safety and plan results; it omits source badges and missing-value lists. Unknown safety still blocks approval while live operational feeds and approved studies are unconnected. The second-tab grid assistant uses `/v1/workspace/evaluate` for planning cases. For layout work, use `VITE_API_MODE=fixture npm run dev`. See the [UI guide](frontend/README.md) for tests and the fixture boundary.
+The main decision workspace sends reviewed cases to `/v1/workspace/assess`. For a planning demo, the screen keeps concise safety, plan and outcome results; it omits source badges and missing-value lists. Unknown safety still blocks approval while live operational feeds and approved studies are unconnected. The second-tab grid assistant uses `/v1/workspace/evaluate` for planning cases. For layout work, use `VITE_API_MODE=fixture npm run dev`. See the [UI guide](frontend/README.md) for tests and the fixture boundary.
 
 For the teammate walkthrough, use the [golden-path demo](docs/DEMO.md) on the `feat/golden-path-demo` branch. The intake, fact review, synthetic planning network and action-bundle calculation run without external planning files. With team Key Vault access, the existing intake step uses Azure OpenAI. The checked demo facts and calculation still work if Azure is unavailable.
 

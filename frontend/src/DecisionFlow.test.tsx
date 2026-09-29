@@ -41,13 +41,16 @@ describe('decision workspace end to end (fixture)', () => {
     expect(text).not.toMatch(/\b(t[1-4]|h[1-4])\b/);
   });
 
-  it('makes the assessment stale after a fact edit until it is rerun', async () => {
+  it('shows no situation facts section', async () => {
+    await assessOutageAndSnsp();
+    expect(screen.queryByRole('heading', { name: 'Situation facts' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/missing facts/)).not.toBeInTheDocument();
+  });
+
+  it('makes the assessment stale after an input change until it is rerun', async () => {
     await assessOutageAndSnsp();
     expect(screen.queryAllByText(STALE_NOTE)).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button', { name: /Edit Studied flow on limiting route/ }));
-    const input = screen.getByRole('spinbutton');
-    fireEvent.change(input, { target: { value: '420' } });
-    fireEvent.click(screen.getByRole('button', { name: /Save/ }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Precise grid / site' }));
     // Out of date is said once, in its own banner above the summary card,
     // with the only rerun button.
     const notices = screen.getAllByText(DECISION_COPY.summaryStale);

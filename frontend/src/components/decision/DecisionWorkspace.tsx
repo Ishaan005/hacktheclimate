@@ -10,12 +10,11 @@ import EvidenceDrawer from './EvidenceDrawer';
 import PlanPanel from './PlanPanel';
 import SafetyPanel from './SafetyPanel';
 import SituationSearch from './SituationSearch';
-import SituationTable from './SituationTable';
 import TopBar from './TopBar';
 import './DecisionWorkspace.css';
 
 // Top bar → search → summary → safety (left) and plan (right) → comparison
-// → situation facts → evidence. Safety comes first on every row: the plan
+// → evidence. Safety comes first on every row: the plan
 // and its benefits are read against it. The screen shows a backend assessment and never sends an
 // instruction.
 function DecisionWorkspace() {
@@ -55,7 +54,7 @@ function DecisionWorkspace() {
   } else if (assessment && overall) {
     const plan = alternative ?? assessment.proposed;
     // DesignersGuide order: binding condition, action and security first;
-    // value next; supporting facts and evidence last, on expansion.
+    // value next; evidence last, on expansion.
     body = (
       <>
         {/* Out of date is its own banner above the summary, said once. */}
@@ -82,14 +81,6 @@ function DecisionWorkspace() {
           </div>
         </div>
         <ComparisonPanel outcomes={assessment.outcomes} benefits={assessment.benefits} view={view} demo={demo} />
-        <SituationTable
-          facts={facts}
-          conditions={assessment.conditions}
-          activeInstructions={assessment.activeInstructions}
-          edits={edits}
-          demo={demo}
-          onEdit={workspace.editFact}
-        />
         {!demo && <EvidenceDrawer evidence={assessment.evidence} edits={edits} validated={assessment.validated} sourceKind={assessment.context.sourceKind} />}
       </>
     );
