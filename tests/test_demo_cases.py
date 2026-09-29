@@ -79,7 +79,7 @@ def test_t3_golden_path_selects_mixed_bundle_and_clears_thermal_screen():
 def test_t4_variant_refuses_when_further_loss_islands_demo_area():
     result = evaluate_west_outage_demo(
         _case(
-            "Planned outage near Ballylickey plus another credible circuit loss "
+            "Planned outage in the west near Ballylickey plus another credible circuit loss "
             "creates an N-1 overload for the next 2 hours.",
             ["local_network_constraint", "planned_outage_exposure"],
         ),
