@@ -36,17 +36,11 @@ describe('recommended action card', () => {
     expect(steps[3]).toHaveTextContent('16:30Release the instruction');
   });
 
-  it('closes the steps dropdown on Escape and on a click outside', () => {
-    const card = renderCard(actionFor('generator_redispatch'));
-    const details = within(card).getByText(`${WORKSPACE_COPY.actionStepsTitle} (4)`).closest('details') as HTMLDetailsElement;
-    details.open = true;
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(details.open).toBe(false);
-    details.open = true;
-    fireEvent.mouseDown(within(details).getAllByRole('listitem')[0]);
-    expect(details.open).toBe(true);
-    fireEvent.mouseDown(document.body);
-    expect(details.open).toBe(false);
+  it('renders an action without steps, as restored from an older saved case', () => {
+    const { steps: _steps, ...action } = actionFor('generator_redispatch');
+    const card = renderCard(action);
+    expect(within(card).getByText('60 MW')).toBeInTheDocument();
+    expect(within(card).queryByText(new RegExp(WORKSPACE_COPY.actionStepsTitle))).toBeNull();
   });
 
   it('shows no family detail fields or costs', () => {

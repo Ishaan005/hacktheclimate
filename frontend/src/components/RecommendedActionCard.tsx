@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { ACTION_FAMILY_LABEL, EXECUTABILITY_LABEL, WORKSPACE_COPY } from '../copy';
 import { formatTime } from '../format';
 import { instructionText } from '../scenarios';
@@ -10,27 +9,10 @@ type Props = {
   noActionReason: string | null;
 };
 
-// A dropdown panel that floats over the content below, so opening it never
-// changes the card height. Closes on Escape or a click outside.
+// Expands in place under the overview; the card grows to fit.
 function ActionSteps({ steps }: { steps: ActionStep[] }) {
-  const ref = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    function close(event: Event) {
-      const details = ref.current;
-      if (!details?.open) return;
-      if (event instanceof KeyboardEvent ? event.key === 'Escape' : !details.contains(event.target as Node)) {
-        details.open = false;
-      }
-    }
-    document.addEventListener('mousedown', close);
-    document.addEventListener('keydown', close);
-    return () => {
-      document.removeEventListener('mousedown', close);
-      document.removeEventListener('keydown', close);
-    };
-  }, []);
   return (
-    <details ref={ref} className="action-steps">
+    <details className="action-steps">
       <summary>{WORKSPACE_COPY.actionStepsTitle} ({steps.length})</summary>
       <ol className="action-steps-panel">
         {steps.map((step, i) => (
@@ -57,6 +39,7 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
     );
   }
   const conditional = action.executability === 'conditional';
+  const steps = action.steps ?? [];
   return (
     <section
       className={`card card-action${conditional ? ' card-action-conditional' : ''}`}
@@ -79,7 +62,7 @@ function RecommendedActionCard({ action, noActionReason }: Props) {
         </span>
       </p>
       <ActionTimeline action={action} />
-      {action.steps.length > 0 && <ActionSteps steps={action.steps} />}
+      {steps.length > 0 && <ActionSteps steps={steps} />}
     </section>
   );
 }

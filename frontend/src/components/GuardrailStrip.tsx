@@ -3,10 +3,18 @@ import { formatTime } from '../format';
 import type { Guardrail, GuardrailStatus } from '../types';
 import StatusChip from './StatusChip';
 
+// Sentence case for a name this build has no label for: min_generation
+// becomes "Min generation".
+function fallbackLabel(name: string): string {
+  const words = name.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 const STATUS_ORDER: GuardrailStatus[] = ['breach', 'unknown', 'within_modelled_limit'];
 
 // One row per safety constraint so baseline and post-action read down in columns.
-// Rows whose status changes are highlighted; the rest are context.
+// Rows whose status changes are highlighted; the rest are context. A row
+// with a breach on either side takes a red bar instead of the blue one.
 function GuardrailStrip({ guardrails }: { guardrails: Guardrail[] }) {
   const counts = STATUS_ORDER.map((status) => ({
     status,
@@ -33,10 +41,13 @@ function GuardrailStrip({ guardrails }: { guardrails: Guardrail[] }) {
         <tbody>
           {guardrails.map((item) => {
             const changed = item.baseline !== item.postAction;
+            const breach = item.baseline === 'breach' || item.postAction === 'breach';
+            const className = [changed && 'guardrail-changed', breach && 'guardrail-breach'].filter(Boolean).join(' ');
             return (
-              <tr key={item.name} className={changed ? 'guardrail-changed' : undefined}>
+              <tr key={item.name} className={className || undefined}>
                 <th scope="row">
-                  {GUARDRAIL_LABEL[item.name]}
+                  {/* A solver may send a name this build does not know. */}
+                  {GUARDRAIL_LABEL[item.name] ?? fallbackLabel(item.name)}
                   {item.note && <span className="guardrail-note">{item.note}</span>}
                 </th>
                 <td><StatusChip status={item.baseline} prefix={WORKSPACE_COPY.baseline} /></td>

@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { newCase } from './case';
-import { clearSession, loadSession, saveSession, STORAGE_KEY } from './caseStore';
+import { clearSession, loadSession, saveSession, SESSION_VERSION, STORAGE_KEY } from './caseStore';
 import { illustrativeClarification } from './fixtures/illustrativeClarification';
 import type { SavedSession } from './caseStore';
 
 const session: SavedSession = {
-  version: 1,
+  version: SESSION_VERSION,
   request: { description: 'problem', threadId: 'thread-1', answers: [] },
   round: 1,
   operatorCase: newCase('problem', '2026-09-29T08:00Z'),
@@ -32,7 +32,7 @@ describe('caseStore', () => {
 
   it.each([
     ['not JSON', '{'],
-    ['an older version', JSON.stringify({ ...session, version: 0 })],
+    ['an older version', JSON.stringify({ ...session, version: 1 })],
     ['malformed questions', JSON.stringify({ ...session, state: { status: 'clarifying', round: 1, clarification: { reason: 'x', questions: [] } } })],
     ['an unknown status', JSON.stringify({ ...session, state: { status: 'thinking' } })],
     ['a case without facts', JSON.stringify({ ...session, operatorCase: { id: 'x', originalText: 'x', scenarios: [] } })],

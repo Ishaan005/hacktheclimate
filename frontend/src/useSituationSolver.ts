@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { solveSituation, SolverUnavailableError, startCase } from './api';
 import type { Extraction } from './api';
 import { applyAnswers, caseSummaryText, newCase, readyForEvaluation, setCaseFact } from './case';
-import { clearSession, loadSession, saveSession } from './caseStore';
+import { clearSession, loadSession, saveSession, SESSION_VERSION } from './caseStore';
 import { InvalidClarificationError, parseClarificationRequest } from './clarification';
 import { resolveDispatchDownQuestion } from './scenarios';
 import type { FactValue, OperatorCase } from './case';
@@ -70,7 +70,7 @@ export function useSituationSolver() {
     const request = requestRef.current;
     const current = caseRef.current;
     if (!request || !current) return;
-    saveSession({ version: 1, request, round: roundRef.current, operatorCase: current, state: savedState(next) });
+    saveSession({ version: SESSION_VERSION, request, round: roundRef.current, operatorCase: current, state: savedState(next) });
   }
 
   function show(next: SolveState) {

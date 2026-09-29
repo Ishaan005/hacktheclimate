@@ -10,6 +10,10 @@ import type { ClarificationRequest, SolverRequest, SolverResult } from './types'
 
 export const STORAGE_KEY = 'eirgrid-mvp.case.v1';
 
+// Bump when a saved shape changes, so an older session is dropped instead of
+// rendering stale fields. 2: guardrail names and action steps changed.
+export const SESSION_VERSION = 2;
+
 // Only settled states are saved. A request in flight is saved as the request
 // itself and runs again on reload.
 export type SavedState =
@@ -20,7 +24,7 @@ export type SavedState =
   | { status: 'pending' };
 
 export type SavedSession = {
-  version: 1;
+  version: typeof SESSION_VERSION;
   request: SolverRequest;
   round: number;
   operatorCase: OperatorCase;
@@ -80,10 +84,10 @@ export function loadSession(): SavedSession | null {
   if (!text) return null;
   try {
     const raw: unknown = JSON.parse(text);
-    if (!isRecord(raw) || raw.version !== 1 || typeof raw.round !== 'number' || !isRequest(raw.request) || !isCase(raw.operatorCase)) {
+    if (!isRecord(raw) || raw.version !== SESSION_VERSION || typeof raw.round !== 'number' || !isRequest(raw.request) || !isCase(raw.operatorCase)) {
       throw new Error('session malformed');
     }
-    return { version: 1, request: raw.request, round: raw.round, operatorCase: raw.operatorCase, state: parseState(raw.state) };
+    return { version: SESSION_VERSION, request: raw.request, round: raw.round, operatorCase: raw.operatorCase, state: parseState(raw.state) };
   } catch (error) {
     console.error('Discarding saved case:', error);
     clearSession();

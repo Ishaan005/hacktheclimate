@@ -381,7 +381,9 @@ export type RecommendedAction = ActionFamilyDetails & {
   effectiveUntil: string;
   earliestExecution: string | null;
   executability: Executability;
-  steps: ActionStep[];
+  // Optional: a solver may omit it, and a case saved before steps existed
+  // restores without it.
+  steps?: ActionStep[];
 };
 
 // Per-state values shown side by side. Null means unknown, never zero.
