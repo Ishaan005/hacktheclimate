@@ -11,6 +11,7 @@ from .cases import load_cases
 from .contracts import Contract, DecisionCase, utc
 from .manifest import load_contract_manifest
 from .policy import load_demo_policy
+from .scenarios import ScenarioCatalogue, load_scenario_catalogue
 from .service import CaseEvaluation, evaluate_case
 from .sources import load_checked_constraint
 
@@ -23,16 +24,22 @@ class PreviewRequest(Contract):
     include_modelled_demo_cases: bool = False
 
 
+@router.get("/scenarios", response_model=ScenarioCatalogue)
+def scenario_catalogue() -> ScenarioCatalogue:
+    """The locked identification catalogue; actions and safety inputs remain separate."""
+    return load_scenario_catalogue()
+
+
 @router.post("/preview", response_model=CaseEvaluation)
 def preview_case(request: PreviewRequest) -> CaseEvaluation:
     """No client-supplied forecast or safety check can enter this endpoint."""
     if utc(request.case.as_of) > datetime.now(timezone.utc) + timedelta(minutes=1):
         raise HTTPException(422, "case decision time cannot be in the future")
     source = load_checked_constraint(request.case.as_of)
-    if source.status == "available" and (request.case.location is not None or request.case.asset_ids):
+    if source.status == "available":
         source = source.model_copy(update={
             "status": "inapplicable",
-            "reason": "National constraint forecast cannot populate a location or asset baseline",
+            "reason": "Experimental national constraint total cannot establish an issue #47 scenario baseline",
             "values": [],
         })
     return evaluate_case(

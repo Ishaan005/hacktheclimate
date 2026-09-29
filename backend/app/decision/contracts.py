@@ -44,7 +44,8 @@ class ExistingInstruction(Contract):
 class DecisionCase(Contract):
     schema_version: Literal[1] = 1
     case_id: str
-    scenario_ids: list[str] = Field(min_length=1)
+    scenario_ids: list[str] = Field(default_factory=list)
+    cause_unknown: bool = False
     location: str | None = None
     asset_ids: list[str] = Field(default_factory=list)
     as_of: datetime
@@ -61,6 +62,8 @@ class DecisionCase(Contract):
             raise ValueError("decision window must start on a future UTC half-hour")
         if not self.case_id.strip() or any(not item.strip() for item in self.scenario_ids):
             raise ValueError("case and scenario IDs must be nonempty")
+        if self.cause_unknown == bool(self.scenario_ids):
+            raise ValueError("use scenario labels or the cause-unknown intake state")
         if len(set(self.scenario_ids)) != len(self.scenario_ids):
             raise ValueError("scenario IDs must be unique")
         return self

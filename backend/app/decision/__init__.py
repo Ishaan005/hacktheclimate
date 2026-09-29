@@ -6,6 +6,7 @@ from .contracts import DecisionCase, EvidenceValue, ExistingInstruction, PastCas
 from .evidence import evidence_from_gfs_snapshot, resolve_case_context
 from .manifest import load_contract_manifest
 from .policy import evaluate_policy, load_demo_policy
+from .scenarios import load_scenario_catalogue
 from .service import evaluate_case
 from .sources import load_checked_constraint
 
@@ -14,5 +15,6 @@ __all__ = [
     "append_case", "best_case_metrics", "calculate_current_plan",
     "evaluate_case", "evaluate_policy", "evidence_from_gfs_snapshot", "load_cases",
     "load_checked_constraint", "load_contract_manifest", "load_demo_policy",
+    "load_scenario_catalogue",
     "resolve_case_context", "search_cases",
 ]
