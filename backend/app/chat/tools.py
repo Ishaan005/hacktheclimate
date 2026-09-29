@@ -1,16 +1,22 @@
 """Tools the assistant can call. Every number it reports must come from one of these."""
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from langchain_core.tools import tool
 
+logger = logging.getLogger(__name__)
 
-def _safe(fn, *args):
+
+def _safe(fn):
     try:
-        return fn(*args)
+        return fn()
     except (FileNotFoundError, ValueError) as exc:
         return {"error": str(exc)}
+    except Exception as exc:  # ToolNode re-raises non-validation errors, which would kill the chat turn.
+        logger.exception("Chat tool failed")
+        return {"error": f"Tool failed: {type(exc).__name__}"}
 
 
 @tool
@@ -95,6 +101,9 @@ def get_current_constraint_forecast(target_timestamp: str) -> dict:
         return {**_forecast_metadata(snapshot), "forecast": row}
     except (FileNotFoundError, ValueError, KeyError, TypeError) as exc:
         return {"error": f"Checked forward constraint forecast unavailable: {exc}"}
+    except Exception as exc:  # ToolNode re-raises these; report instead of failing the turn.
+        logger.exception("Chat tool failed")
+        return {"error": f"Checked forward constraint forecast unavailable: {type(exc).__name__}"}
 
 
 @tool
@@ -111,11 +120,14 @@ def get_current_constraint_day() -> dict:
         return {
             **_forecast_metadata(snapshot),
             "remaining_intervals": len(rows),
-            "sum_expected_constraint_mwh": sum(r["expected_constraint_mwh"] for r in rows),
+            "sum_expected_constraint_mwh": round(sum(r["expected_constraint_mwh"] for r in rows), 1),
             "peak_intervals": sorted(rows, key=lambda r: r["expected_constraint_mwh"], reverse=True)[:5],
         }
     except (FileNotFoundError, ValueError, KeyError, TypeError) as exc:
         return {"error": f"Checked forward constraint forecast unavailable: {exc}"}
+    except Exception as exc:  # ToolNode re-raises these; report instead of failing the turn.
+        logger.exception("Chat tool failed")
+        return {"error": f"Checked forward constraint forecast unavailable: {type(exc).__name__}"}
 
 
 @tool
@@ -138,12 +150,15 @@ def get_network_scenario(target_timestamp: str) -> dict:
         row = next((r for r in rows if datetime.fromisoformat(r["valid_time"].replace("Z", "+00:00")) == target), None)
         if row is None:
             return {"error": "No current planning-network scenario for that target half-hour."}
-        return {"mode": "planning_network_dc_scenario", "limitations": [
+        return {**row, "mode": "planning_network_dc_scenario", "limitations": [
             "TYTFS planning case and DC proxy, not current operational topology or a thermal-security verdict.",
             "No safe dispatch action or avoided-energy impact follows from this scenario alone.",
-        ], **row}
+        ]}
     except (FileNotFoundError, ValueError, KeyError, TypeError) as exc:
         return {"error": f"Planning-network scenario unavailable: {exc}"}
+    except Exception as exc:  # ToolNode re-raises these; report instead of failing the turn.
+        logger.exception("Chat tool failed")
+        return {"error": f"Planning-network scenario unavailable: {type(exc).__name__}"}
 
 
 FORECAST_TOOLS = [get_dispatch_down_forecast, get_dispatch_down_day, check_constraint,

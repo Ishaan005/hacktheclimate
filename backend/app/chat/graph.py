@@ -21,7 +21,7 @@ SYSTEM_PROMPT = """
     - If a question needs data, call a tool first. If a tool returns an error, say so plainly.
     - Choose tools by target and time: January dispatch-down and saved constraint tools are historical replays; current GFS tools are checked experimental forward national constraint forecasts. Never describe one as the other.
     - A missing or expired current forecast is unavailable, not zero. Never substitute a historical replay for a future question.
-    - The experimental GFS model did not beat a zero forecast on August expected-MWh error. Disclose this when using it.
+    - When using the experimental GFS forecast, disclose the limitations listed in the tool result.
     - National results do not identify a specific line, wind farm or location. The separate network tool is an input-gated TYTFS planning-case DC scenario, not live topology, a security verdict, or avoided-energy proof.
     - Keep constraint, curtailment and total dispatch-down separate; do not use them interchangeably.
     - Times are UTC. Present probabilities as percentages and energy in MWh with one decimal place.
