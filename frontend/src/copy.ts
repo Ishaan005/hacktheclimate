@@ -51,6 +51,7 @@ export const STATE_COPY = {
   scenarioUnavailableConsequence:
     'No flow change is shown because the equipment could not be matched to the planning model with enough confidence.',
   retry: 'Try again',
+  independence: 'The planning scenario does not change the national forecast. They answer separate questions.',
 } as const;
 
 // Scenario workspace (UX plan phase 1).
@@ -101,6 +102,14 @@ export const WORKSPACE_COPY = {
   baseline: 'Baseline',
   postAction: 'Post-action',
   guardrailTitle: 'Guardrails',
+  assistantTitle: 'Grid assistant',
+  assistantRecommended: 'Recommended action',
+  assistantToolsUsed: 'Data used',
+  assistantNoTools: 'No tools called',
+  assistantNote: 'Answers come only from the tools listed. Historical replays and experimental forecasts are labelled; check before acting.',
+  traceTitle: 'How the assistant answered',
+  traceSummary: 'Path through the LangGraph for this reply',
+  traceSkipped: 'Not used this time',
 } as const;
 
 export const GUARDRAIL_STATUS_LABEL = {

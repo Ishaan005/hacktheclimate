@@ -69,7 +69,7 @@ Original organiser CSVs and EirGrid workbooks are outside Git. Processed dataset
 
 ## Chat assistant (Azure OpenAI + LangGraph)
 
-`POST /v1/chat` answers operator questions using the forecast models as tools. Setup:
+`POST /v1/chat` answers questions by calling model-backed tools through LangGraph. It can query the January dispatch-down replay, the January–August constraint replay, the latest checked experimental GFS national constraint forecast, and the input-gated TYTFS planning-network scenario. Setup:
 
 ```bash
 python -m pip install -r requirements-chat.txt
@@ -120,7 +120,7 @@ curl -sS http://127.0.0.1:8000/v1/chat \
 The reply looks like:
 
 ```json
-{"thread_id": "3f2c...", "reply": "... Recommended action: A2 - ...", "tools_used": ["get_dispatch_down_forecast"], "model": "gpt-4.1"}
+{"thread_id": "3f2c...", "reply": "Historical replay: ... A location-specific action needs reviewed network and safety inputs.", "tools_used": ["get_dispatch_down_forecast"], "model": "gpt-4.1"}
 ```
 
 To continue the same conversation, send the returned `thread_id` back:
@@ -139,6 +139,6 @@ Request fields:
 | `thread_id` | No | Continues an earlier conversation; omit it to start a new one |
 | `selected_target` | No | The UTC time selected in the UI, so "this time" refers to it |
 
-The UI's situation box uses the same route. With the API and `npm run dev` running (not fixture mode), type a question such as `What is the dispatch-down risk at 2026-01-24 01:00, and what should I do?`. The reply card shows the answer, the recommended action and the tools used; when a dispatch-down tool was called for a named time, the real forecast view appears below it. If chat is not configured, dispatch-down questions still open the forecast view.
+The UI's situation box uses the same route. With the API and `npm run dev` running, type a question such as `What was the dispatch-down risk at 2026-01-24 01:00?`. The reply card shows the answer and tools used; a dispatch-down question also opens the historical replay view. For a future constraint outlook, run the checked daily GFS inference job first, then ask about upcoming national constraint or a specific UTC half-hour. If the snapshot is missing or expired, the chat tool reports it as unavailable. National forecasts alone cannot justify a location-specific operator action.
 
 Candidate actions come from `config/operator_actions.txt`. To switch model, change `AZURE_OPENAI_DEPLOYMENT` in `.env` (`gpt-4.1`, `gpt-4.1-mini` or `gpt-4o`) and restart the API. A `429` response means the shared Azure endpoint is rate-limited; wait and retry.

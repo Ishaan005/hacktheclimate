@@ -72,6 +72,10 @@ def chat(request: ChatRequest) -> ChatResponse:
             raise HTTPException(502, "Azure OpenAI rejected the key. Check AZURE_OPENAI_API_KEY.") from exc
         if name == "NotFoundError":
             raise HTTPException(502, "Deployment not found. Check AZURE_OPENAI_DEPLOYMENT.") from exc
+        if name in {"APITimeoutError", "OpenAITimeoutError"}:
+            raise HTTPException(504, "Azure OpenAI timed out. Try again shortly.") from exc
+        if name in {"APIConnectionError", "OpenAIConnectionError"}:
+            raise HTTPException(503, "Could not reach Azure OpenAI. Check your network and AZURE_OPENAI_ENDPOINT.") from exc
         raise
 
     new_messages = result["messages"][before:]
