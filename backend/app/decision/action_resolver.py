@@ -8,7 +8,7 @@ from pydantic import Field
 
 from .actions import ActionCatalogue, ExecutionStatus, load_action_catalogue
 from .contracts import Contract, DecisionCase
-from .scenarios import SCENARIO_IDS
+from .scenarios import SCENARIO_IDS, load_scenario_catalogue
 
 
 class ResolvedAction(Contract):
@@ -55,6 +55,11 @@ def resolve_action_ids(
         return []
 
     catalogue = catalogue or load_action_catalogue()
+    scenario_catalogue = load_scenario_catalogue()
+    family_by_scenario = {
+        definition.scenario_id: definition.family
+        for definition in scenario_catalogue.definitions
+    }
     parameters = set(available_parameters)
     evidence = set(available_evidence_fields)
     resolved: list[ResolvedAction] = []
@@ -73,6 +78,9 @@ def resolve_action_ids(
             required_parameters=list(action.required_parameters),
             required_evidence_fields=list(action.required_evidence_fields),
             required_safety_rules=action.safety_rules_for(matched),
+            required_safety_families=sorted({
+                family_by_scenario[scenario_id] for scenario_id in matched
+            }),
             missing_parameters=sorted(set(action.required_parameters) - parameters),
             missing_evidence_fields=sorted(set(action.required_evidence_fields) - evidence),
         ))
