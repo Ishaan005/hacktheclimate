@@ -6,9 +6,9 @@ import ComparisonPanel from './ComparisonPanel';
 
 const { outcomes, benefits } = fixtureAssessment;
 
-function renderPanel(overrides: { outcomes?: OutcomeState[]; stale?: boolean } = {}) {
+function renderPanel(overrides: { outcomes?: OutcomeState[]; stale?: boolean; demo?: boolean } = {}) {
   return render(
-    <ComparisonPanel outcomes={overrides.outcomes ?? outcomes} benefits={benefits} view="national" stale={overrides.stale ?? false} />,
+    <ComparisonPanel outcomes={overrides.outcomes ?? outcomes} benefits={benefits} view="national" stale={overrides.stale ?? false} demo={overrides.demo ?? false} />,
   );
 }
 
@@ -88,6 +88,14 @@ describe('ComparisonPanel', () => {
     expect(screen.queryByText('Site dispatch-down risk')).not.toBeInTheDocument();
     expect(screen.getByText('National context only, not a site outcome')).toBeInTheDocument();
     expect(screen.queryByText('Gross market opportunity')).not.toBeInTheDocument();
+  });
+
+  it('uses one demo caveat and leaves detailed context in the evidence drawer', () => {
+    renderPanel({ demo: true });
+    expect(screen.getByText('Modeled outcome context')).toBeInTheDocument();
+    expect(screen.getByText('Demo estimate only. Safety is not approved for this action.')).toBeInTheDocument();
+    expect(card('Modeled dispatch-down difference')).not.toHaveTextContent('Cannot be claimed');
+    expect(screen.queryByText('National context only, not a site outcome')).not.toBeInTheDocument();
   });
 
   it('warns when a column uses a different window', () => {

@@ -6,7 +6,7 @@ import EvidenceDrawer from './EvidenceDrawer';
 const { evidence, edits, validated, context } = fixtureAssessment;
 
 function renderDrawer() {
-  return render(<EvidenceDrawer evidence={evidence} edits={edits} validated={validated} sourceKind={context.sourceKind} />);
+  return render(<EvidenceDrawer evidence={evidence} edits={edits} validated={validated} sourceKind={context.sourceKind} nationalContext={fixtureAssessment.benefits.nationalContext} />);
 }
 
 describe('EvidenceDrawer', () => {
@@ -33,5 +33,6 @@ describe('EvidenceDrawer', () => {
     expect(screen.getByText('Historical demonstration')).toBeInTheDocument();
     expect(screen.getByText(/Not a validated assessment/)).toBeInTheDocument();
     expect(screen.queryByText('No operator edits.')).not.toBeInTheDocument();
+    expect(screen.getByText('National forecast context')).toBeInTheDocument();
   });
 });

@@ -56,6 +56,8 @@ describe('top bar', () => {
     expect(badge).toHaveTextContent(SOURCE_KIND_LABEL.historical_demo);
     expect(badge?.textContent).not.toMatch(/live/i);
     expect(within(container).queryByText(/^Live/)).toBeNull();
+    expect(within(container).queryByText(TOP_BAR_COPY.dataStatus)).not.toBeInTheDocument();
+    expect(within(container).getByText('Assessment time')).toBeInTheDocument();
   });
 });
 

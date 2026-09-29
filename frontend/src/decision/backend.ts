@@ -316,7 +316,7 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
     : facts.some((fact) => fact.state === 'stale') ? 'stale'
     : facts.some((fact) => fact.state === 'missing') ? 'missing'
     : facts.some((fact) => fact.state === 'modeled') ? 'modeled' : 'current';
-  const proposedPlan = backendPlanView(proposal, 'proposed', 'Backend proposal');
+  const proposedPlan = backendPlanView(proposal, 'proposed', 'Modeled action bundle');
   const altPlan = backendPlanView(alternative, 'operator', request.alternative?.name ?? 'Operator alternative');
   const benefits = proposal.benefits;
   const reason = 'Not established by validated case-level outcome evidence';

@@ -19,6 +19,14 @@ null values, missing evidence, and `UNKNOWN` safety gates so absent data cannot
 be mistaken for zero or an approved action. Missing check details remain in
 the evidence drawer.
 
+For a historical or synthetic planning demo, the top bar names the demo source
+and assessment time without repeating a page-level `Missing` badge. The safety
+panel shows one concise Unknown explanation; its full reason and exact missing
+checks are expandable. Modeled outcome numbers use one demo caveat rather than
+repeating it on every card. The experimental national forecast text moves to
+the evidence drawer. These presentation changes do not change safety or
+benefit validation.
+
 The current frontend uses [the adapter](../frontend/src/decision/backend.ts) to
 turn the endpoint's snake_case response into the decision workspace view model.
 It sends only reviewed condition details and operator-entered facts. The UI

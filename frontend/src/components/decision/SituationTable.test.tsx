@@ -53,7 +53,7 @@ describe('situation table', () => {
         origin: 'planning' as const, state: 'modeled' as const } : fact) });
     const row = rowFor('Actual flow on limiting route');
     expect(within(row).getByText('Modeled')).toBeInTheDocument();
-    expect(within(row).getByText('Synthetic planning model')).toBeInTheDocument();
+    expect(within(row).getByText('Planning model')).toBeInTheDocument();
     expect(within(row).getByText('Synthetic planning case (not live)', { exact: false })).toBeInTheDocument();
   });
 

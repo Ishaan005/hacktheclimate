@@ -1,6 +1,7 @@
 import { DATA_STATUS_LABEL } from '../../decision/copy/shared';
 import { TOP_BAR_COPY } from '../../decision/copy/topBar';
 import { DEMO_SITES, siteById } from '../../decision/sites';
+import { isDemoSource } from '../../decision/source';
 import type { DataStatus, ViewMode, WorkspaceContext } from '../../decision/types';
 import { formatDateTime, formatDayTime, formatTime, parseUtc } from '../../format';
 import SourceBadge from './SourceBadge';
@@ -39,6 +40,7 @@ function TopBar({ context, view, siteId, validated, onViewChange }: Props) {
   const site = view === 'site' ? siteById(siteId) : undefined;
   // Use the assessment's site details only when they are for this site.
   const contextForSite = context && context.view === 'site' && context.siteId === siteId ? context : null;
+  const demo = context ? isDemoSource(context.sourceKind) : false;
   const location = view === 'site' ? site?.name ?? TOP_BAR_COPY.noSite : TOP_BAR_COPY.allIsland;
 
   function selectView(next: ViewMode) {
@@ -103,17 +105,17 @@ function TopBar({ context, view, siteId, validated, onViewChange }: Props) {
         )}
         {context && <>
           <div>
-            <dt>{TOP_BAR_COPY.currentTime}</dt>
+            <dt>{demo ? 'Assessment time' : TOP_BAR_COPY.currentTime}</dt>
             <dd>{formatDateTime(context.currentTime)}</dd>
           </div>
           <div>
             <dt>{TOP_BAR_COPY.window}</dt>
             <dd>{formatWindow(context.windowStart, context.windowEnd)}</dd>
           </div>
-          <div>
+          {!demo && <div>
             <dt>{TOP_BAR_COPY.dataStatus}</dt>
             <dd><span className={STATUS_TONE[context.dataStatus]}>{DATA_STATUS_LABEL[context.dataStatus]}</span></dd>
-          </div>
+          </div>}
           <div>
             <dt>{TOP_BAR_COPY.source}</dt>
             <dd><SourceBadge kind={context.sourceKind} validated={validated} /></dd>

@@ -36,11 +36,12 @@ type Props = {
   edits: OperatorEdit[];
   validated: boolean;
   sourceKind: DataSourceKind;
+  nationalContext?: string | null;
 };
 
 // Collapsed by default so the safety result is read first. Everything here
 // explains the result; nothing here changes it.
-function EvidenceDrawer({ evidence, edits, validated, sourceKind }: Props) {
+function EvidenceDrawer({ evidence, edits, validated, sourceKind, nationalContext }: Props) {
   return (
     <details className="card evidence-drawer">
       <summary className="evidence-summary">
@@ -145,6 +146,10 @@ function EvidenceDrawer({ evidence, edits, validated, sourceKind }: Props) {
 
         {evidence.uncertainty.length > 0 && <Section title={EVIDENCE_COPY.uncertaintyTitle}>
           <TextList items={evidence.uncertainty} />
+        </Section>}
+
+        {nationalContext && <Section title="National forecast context">
+          <p>{nationalContext}</p>
         </Section>}
 
         {evidence.missingChecks.length > 0 && <Section title={EVIDENCE_COPY.missingChecksTitle}>

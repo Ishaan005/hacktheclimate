@@ -47,6 +47,7 @@ function valueText(value: number | string | null, unit: string | null): string {
 
 function provenanceText(fact: SituationFact): string {
   if (fact.state === 'missing' && fact.missingReason) return fact.missingReason;
+  if (fact.state === 'modeled' && fact.timestamp) return formatDateTime(fact.timestamp);
   const parts = [fact.source, fact.timestamp ? formatDateTime(fact.timestamp) : null].filter(Boolean);
   return parts.length ? parts.join(' · ') : SITUATION_COPY.noSource;
 }

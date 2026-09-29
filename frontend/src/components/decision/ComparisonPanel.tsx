@@ -134,11 +134,12 @@ type Props = {
   benefits: Benefits;
   view: ViewMode;
   stale: boolean;
+  demo?: boolean;
 };
 
 // Four plan states over one window. Safety rows come first; benefit cards
 // follow and cannot be claimed unless the proposed plan passes safety.
-function ComparisonPanel({ outcomes, benefits, view, stale }: Props) {
+function ComparisonPanel({ outcomes, benefits, view, stale, demo = false }: Props) {
   const columns = COLUMN_ORDER.map((column) => outcomeFor(outcomes, column)).filter((outcome): outcome is OutcomeState => outcome?.available === true);
   const reference = columns[0];
   const mismatched = windowMismatches(columns);
@@ -156,7 +157,7 @@ function ComparisonPanel({ outcomes, benefits, view, stale }: Props) {
     ? `${formatDayTime(reference.windowStart)}–${formatTime(reference.windowEnd)}`
     : reference ? `${formatDayTime(reference.windowStart)} – ${formatDayTime(reference.windowEnd)}` : null;
 
-  if (!columns.length && !benefitAvailable && !benefits.nationalContext) return null;
+  if (!columns.length && !benefitAvailable && (!benefits.nationalContext || demo)) return null;
 
   return (
     <section className="card comparison-panel" aria-labelledby="comparison-heading">
@@ -194,16 +195,19 @@ function ComparisonPanel({ outcomes, benefits, view, stale }: Props) {
         </table>
       </div>}
 
-      {(benefitAvailable || benefits.nationalContext) && <>
-      <h4 className="comparison-benefits-title">{BENEFIT_COPY.title}</h4>
-      {blockedBy && benefitAvailable && <p className="comparison-warning">{BENEFIT_COPY.cannotClaimNote}</p>}
+      {(benefitAvailable || (benefits.nationalContext && !demo)) && <>
+      <h4 className="comparison-benefits-title">{demo ? 'Modeled outcome context' : BENEFIT_COPY.title}</h4>
+      {demo && benefitAvailable && <p className="comparison-warning">
+        {blockedBy ? 'Demo estimate only. Safety is not approved for this action.' : 'Demo estimate only; not an operationally validated benefit.'}
+      </p>}
+      {!demo && blockedBy && benefitAvailable && <p className="comparison-warning">{BENEFIT_COPY.cannotClaimNote}</p>}
       <dl className="metrics comparison-benefits">
         {hasValue(benefits.avoidedDispatchDownMwh) &&
         <EstablishedCard
-          label={BENEFIT_COPY.avoided}
+          label={demo && blockedBy ? 'Modeled dispatch-down difference' : BENEFIT_COPY.avoided}
           entries={[{ value: benefits.avoidedDispatchDownMwh }]}
-          details={[BENEFIT_COPY.avoidedDetail, BENEFIT_COPY.avoidedNote]}
-          blockedBy={blockedBy}
+          details={demo ? [] : [BENEFIT_COPY.avoidedDetail, BENEFIT_COPY.avoidedNote]}
+          blockedBy={demo ? null : blockedBy}
         />}
         {siteEstablished && <EstablishedCard
           label={BENEFIT_COPY.siteRisk}
@@ -212,9 +216,9 @@ function ComparisonPanel({ outcomes, benefits, view, stale }: Props) {
             ...(hasValue(benefits.siteRiskExpectedMwh) ? [{ name: BENEFIT_COPY.siteExpected, value: benefits.siteRiskExpectedMwh }] : []),
           ]}
           details={view === 'national' ? [BENEFIT_COPY.siteNationalView] : []}
-          blockedBy={blockedBy}
+          blockedBy={demo ? null : blockedBy}
         />}
-        {benefits.nationalContext && <div className="metric established-card">
+        {benefits.nationalContext && !demo && <div className="metric established-card">
           <dt className="metric-label established-card-label">{BENEFIT_COPY.nationalContext}</dt>
           <dd className="established-card-entry">{benefits.nationalContext}</dd>
         </div>}
@@ -222,25 +226,25 @@ function ComparisonPanel({ outcomes, benefits, view, stale }: Props) {
           label={BENEFIT_COPY.systemCost}
           entries={[{ value: benefits.netSystemResourceCostEur }]}
           details={[BENEFIT_COPY.perspective(benefits.netSystemResourceCostEur.perspective)]}
-          blockedBy={blockedBy}
+          blockedBy={demo ? null : blockedBy}
         />}
         {hasValue(benefits.grossMarketOpportunityEur) && <EstablishedCard
           label={BENEFIT_COPY.marketOpportunity}
           entries={[{ value: benefits.grossMarketOpportunityEur }]}
           details={[BENEFIT_COPY.marketNote]}
-          blockedBy={blockedBy}
+          blockedBy={demo ? null : blockedBy}
         />}
         {hasValue(benefits.netFinancialValueEur) && <EstablishedCard
           label={BENEFIT_COPY.financialValue}
           entries={[{ value: benefits.netFinancialValueEur }]}
           details={[BENEFIT_COPY.perspective(benefits.netFinancialValueEur.perspective), BENEFIT_COPY.financialNote]}
-          blockedBy={blockedBy}
+          blockedBy={demo ? null : blockedBy}
         />}
         {hasValue(benefits.carbonEffectTco2e) && <EstablishedCard
           label={BENEFIT_COPY.carbon}
           entries={[{ value: benefits.carbonEffectTco2e }]}
           details={[BENEFIT_COPY.carbonNote]}
-          blockedBy={blockedBy}
+          blockedBy={demo ? null : blockedBy}
         />}
       </dl>
       </>}

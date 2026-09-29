@@ -4,6 +4,7 @@ import { STALE_NOTE } from '../../decision/copy/shared';
 import { SAFETY_COPY } from '../../decision/copy/safety';
 import { checksForPlan, combineResults } from '../../decision/rules';
 import { FAMILY_LABEL, familyOf } from '../../decision/scope';
+import { isDemoSource } from '../../decision/source';
 import type { Assessment, OverallSafety, Plan, SafetyCheck, ScenarioFamily, ViewMode } from '../../decision/types';
 import { formatDateTime } from '../../format';
 import { ResultChip } from './ResultChip';
@@ -98,6 +99,7 @@ function CheckTable({ checks, caption }: { checks: (SafetyCheck & { goNoGo?: boo
 
 function SafetyPanel({ assessment, overall, plan, view, stale }: SafetyPanelProps) {
   const headingId = useId();
+  const demo = isDemoSource(assessment.context.sourceKind);
   const familyChecks = assessment.familyChecks.filter(hasDisplayData);
   const families = familyOrder(assessment).filter((family) => familyChecks.some((check) => check.family === family));
   const crossChecks = assessment.crossChecks.filter(hasDisplayData);
@@ -116,9 +118,22 @@ function SafetyPanel({ assessment, overall, plan, view, stale }: SafetyPanelProp
             <ResultChip result={overall.result} prefix={SAFETY_COPY.overallLabel} />
           </span>
         </div>
-        <p className="safety-overall-reason">{overall.reason}</p>
+        <p className="safety-overall-reason">
+          {demo && overall.result === 'unknown'
+            ? 'Planning result only. Operational safety still needs verification.'
+            : overall.reason}
+        </p>
+        {demo && overall.result === 'unknown' && (overall.reason || overall.missingEvidence.length > 0) && (
+          <details className="safety-overall-details">
+            <summary>Why safety is Unknown</summary>
+            <p>{overall.reason}</p>
+            {overall.missingEvidence.length > 0 && <ul>
+              {overall.missingEvidence.map((item) => <li key={item}>{item}</li>)}
+            </ul>}
+          </details>
+        )}
         {stale && <p className="safety-note safety-note-warning" role="status">{STALE_NOTE}</p>}
-        {!assessment.validated && <p className="safety-note safety-note-warning">{SAFETY_COPY.notValidated}</p>}
+        {!assessment.validated && !demo && <p className="safety-note safety-note-warning">{SAFETY_COPY.notValidated}</p>}
       </div>
 
       {families.length > 0 && <section className="safety-section" aria-label={SAFETY_COPY.familyChecksTitle}>

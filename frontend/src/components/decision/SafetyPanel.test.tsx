@@ -25,7 +25,11 @@ describe('safety panel', () => {
     expect(within(overall).getByText('Unknown')).toBeInTheDocument();
     expect(within(overall).queryByText(SAFETY_COPY.missingEvidence)).not.toBeInTheDocument();
     expect(within(overall).getByText(STALE_NOTE)).toBeInTheDocument();
-    expect(within(overall).getByText(SAFETY_COPY.notValidated)).toBeInTheDocument();
+    expect(within(overall).getByText('Planning result only. Operational safety still needs verification.')).toBeInTheDocument();
+    expect(within(overall).queryByText(SAFETY_COPY.notValidated)).not.toBeInTheDocument();
+    const details = within(overall).getByText('Why safety is Unknown').closest('details');
+    expect(details).not.toHaveAttribute('open');
+    expect(within(details as HTMLElement).getByText('Actual flow on limiting route')).toBeInTheDocument();
   });
 
   it('shows Fail on a failing family check', () => {

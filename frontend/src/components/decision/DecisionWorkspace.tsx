@@ -1,6 +1,7 @@
 import { SEARCH_COPY } from '../../decision/copy/search';
 import { DECISION_COPY } from '../../decision/copy/workspace';
 import { displayOverall } from '../../decision/rules';
+import { isDemoSource } from '../../decision/source';
 import { useDecisionWorkspace } from '../../decision/useDecisionWorkspace';
 import StatusMessage from '../StatusMessage';
 import ComparisonPanel from './ComparisonPanel';
@@ -76,8 +77,8 @@ function DecisionWorkspace() {
             />
           </div>
         </div>
-        <ComparisonPanel outcomes={assessment.outcomes} benefits={assessment.benefits} view={view} stale={stale} />
-        <EvidenceDrawer evidence={assessment.evidence} edits={edits} validated={assessment.validated} sourceKind={assessment.context.sourceKind} />
+        <ComparisonPanel outcomes={assessment.outcomes} benefits={assessment.benefits} view={view} stale={stale} demo={isDemoSource(assessment.context.sourceKind)} />
+        <EvidenceDrawer evidence={assessment.evidence} edits={edits} validated={assessment.validated} sourceKind={assessment.context.sourceKind} nationalContext={assessment.benefits.nationalContext} />
       </>
     );
   }

@@ -3,6 +3,7 @@ import { ACTION_KIND_LABEL } from '../../decision/actionLabels';
 import { PERMISSION_STATE_LABEL, PLAN_COPY, ROLE_LABEL, permissionText } from '../../decision/copy/plan';
 import { RESULT_LABEL, STALE_NOTE } from '../../decision/copy/shared';
 import { planLabel } from '../../decision/rules';
+import { isDemoSource } from '../../decision/source';
 import { copyAsAlternative } from '../../decision/useDecisionWorkspace';
 import type { ActionKind, Assessment, PermissionState, Plan, PlanStep, SafetyCheck } from '../../decision/types';
 import { formatNumber, formatSigned, formatTime, parseUtc } from '../../format';
@@ -249,11 +250,12 @@ function EditableStep({ step, index, plan, checks, onEditStep, onRemove }: EditP
 
 function LabelLine({ plan, assessment, stale }: { plan: Plan; assessment: Assessment; stale: boolean }) {
   const { label, reason } = planLabel(plan, assessment, stale);
+  const repeatedDemoWarning = isDemoSource(assessment.context.sourceKind) && label === 'insufficient_evidence' && !stale;
   return (
     <p className="plan-label">
       <span className="visually-hidden">{PLAN_COPY.labelTitle}: </span>
       <PlanLabelChip label={label} />
-      <span className="plan-label-reason">{reason}</span>
+      {!repeatedDemoWarning && <span className="plan-label-reason">{reason}</span>}
     </p>
   );
 }
