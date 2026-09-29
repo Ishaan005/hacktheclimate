@@ -51,7 +51,13 @@ function backendResponse(): BackendAssessment {
     active_instructions: [],
     comparisons: {
       current_plan: baseline, no_new_instruction: baseline, proposed_plan: baseline,
-      operator_alternative: { ...baseline, plan: { steps: [{ step_id: 'step-a' }] },
+      operator_alternative: { ...baseline, plan: { steps: [{
+        step_id: 'step-a', action_id: 'STORAGE_CHARGE', role: 'main',
+        instruction: 'Charge Battery A', asset_or_party: 'Battery A', executor: 'Battery A',
+        permission_route: 'needs_acceptance', permission: 'denied', permission_party: 'owner',
+        starts_at: null, effect_at: null, ends_at: null,
+        limiting_location_delta_mw: -5, depends_on: [],
+      }] },
         safety: { status: 'FAIL', reason: 'Permission denied', missing_checks: ['credible_failure_flow'] },
         plan_label: 'Unsafe', checks: [...baseline.checks, { ...baseline.checks[0],
           check_id: 'permission', family: 'action', action_step_id: 'step-a', status: 'FAIL', reason: 'Permission denied' }] },
@@ -66,13 +72,19 @@ describe('backend workspace adapter', () => {
   it('sends locked IDs, operator edits and alternative steps to the real route contract', () => {
     const body = toBackendRequest(request(), new Date('2026-09-29T15:01:00Z'));
     expect(body.decision_case.scenario_ids).toEqual(['T3']);
+    expect(body.description).toBe('route overload in outage');
+    expect(body.conditions).toEqual([expect.objectContaining({
+      scenario_id: 'T3', situation_key: 't_outage_overload',
+    })]);
     expect(body.decision_case.starts_at).toBe('2026-09-29T15:30:00.000Z');
     expect(body.decision_case.ends_at).toBe('2026-09-30T15:30:00.000Z');
     expect(body.evidence).toEqual(expect.arrayContaining([
       expect.objectContaining({ field: 'normal_flow_mw', value: 420, source_type: 'operator' }),
     ]));
     expect(body.operator_alternative.steps[0]).toMatchObject({
-      action_id: 'STORAGE_CHARGE', permission: 'denied', limiting_location_delta_mw: -5,
+      action_id: 'STORAGE_CHARGE', role: 'main', instruction: 'Charge Battery A',
+      permission_route: 'needs_acceptance', permission: 'denied',
+      permission_party: 'owner', limiting_location_delta_mw: -5,
     });
   });
 
@@ -91,6 +103,10 @@ describe('backend workspace adapter', () => {
     expect(assessment.validated).toBe(false);
     expect(assessment.overall.result).toBe('fail');
     expect(assessment.alternative?.label).toBe('unsafe');
+    expect(assessment.alternative?.steps[0]).toMatchObject({
+      id: 'step-a', kind: 'local_storage_or_demand', instruction: 'Charge Battery A',
+      permissionState: 'refused', mwEffect: -5,
+    });
     expect(assessment.actionChecks[0].stepId).toBe('step-a');
     expect(assessment.outcomes).toHaveLength(4);
     expect(assessment.outcomes.every((item) => item.windowStart === '2026-09-29T15:30:00Z')).toBe(true);
