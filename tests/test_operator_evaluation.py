@@ -32,7 +32,7 @@ def _request(*, evidence: bool = True) -> OperatorEvaluationRequest:
                 ))
     return OperatorEvaluationRequest(
         decision_case=DecisionCase(
-            case_id="synthetic-test", scenario_ids=["local_constraint"], as_of=as_of,
+            case_id="synthetic-test", scenario_ids=["T1"], as_of=as_of,
             starts_at=start, ends_at=start + timedelta(hours=24),
         ),
         forecast_available_at=as_of - timedelta(minutes=5),
@@ -52,6 +52,10 @@ def test_evaluation_joins_current_plan_network_effect_and_blocks_ranking():
     assert action["modeled_capture_upper_bound_mwh"] == pytest.approx(10)
     assert action["expected_avoided_constraint_mwh"] is None
     assert action["intervals"][0]["network_effect"]["planned_outage"]["base"] != action["intervals"][0]["network_effect"]["planned_outage"]["with_action"]
+    assert action["contract_action_id"] == "FLEX_LOAD"
+    assert "network_loading" in action["required_safety_rules"]
+    assert any(item["action_id"] == "FLEX_LOAD" for item in result["eligible_actions"])
+    assert any(item["action_id"] == "NETWORK_SWITCHING" for item in result["unavailable_actions"])
     assert result["ranked_modeled_capture_bounds"][0]["action_id"] == action["action_id"]
     assert result["ranked_expected_avoided_dispatch_down"] == []
     assert result["recommendation"] is None
