@@ -2,6 +2,8 @@
 
 The saved [GFS constraint model](GFS_CONSTRAINT_TRAINING.md) has a batch inference path and a read-only API route. The model combines an event classifier, positive-event MWh regressor, and probability calibration. It emits national `constraint_mwh` probability, expected MWh and historical-residual ranges for each half-hour from 06:30 UTC to 06:00 the next day. This is an **experimental forecast**: August expected-MWh error was 17.39 MWh versus 15.01 MWh for a zero forecast. It is not connected to the safety or action optimiser.
 
+The [model readiness report](GFS_MODEL_READINESS.md) freezes this as the canonical forward path. The separately evaluated GFS curtailment artifact does not pass its volume gate, so this route does not serve curtailment or total dispatch-down.
+
 ## Daily run
 
 From the repository root in the Python 3.11 environment:

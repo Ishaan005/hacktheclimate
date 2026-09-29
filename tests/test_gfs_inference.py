@@ -84,3 +84,21 @@ def test_invalid_prediction_is_rejected(checked_snapshot) -> None:
     broken["forecasts"][0]["expected_constraint_mwh"] = float("nan")
     with pytest.raises(ValueError, match="Invalid forecast"):
         gfs_forecast.validate_snapshot(broken, as_of=utc(6, 15))
+
+
+def test_curtailment_artifact_cannot_enter_constraint_serving_path() -> None:
+    root = gfs_forecast.REPO_ROOT
+    panel = pd.read_csv(root / "data/processed/gfs_daily_2026_jan_aug.csv")
+    panel = panel[panel.issue_time_utc.eq("2026-08-31T00:00:00Z")].copy()
+    point = json.loads((root / "data/processed/gfs_daily_2026_jan_aug_manifest.json").read_text())
+    point["days"] = [day for day in point["days"] if day["issue_time"] == "2026-08-31T00:00:00Z"]
+    point["days"][0]["retrieved_at_utc"] = "2026-08-31T06:10:00Z"
+    release = json.loads((root / "data/processed/gfs_daily_2026_jan_aug_release_manifest.json").read_text())
+    release["days"] = [day for day in release["days"] if day["issue_time_utc"] == "2026-08-31T00:00:00Z"]
+    with pytest.raises(ValueError, match="Only the national constraint"):
+        gfs_forecast.build_snapshot(
+            panel, point, release,
+            model_path=root / "artifacts/gfs_curtailment/final_model.joblib",
+            metrics_path=root / "artifacts/gfs_curtailment/metrics.json",
+            now=utc(6, 15),
+        )

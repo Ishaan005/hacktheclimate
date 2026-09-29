@@ -120,6 +120,8 @@ def build_snapshot(
     bundle = joblib.load(model_path)
     if not {"model", "calendar_baseline", "source_versions"} <= set(bundle):
         raise ValueError("Saved model is missing expected training metadata")
+    if bundle.get("target", "constraint_mwh") != "constraint_mwh":
+        raise ValueError("Only the national constraint model may enter the live forecast path")
     metrics = json.loads(metrics_path.read_text())
     if bundle["source_versions"] != metrics["source_versions"]:
         raise ValueError("Saved model and evaluation report have different source versions")

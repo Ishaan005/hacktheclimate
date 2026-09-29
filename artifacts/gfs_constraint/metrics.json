@@ -1,5 +1,5 @@
 {
-  "target": "national constraint_mwh; curtailment_mwh retained only for separation check",
+  "target": "national constraint_mwh; other dispatch-down component retained only as a separate label",
   "event_definition": "constraint_mwh > 5.0 MWh per half-hour",
   "issue_and_decision": "Daily NOAA GFS 00Z run, all used forecast-hour objects present by 06Z decision",
   "weather_mapping": "Forecast hour at or before each target half-hour; no invented 30-minute meteorology",
@@ -102,7 +102,7 @@
     "weather_csv_sha256": "5e5dc02639b32add8d9c0ed9e743522b8cdb7a131f6d0daa290738f9a8ba9093",
     "labels_csv_sha256": "4497a6af5145180b49a2b221ef0ffd43aa3a3b03f5b790e7e5137ca07097e0e7",
     "training_table_csv_sha256": "e12f93e46981a568e906f3bf685743bb0ca089e2952ce42fd001541fb2066a17",
-    "training_script_sha256": "a05debab5f6482806df4c9a9b49b0c6e484093419b7ed0afa9fd8dd92c1a4c62",
+    "training_script_sha256": "bd52f69e91e398c04bf9c91216f3ff639593c091eac7d071c18d0ed3ae6c58c8",
     "scikit_learn": "1.8.0",
     "pandas": "2.2.3",
     "numpy": "2.3.5",
