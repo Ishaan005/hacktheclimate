@@ -1,5 +1,7 @@
 """Typed, evidence-gated services for the advisory decision demo."""
 
+from .actions import load_action_catalogue
+from .action_resolver import resolve_action_ids, resolve_case_actions
 from .baseline import best_case_metrics, calculate_current_plan
 from .cases import append_case, load_cases, search_cases
 from .contracts import DecisionCase, EvidenceValue, ExistingInstruction, PastCase
@@ -12,6 +14,7 @@ from .sources import load_checked_constraint
 
 __all__ = [
     "DecisionCase", "EvidenceValue", "ExistingInstruction", "PastCase",
+    "load_action_catalogue", "resolve_action_ids", "resolve_case_actions",
     "append_case", "best_case_metrics", "calculate_current_plan",
     "evaluate_case", "evaluate_policy", "evidence_from_gfs_snapshot", "load_cases",
     "load_checked_constraint", "load_contract_manifest", "load_demo_policy",

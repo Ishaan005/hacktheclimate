@@ -3,8 +3,28 @@
   "status": "pending_review",
   "scenario_catalogue_reference": "https://github.com/Ishaan005/hacktheclimate/issues/47",
   "approval_reference": null,
-  "scenario_ids": ["T1", "T2", "T3", "T4", "H1", "H2", "H3", "H4", "SNSP"],
-  "action_ids": [],
+  "scenario_ids": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "SNSP"
+  ],
+  "action_ids": [
+    "FLEX_LOAD",
+    "STORAGE_CHARGE",
+    "GENERATOR_REDISPATCH",
+    "RENEWABLE_LIMIT",
+    "INTERCONNECTOR_TRANSFER",
+    "NETWORK_SWITCHING",
+    "OUTAGE_RETURN",
+    "UNIT_COMMITMENT",
+    "RESERVE_RAMP_ACTION"
+  ],
   "required_facts_by_scenario": {},
   "outcome_metrics_approved": false
 }

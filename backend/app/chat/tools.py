@@ -161,5 +161,35 @@ def get_network_scenario(target_timestamp: str) -> dict:
         return {"error": f"Planning-network scenario unavailable: {type(exc).__name__}"}
 
 
+@tool
+def get_scenario_actions(scenario_ids: list[str]) -> dict:
+    """Return the deterministic issue #51 action families for locked scenario IDs.
+
+    Use only T1, T2, T3, T4, H1, H2, H3, H4 or SNSP. This tool determines
+    which action families are in scope; it does not prove an action is available,
+    safe or recommendable.
+    """
+    try:
+        from ..decision import load_action_catalogue, resolve_action_ids
+
+        catalogue = load_action_catalogue()
+        actions = resolve_action_ids(scenario_ids, catalogue=catalogue)
+        return {
+            "mode": "decision_action_contract",
+            "catalogue_status": catalogue.status,
+            "source": catalogue.source,
+            "scenario_ids": scenario_ids,
+            "actions": [action.model_dump(mode="json") for action in actions],
+            "limitations": [
+                "Eligibility comes from the working issue #51 contract; domain approval is still pending.",
+                "planning_supported means an executor exists, not that a specific asset is available or safe.",
+                "A recommendation still requires exact action inputs and passing safety/evidence gates.",
+            ],
+        }
+    except (FileNotFoundError, ValueError, KeyError, TypeError) as exc:
+        return {"error": f"Decision action contract unavailable: {exc}"}
+
+
 FORECAST_TOOLS = [get_dispatch_down_forecast, get_dispatch_down_day, check_constraint,
-                  get_current_constraint_forecast, get_current_constraint_day, get_network_scenario]
+                  get_current_constraint_forecast, get_current_constraint_day, get_network_scenario,
+                  get_scenario_actions]
