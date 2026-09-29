@@ -119,7 +119,15 @@ export const WORKSPACE_COPY = {
   outcomeTitle: 'New outcome',
   baseline: 'Baseline',
   postAction: 'Post-action',
-  guardrailTitle: 'Safety (constraints)',
+  guardrailTitle: 'Guardrails',
+  assistantTitle: 'Grid assistant',
+  assistantRecommended: 'Recommended action',
+  assistantToolsUsed: 'Data used',
+  assistantNoTools: 'No tools called',
+  assistantNote: 'Answers come only from the tools listed. Historical replays and experimental forecasts are labelled; check before acting.',
+  traceTitle: 'How the assistant answered',
+  traceSummary: 'Path through the LangGraph for this reply',
+  traceSkipped: 'Not used this time',
 } as const;
 
 export const GUARDRAIL_STATUS_LABEL = {

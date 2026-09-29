@@ -1,0 +1,20 @@
+# Advisory decision backend: Ishaan workstreams 08–12
+
+`backend.app.decision` provides typed Python services and JSON-serializable Pydantic contracts for the later intake, action, and UI work. It does not issue grid instructions or turn planning-model checks into operational safety approval.
+
+## Sequence and contract
+
+1. Create a `DecisionCase` with a decision time, 48 half-hour future window, scenario IDs, location/assets, and existing instructions. An instruction must identify the evidence that it is already reflected in the forecast or give a quantified signed MWh-per-interval effect. Unknown effects prevent a complete baseline component.
+2. Pass `EvidenceValue` records to `resolve_case_context`. Each supplied value needs an explicit freshness limit. The resolver rejects measurements, forecast issues, or values that were unavailable at the decision time. It labels stale and missing values; it never backfills them from later data. Duplicate values for the same field and valid time are rejected so intake must resolve source conflicts explicitly. The `evidence_from_gfs_snapshot` adapter accepts only the checked **experimental national constraint** snapshot. It supplies no curtailment, spatial effect, or safety result.
+3. Load `config/demo_safety_policy_v1.json` and call `evaluate_policy`. Every rule listed in roadmap #32 is present. The TYTFS DC loading and islanding checks may be supplied through the existing planning safety result; those results must already represent the current plan. Their `PASS` means only that the stated **planning proxy** passed. Voltage, reserve, system strength, frequency, inertia, minimum online units, RoCoF, asset capability, and timing have no approved end-to-end calculation yet. They remain `UNKNOWN`, so `safety_gate_passed` is false. The old issue #5 SNSP limit is retained as an **unapproved candidate**, not a passing rule. A breach anywhere in the 48-interval window overrides unknowns. Any changed limit or rule needs a new policy version; results also include a hash of the exact rules.
+4. Call `calculate_current_plan` to obtain each interval's constraint, curtailment, and total dispatch-down MWh, the 24-hour sums, lower and upper bounds, missing reasons, instruction IDs, source versions, and aggregate safety result. A total remains unavailable if either component is missing. This is the shared current-plan shape for later action comparison.
+5. Call `best_case_metrics` only for a separately labelled demo upside. It caps avoided energy by the baseline upper bound and action MW × hours, plus a verified recoverable-energy cap when provided. Unknown incremental cost appears as an explicit zero-cost assumption. These values never populate expected savings or authorize a recommendation.
+
+`load_cases` reads the included synthetic/modelled examples. `append_case` adds schema-versioned records to a chosen JSONL file without replacing earlier records or accepting duplicate IDs. `search_cases` filters by decision-time availability, scenario and minimum quality, then ranks by location, matching conditions, quality, and recency. Each result explains its match and says whether its outcome is observed, estimated, or modelled. A real observed record requires a measured, case-level source reference. Store operational case libraries outside the demo fixture, with source review before ingestion.
+
+The [case-flow handoff](DECISION_HANDOFF.md) documents the read-only preview route, current data gaps, and the exact approvals needed before it can join action selection.
+The [locked scenario catalogue](../config/decision_scenarios_v1.json) now contains the nine product labels from issue #47; the action and metric contract remains pending.
+
+## Current limits
+
+The GFS model's August expected-MWh error did not beat zero. Existing TYTFS data are a planning case, and national dispatch-down totals are not case-level action outcomes. The included case records are invented examples and must never be presented as measured savings. The five services are callable contracts for the other owners; they do not yet make the full operator-to-recommendation journey complete.

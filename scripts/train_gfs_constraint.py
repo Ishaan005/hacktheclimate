@@ -23,6 +23,15 @@ from sklearn.metrics import average_precision_score, brier_score_loss, mean_abso
 
 EVENT_THRESHOLD_MWH = 5.0
 CALENDAR_FEATURES = ["hour_sin", "hour_cos", "dow_sin", "dow_cos", "month_sin", "month_cos", "horizon_hours"]
+TARGETS = ("constraint_mwh", "curtailment_mwh")
+
+
+def event_column(target: str) -> str:
+    if target not in TARGETS:
+        raise ValueError(f"Unsupported target: {target}")
+    return target.removesuffix("_mwh") + "_event"
+
+
 def _utc_naive(series: pd.Series) -> pd.Series:
     return pd.to_datetime(series, utc=True).dt.tz_convert(None)
 
@@ -105,7 +114,7 @@ def build_forecast_rows(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     return table.sort_values("target_time_utc").reset_index(drop=True), CALENDAR_FEATURES + weather_features
 
 
-def build_training_table(panel: pd.DataFrame, labels: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+def build_training_table(panel: pd.DataFrame, labels: pd.DataFrame, *, target: str = "constraint_mwh") -> tuple[pd.DataFrame, list[str]]:
     """Join only target labels to already checked forecast-safe features."""
     table, features = build_forecast_rows(panel)
     measured = labels[["timestamp", "constraint_mwh", "curtailment_mwh"]].copy()
@@ -113,7 +122,9 @@ def build_training_table(panel: pd.DataFrame, labels: pd.DataFrame) -> tuple[pd.
     if measured.duplicated("timestamp").any():
         raise ValueError("Duplicate label timestamp")
     table = table.merge(measured, left_on="target_time_utc", right_on="timestamp", how="inner", validate="one_to_one")
-    table["constraint_event"] = (table.constraint_mwh > EVENT_THRESHOLD_MWH).astype(int)
+    if not np.isfinite(table[list(TARGETS)].to_numpy()).all() or (table[list(TARGETS)] < 0).any().any():
+        raise ValueError("Missing, non-finite or negative dispatch-down label")
+    table[event_column(target)] = (table[target] > EVENT_THRESHOLD_MWH).astype(int)
     return table, features
 
 
@@ -123,8 +134,9 @@ def _conformal_quantile(residuals: np.ndarray, coverage: float) -> float:
     return float(np.sort(residuals)[rank - 1])
 
 
-def _fit_one(train: pd.DataFrame, calibration: pd.DataFrame, features: list[str]) -> dict:
-    y_event = train.constraint_event.to_numpy()
+def _fit_one(train: pd.DataFrame, calibration: pd.DataFrame, features: list[str], target: str) -> dict:
+    event = event_column(target)
+    y_event = train[event].to_numpy()
     if len(set(y_event)) < 2 or (y_event == 1).sum() < 30:
         raise ValueError("Not enough positive and negative training examples")
     classifier = HistGradientBoostingClassifier(max_iter=150, max_depth=4, learning_rate=0.05,
@@ -132,15 +144,15 @@ def _fit_one(train: pd.DataFrame, calibration: pd.DataFrame, features: list[str]
     classifier.fit(train[features], y_event)
     volume = HistGradientBoostingRegressor(max_iter=150, max_depth=4, learning_rate=0.05,
                                            l2_regularization=5.0, random_state=42)
-    volume.fit(train.loc[train.constraint_event.eq(1), features],
-               train.loc[train.constraint_event.eq(1), "constraint_mwh"])
+    volume.fit(train.loc[train[event].eq(1), features],
+               train.loc[train[event].eq(1), target])
     raw_cal = classifier.predict_proba(calibration[features])[:, 1]
     calibrator = IsotonicRegression(y_min=0, y_max=1, out_of_bounds="clip")
-    calibrator.fit(raw_cal, calibration.constraint_event.to_numpy())
+    calibrator.fit(raw_cal, calibration[event].to_numpy())
     cal_probability = calibrator.transform(raw_cal)
     cal_conditional = np.maximum(volume.predict(calibration[features]), 0)
     cal_expected = cal_probability * cal_conditional
-    residuals = np.abs(calibration.constraint_mwh.to_numpy() - cal_expected)
+    residuals = np.abs(calibration[target].to_numpy() - cal_expected)
     return {
         "features": features,
         "classifier": classifier,
@@ -155,12 +167,13 @@ def _fit_one(train: pd.DataFrame, calibration: pd.DataFrame, features: list[str]
     }
 
 
-def fit_bundle(train: pd.DataFrame, calibration: pd.DataFrame, weather_features: list[str]) -> dict:
+def fit_bundle(train: pd.DataFrame, calibration: pd.DataFrame, weather_features: list[str], *, target: str = "constraint_mwh") -> dict:
     if train.target_time_utc.max() >= calibration.target_time_utc.min():
         raise ValueError("Training and calibration target periods overlap")
     return {
-        "model": _fit_one(train, calibration, weather_features),
-        "calendar_baseline": _fit_one(train, calibration, CALENDAR_FEATURES),
+        "model": _fit_one(train, calibration, weather_features, target),
+        "calendar_baseline": _fit_one(train, calibration, CALENDAR_FEATURES, target),
+        "target": target,
         "event_threshold_mwh": EVENT_THRESHOLD_MWH,
         "forecast_source": "NOAA GFS via dynamical.org, 00Z issue for 06Z daily decision",
     }
@@ -186,9 +199,9 @@ def _ece(y: np.ndarray, probability: np.ndarray) -> float:
                      for b in range(10) if (bins == b).any()))
 
 
-def metrics(rows: pd.DataFrame, forecast: pd.DataFrame, baseline: pd.DataFrame) -> dict:
-    y = rows.constraint_mwh.to_numpy()
-    event = rows.constraint_event.to_numpy()
+def metrics(rows: pd.DataFrame, forecast: pd.DataFrame, baseline: pd.DataFrame, *, target: str = "constraint_mwh") -> dict:
+    y = rows[target].to_numpy()
+    event = rows[event_column(target)].to_numpy()
     p = forecast.probability.to_numpy()
     return {
         "rows": len(rows),
@@ -209,10 +222,10 @@ def metrics(rows: pd.DataFrame, forecast: pd.DataFrame, baseline: pd.DataFrame) 
 
 
 def evaluate_fold(train: pd.DataFrame, calibration: pd.DataFrame, test: pd.DataFrame,
-                  features: list[str]) -> tuple[dict, dict, pd.DataFrame]:
+                  features: list[str], *, target: str = "constraint_mwh") -> tuple[dict, dict, pd.DataFrame]:
     if train.target_time_utc.max() >= calibration.target_time_utc.min() or calibration.target_time_utc.max() >= test.target_time_utc.min():
         raise ValueError("Chronological fold periods overlap")
-    bundle = fit_bundle(train, calibration, features)
+    bundle = fit_bundle(train, calibration, features, target=target)
     forecast = predict_one(bundle["model"], test)
     baseline = predict_one(bundle["calendar_baseline"], test)
     result = {
@@ -222,17 +235,17 @@ def evaluate_fold(train: pd.DataFrame, calibration: pd.DataFrame, test: pd.DataF
         "calibration_end": str(calibration.target_time_utc.max()),
         "test_start": str(test.target_time_utc.min()),
         "test_end": str(test.target_time_utc.max()),
-        "all_horizons": metrics(test, forecast, baseline),
+        "all_horizons": metrics(test, forecast, baseline, target=target),
         "exact_horizons": {},
         "horizon_bands": {},
     }
     for horizon in (1.0, 6.0, 12.0, 24.0):
         mask = test.horizon_hours.eq(horizon)
-        result["exact_horizons"][f"{int(horizon)}h"] = metrics(test[mask], forecast[mask], baseline[mask])
+        result["exact_horizons"][f"{int(horizon)}h"] = metrics(test[mask], forecast[mask], baseline[mask], target=target)
     for name, low, high in (("0.5-6h", 0.5, 6), ("6.5-12h", 6.5, 12), ("12.5-24h", 12.5, 24)):
         mask = test.horizon_hours.between(low, high)
-        result["horizon_bands"][name] = metrics(test[mask], forecast[mask], baseline[mask])
-    predictions = test[["issue_time_utc", "decision_time_utc", "target_time_utc", "horizon_hours", "source_snapshot_id", "constraint_mwh", "curtailment_mwh", "constraint_event"]].copy()
+        result["horizon_bands"][name] = metrics(test[mask], forecast[mask], baseline[mask], target=target)
+    predictions = test[["issue_time_utc", "decision_time_utc", "target_time_utc", "horizon_hours", "source_snapshot_id", "constraint_mwh", "curtailment_mwh", event_column(target)]].copy()
     for prefix, frame in (("model", forecast), ("calendar", baseline)):
         for column in frame:
             predictions[f"{prefix}_{column}"] = frame[column]
@@ -241,16 +254,20 @@ def evaluate_fold(train: pd.DataFrame, calibration: pd.DataFrame, test: pd.DataF
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--target", choices=TARGETS, default="constraint_mwh")
     parser.add_argument("--weather", type=Path, default=Path("data/processed/gfs_daily_2026_jan_aug.csv"))
     parser.add_argument("--labels", type=Path, default=Path("data/processed/training_table_eirgrid_2026_jan_aug.csv"))
     parser.add_argument("--release-manifest", type=Path, default=Path("data/processed/gfs_daily_2026_jan_aug_release_manifest.json"))
-    parser.add_argument("--output-dir", type=Path, default=Path("artifacts/gfs_constraint"))
-    parser.add_argument("--table", type=Path, default=Path("data/processed/gfs_constraint_training_2026_jan_aug.csv"))
+    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--table", type=Path)
     args = parser.parse_args()
+    target_name = args.target.removesuffix("_mwh")
+    args.output_dir = args.output_dir or Path(f"artifacts/gfs_{target_name}")
+    args.table = args.table or Path(f"data/processed/gfs_{target_name}_training_2026_jan_aug.csv")
     panel = pd.read_csv(args.weather)
     validate_release_manifest(panel, args.release_manifest)
     labels = pd.read_csv(args.labels)
-    table, features = build_training_table(panel, labels)
+    table, features = build_training_table(panel, labels, target=args.target)
     args.table.parent.mkdir(parents=True, exist_ok=True)
     table.to_csv(args.table, index=False)
     source_versions = {
@@ -278,7 +295,7 @@ def main() -> None:
         test = table[table.target_time_utc.between(test_start, test_end, inclusive="left")]
         if min(len(train), len(calibration), len(test)) == 0:
             raise ValueError(f"Empty train/calibration/test fold for {test_start}")
-        result, bundle, predictions = evaluate_fold(train, calibration, test, features)
+        result, bundle, predictions = evaluate_fold(train, calibration, test, features, target=args.target)
         folds[f"2026-{month:02d}"] = result
         predictions["test_month"] = f"2026-{month:02d}"
         all_predictions.append(predictions)
@@ -293,25 +310,25 @@ def main() -> None:
     backtest_predictions.to_csv(args.output_dir / "backtest_predictions.csv", index=False)
     model_predictions = backtest_predictions[[column for column in backtest_predictions if column.startswith("model_")]].rename(columns=lambda column: column.removeprefix("model_"))
     calendar_predictions = backtest_predictions[[column for column in backtest_predictions if column.startswith("calendar_")]].rename(columns=lambda column: column.removeprefix("calendar_"))
-    aggregate = {"all_horizons": metrics(backtest_predictions, model_predictions, calendar_predictions), "exact_horizons": {}, "horizon_bands": {}}
+    aggregate = {"all_horizons": metrics(backtest_predictions, model_predictions, calendar_predictions, target=args.target), "exact_horizons": {}, "horizon_bands": {}}
     for horizon in (1.0, 6.0, 12.0, 24.0):
         mask = backtest_predictions.horizon_hours.eq(horizon)
-        aggregate["exact_horizons"][f"{int(horizon)}h"] = metrics(backtest_predictions[mask], model_predictions[mask], calendar_predictions[mask])
+        aggregate["exact_horizons"][f"{int(horizon)}h"] = metrics(backtest_predictions[mask], model_predictions[mask], calendar_predictions[mask], target=args.target)
     for name, low, high in (("0.5-6h", 0.5, 6), ("6.5-12h", 6.5, 12), ("12.5-24h", 12.5, 24)):
         mask = backtest_predictions.horizon_hours.between(low, high)
-        aggregate["horizon_bands"][name] = metrics(backtest_predictions[mask], model_predictions[mask], calendar_predictions[mask])
+        aggregate["horizon_bands"][name] = metrics(backtest_predictions[mask], model_predictions[mask], calendar_predictions[mask], target=args.target)
     final_train = table[table.target_time_utc < pd.Timestamp("2026-08-01")]
     final_calibration = table[table.target_time_utc >= pd.Timestamp("2026-08-01")]
-    final_bundle = fit_bundle(final_train, final_calibration, features)
+    final_bundle = fit_bundle(final_train, final_calibration, features, target=args.target)
     final_bundle["source_versions"] = source_versions
     joblib.dump(final_bundle, args.output_dir / "final_model.joblib")
     monthly = {}
     for month, group in table.groupby(table.target_time_utc.dt.to_period("M")):
-        monthly[str(month)] = {"rows": len(group), "event_prevalence": float(group.constraint_event.mean()),
+        monthly[str(month)] = {"rows": len(group), "event_prevalence": float(group[event_column(args.target)].mean()),
                                "missing_feature_values": int(group[features].isna().sum().sum())}
     report = {
-        "target": "national constraint_mwh; curtailment_mwh retained only for separation check",
-        "event_definition": f"constraint_mwh > {EVENT_THRESHOLD_MWH} MWh per half-hour",
+        "target": f"national {args.target}; other dispatch-down component retained only as a separate label",
+        "event_definition": f"{args.target} > {EVENT_THRESHOLD_MWH} MWh per half-hour",
         "issue_and_decision": "Daily NOAA GFS 00Z run, all used forecast-hour objects present by 06Z decision",
         "weather_mapping": "Forecast hour at or before each target half-hour; no invented 30-minute meteorology",
         "feature_availability": "NOAA object Last-Modified <= decision; no EirGrid actuals or label lags as predictors",

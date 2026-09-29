@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "status": "locked",
+  "source": "https://github.com/Ishaan005/hacktheclimate/issues/47",
+  "definitions": [
+    {
+      "scenario_id": "T1", "family": "transmission", "name": "Intact overload",
+      "selection": "No equipment already out; normal flow is at or beyond its allowed limit.",
+      "scope": "named network bottleneck", "variants": ["local generating area", "shared route", "wide affected renewable group"],
+      "intake_fields": ["limiting_equipment", "equipment_type", "affected_renewable_units_or_groups", "reach", "what_changed", "normal_flow_mw", "normal_flow_limit_mw", "now_or_forecast", "relevant_time_window"]
+    },
+    {
+      "scenario_id": "T2", "family": "transmission", "name": "Intact single-failure risk",
+      "selection": "No equipment already out; normal flow is within limits, but one credible failure overloads remaining equipment.",
+      "scope": "named network bottleneck", "variants": ["local generating area", "shared route", "wide affected renewable group"],
+      "intake_fields": ["limiting_equipment", "equipment_type", "affected_renewable_units_or_groups", "reach", "what_changed", "normal_flow_mw", "normal_flow_limit_mw", "credible_failure", "post_failure_flow_mw", "post_failure_limit_mw", "now_or_forecast", "relevant_time_window"]
+    },
+    {
+      "scenario_id": "T3", "family": "transmission", "name": "Outage overload",
+      "selection": "Equipment is already out; normal flow on remaining equipment is at or beyond its allowed limit.",
+      "scope": "named network bottleneck", "variants": ["local generating area", "shared route", "wide affected renewable group"],
+      "intake_fields": ["limiting_equipment", "equipment_type", "affected_renewable_units_or_groups", "reach", "what_changed", "outage_equipment", "outage_type", "expected_return_time", "normal_flow_mw", "normal_flow_limit_mw", "now_or_forecast", "relevant_time_window"]
+    },
+    {
+      "scenario_id": "T4", "family": "transmission", "name": "Outage plus failure risk",
+      "selection": "Equipment is already out; normal flow is within limits, but one further credible failure overloads remaining equipment.",
+      "scope": "named network bottleneck", "variants": ["local generating area", "shared route", "wide affected renewable group"],
+      "intake_fields": ["limiting_equipment", "equipment_type", "affected_renewable_units_or_groups", "reach", "what_changed", "outage_equipment", "outage_type", "expected_return_time", "normal_flow_mw", "normal_flow_limit_mw", "credible_failure", "post_failure_flow_mw", "post_failure_limit_mw", "now_or_forecast", "relevant_time_window"]
+    },
+    {
+      "scenario_id": "H1", "family": "high_frequency_minimum_generation", "name": "Active high frequency",
+      "selection": "Measured frequency exceeds the permitted high range following a supply surplus.",
+      "scope": "whole power system", "variants": ["lost interconnector export", "unexpected demand drop", "generation or imports rose faster than expected"],
+      "intake_fields": ["measured_frequency_hz", "effective_high_frequency_limit_hz", "measurement_time", "surplus_cause", "confirmed_limiting_requirement"]
+    },
+    {
+      "scenario_id": "H2", "family": "high_frequency_minimum_generation", "name": "Minimum conventional generation",
+      "selection": "The effective minimum-unit requirement binds in Ireland, Northern Ireland, or both.",
+      "scope": "whole power system", "variants": ["Ireland", "Northern Ireland", "both jurisdictions"],
+      "intake_fields": ["effective_policy", "jurisdiction", "required_qualified_unit_count", "online_qualified_unit_count", "online_unit_locations", "online_unit_minimum_outputs_mw", "confirmed_limiting_requirement"]
+    },
+    {
+      "scenario_id": "H3", "family": "high_frequency_minimum_generation", "name": "Reserve requirement",
+      "selection": "The effective upward or downward reserve requirement is a confirmed limiting reason; downward reserve requires an effective policy rule.",
+      "scope": "whole power system", "variants": ["upward reserve", "downward reserve if policy requires"],
+      "intake_fields": ["effective_policy", "reserve_direction", "reserve_requirement_mw", "qualified_available_reserve_mw", "covered_event", "confirmed_limiting_requirement"]
+    },
+    {
+      "scenario_id": "H4", "family": "high_frequency_minimum_generation", "name": "Ramping requirement",
+      "selection": "A confirmed upward or downward ramping requirement binds over the relevant one-, three-, or eight-hour window.",
+      "scope": "whole power system", "variants": ["upward ramp", "downward ramp"],
+      "intake_fields": ["effective_policy", "ramp_direction", "forecast_change_mw", "ramp_window_hours", "required_ramp_capability_mw", "qualified_available_ramp_capability_mw", "confirmed_limiting_requirement"]
+    },
+    {
+      "scenario_id": "SNSP", "family": "snsp", "name": "SNSP limit",
+      "selection": "The current or forecast all-island SNSP ratio reaches the limit effective at that time.",
+      "scope": "all island", "variants": ["wind or solar rise", "demand fall", "net imports rise", "net exports fall"],
+      "intake_fields": ["snsp_ratio_pct", "effective_snsp_limit_pct", "wind_generation_mw", "solar_generation_mw", "demand_mw", "net_interconnector_transfer_mw", "now_or_forecast", "relevant_time_window"]
+    }
+  ]
+}

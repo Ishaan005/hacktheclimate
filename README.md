@@ -43,6 +43,9 @@ The UI calls `/v1/operator/view` by default. Without its reviewed network inputs
 | `GET /v1/forecast/constraint` | Future intervals from the latest checked experimental GFS forecast; 503 when unavailable or expired |
 | `GET /v1/network/forecast` | Input-gated planning-network scenarios |
 | `GET /v1/operator/view` | Network scenarios, conservative safety checks and action gaps |
+| `POST /v1/operator/evaluate` | Evaluate a supplied decision case, 48 forecast conditions and action set against the local planning case |
+| `POST /v1/decision/preview` | Read-only case evidence, baseline, policy and missing-data preview |
+| `GET /v1/decision/scenarios` | Locked T1–T4, H1–H4 and SNSP intake catalogue from issue #47 |
 
 The January replay uses measured historical inputs and does not establish live forecasting or avoided-energy impact. The GFS model is a national constraint forecast; its August expected-MWh error did **not** beat a zero forecast. Network routes require a re-imported TYTFS case, reviewed generator crosswalk and current upstream forecasts. They do not infer a safe action from the GFS result alone.
 
@@ -54,10 +57,26 @@ curl -sS http://127.0.0.1:8000/v1/demo/absorption \
   -d '{"start_target":"2026-01-24T00:00:00Z","intervals":4,"assets":[{"name":"flexible_load","max_power_mw":10,"energy_required_mwh":8,"available":[true,false,true,true]}]}'
 ```
 
+To inspect the complete operator evaluation on the local TYTFS case, run the
+clearly synthetic planning example:
+
+```bash
+.venv/bin/python -m scripts.run_operator_evaluation --example \
+  --output data/raw/network_case/operator_example_output.json
+```
+
+The command also writes a request JSON beside the output. Edit that request to
+use sourced case conditions and actions, then rerun with `--request PATH --output
+PATH`. The checked-in [example request](examples/operator_evaluation/operator_example_output.request.json)
+and [example output](examples/operator_evaluation/operator_example_output.json)
+show the complete synthetic run. See [operator evaluation](docs/OPERATOR_EVALUATION.md)
+for the input contract and evidence gates.
+
 ## Work with the data and models
 
 - [Data guide](docs/DATA_GUIDE.md): choose included files and rebuild them from the original workbooks.
 - [GFS training report](docs/GFS_CONSTRAINT_TRAINING.md): weather vintages, forecast-safe features, backtests and model limits.
+- [GFS model readiness](docs/GFS_MODEL_READINESS.md): frozen forward path, curtailment experiment and explicit promotion gates.
 - [GFS inference runbook](docs/GFS_INFERENCE.md): checked daily job, versioned output and API serving.
 - [Network forecast architecture](docs/NETWORK_FORECAST_ARCHITECTURE.md) and [safety checks](docs/NETWORK_SAFETY_ACTIONS.md): required inputs and operator boundaries.
 - [UI data handoff](docs/ui-handoff/README.md): response fixtures, TypeScript types, units and evaluation outputs.
@@ -67,7 +86,7 @@ Original organiser CSVs and EirGrid workbooks are outside Git. Processed dataset
 
 ## Chat assistant (Azure OpenAI + LangGraph)
 
-`POST /v1/chat` answers operator questions using the forecast models as tools. Setup:
+`POST /v1/chat` answers questions by calling model-backed tools through LangGraph. It can query the January dispatch-down replay, the January–August constraint replay, the latest checked experimental GFS national constraint forecast, and the input-gated TYTFS planning-network scenario. Setup:
 
 ```bash
 python -m pip install -r requirements-chat.txt
@@ -118,7 +137,7 @@ curl -sS http://127.0.0.1:8000/v1/chat \
 The reply looks like:
 
 ```json
-{"thread_id": "3f2c...", "reply": "... Recommended action: A2 - ...", "tools_used": ["get_dispatch_down_forecast"], "model": "gpt-4.1"}
+{"thread_id": "3f2c...", "reply": "Historical replay: ... A location-specific action needs reviewed network and safety inputs.", "tools_used": ["get_dispatch_down_forecast"], "model": "gpt-4.1"}
 ```
 
 To continue the same conversation, send the returned `thread_id` back:
@@ -137,6 +156,11 @@ Request fields:
 | `thread_id` | No | Continues an earlier conversation; omit it to start a new one |
 | `selected_target` | No | The UTC time selected in the UI, so "this time" refers to it |
 
-The UI's situation box uses the same route. With the API and `npm run dev` running (not fixture mode), type a question such as `What is the dispatch-down risk at 2026-01-24 01:00, and what should I do?`. The reply card shows the answer, the recommended action and the tools used; when a dispatch-down tool was called for a named time, the real forecast view appears below it. If chat is not configured, dispatch-down questions still open the forecast view.
+The UI's situation box uses the same route. With the API and `npm run dev` running, type a question such as `What was the dispatch-down risk at 2026-01-24 01:00?`. The reply card shows the answer and tools used; a dispatch-down question also opens the historical replay view. For a future constraint outlook, run the checked daily GFS inference job first, then ask about upcoming national constraint or a specific UTC half-hour. If the snapshot is missing or expired, the chat tool reports it as unavailable. National forecasts alone cannot justify a location-specific operator action.
 
 Candidate actions come from `config/operator_actions.txt`. To switch model, change `AZURE_OPENAI_DEPLOYMENT` in `.env` (`gpt-4.1`, `gpt-4.1-mini` or `gpt-4o`) and restart the API. A `429` response means the shared Azure endpoint is rate-limited; wait and retry.
+
+### Getting into the azure vm
+```bash
+az ssh vm -n vm-hack-team12 -g rg-hack-team12-swc
+```

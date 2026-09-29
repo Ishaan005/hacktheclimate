@@ -1,0 +1,377 @@
+{
+  "schema_version": 1,
+  "status": "working_draft",
+  "source": "https://github.com/Ishaan005/hacktheclimate/issues/51",
+  "actions": [
+    {
+      "action_id": "FLEX_LOAD",
+      "name": "Increase flexible demand",
+      "description": "Increase controllable demand in a useful electrical location to absorb renewable output.",
+      "applicable_scenarios": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "H2",
+        "SNSP"
+      ],
+      "execution_status": "planning_supported",
+      "required_parameters": [
+        "load_bus_id",
+        "renewable_bus_id",
+        "allocation_region",
+        "generation_type",
+        "power_mw",
+        "available_from",
+        "available_until",
+        "review_status",
+        "evidence_reference"
+      ],
+      "required_evidence_fields": [
+        "recoverable_renewable_mw"
+      ],
+      "required_safety_rules": [
+        "network_loading",
+        "islanding",
+        "asset_capability",
+        "timing"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "T2": [
+          "reserve"
+        ],
+        "T4": [
+          "reserve"
+        ],
+        "H2": [
+          "minimum_online_units",
+          "renewable_share",
+          "reserve"
+        ],
+        "SNSP": [
+          "renewable_share"
+        ]
+      },
+      "source_reference": "Issue #51"
+    },
+    {
+      "action_id": "STORAGE_CHARGE",
+      "name": "Charge storage or pump load",
+      "description": "Increase qualified storage or pumped consumption during a surplus or constrained interval.",
+      "applicable_scenarios": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "H1",
+        "H2",
+        "H4",
+        "SNSP"
+      ],
+      "execution_status": "evidence_only",
+      "required_parameters": [
+        "asset_id",
+        "power_mw",
+        "available_from",
+        "available_until"
+      ],
+      "required_evidence_fields": [
+        "asset_energy_mwh",
+        "asset_response_seconds",
+        "asset_location"
+      ],
+      "required_safety_rules": [
+        "network_loading",
+        "islanding",
+        "asset_capability",
+        "timing"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "H1": [
+          "frequency",
+          "reserve"
+        ],
+        "H2": [
+          "minimum_online_units",
+          "renewable_share",
+          "reserve"
+        ],
+        "H4": [
+          "reserve"
+        ],
+        "SNSP": [
+          "renewable_share"
+        ]
+      },
+      "source_reference": "Issue #51"
+    },
+    {
+      "action_id": "GENERATOR_REDISPATCH",
+      "name": "Generator redispatch",
+      "description": "Reduce generation on one side of a bottleneck or surplus and increase qualified replacement generation where required.",
+      "applicable_scenarios": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "H1",
+        "H2",
+        "H4"
+      ],
+      "execution_status": "evidence_only",
+      "required_parameters": [
+        "source_asset_id",
+        "replacement_asset_id",
+        "power_mw"
+      ],
+      "required_evidence_fields": [
+        "generator_location",
+        "generator_ramp_mw_per_min",
+        "generator_minimum_mw"
+      ],
+      "required_safety_rules": [
+        "network_loading",
+        "islanding",
+        "asset_capability",
+        "timing",
+        "reserve"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "H1": [
+          "frequency"
+        ],
+        "H2": [
+          "minimum_online_units",
+          "inertia",
+          "renewable_share"
+        ],
+        "H4": [
+          "minimum_online_units"
+        ]
+      },
+      "source_reference": "Issue #51"
+    },
+    {
+      "action_id": "RENEWABLE_LIMIT",
+      "name": "Renewable/WDT limit",
+      "description": "Limit the applicable controllable renewable unit or group when other secure actions do not clear the binding condition.",
+      "applicable_scenarios": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "H1",
+        "H2",
+        "H3",
+        "H4",
+        "SNSP"
+      ],
+      "execution_status": "evidence_only",
+      "required_parameters": [
+        "renewable_group_id",
+        "power_mw",
+        "available_from",
+        "available_until"
+      ],
+      "required_evidence_fields": [
+        "group_membership",
+        "delivered_setpoint_mw"
+      ],
+      "required_safety_rules": [
+        "network_loading",
+        "islanding",
+        "asset_capability",
+        "timing"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "H1": [
+          "frequency",
+          "reserve"
+        ],
+        "H2": [
+          "minimum_online_units",
+          "renewable_share",
+          "reserve"
+        ],
+        "H3": [
+          "reserve"
+        ],
+        "H4": [
+          "reserve"
+        ],
+        "SNSP": [
+          "renewable_share"
+        ]
+      },
+      "source_reference": "Issue #51"
+    },
+    {
+      "action_id": "INTERCONNECTOR_TRANSFER",
+      "name": "Change interconnector transfer",
+      "description": "Change an available interconnector transfer only when the studied direction helps the binding condition and counterparty agreement exists.",
+      "applicable_scenarios": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "H1",
+        "SNSP"
+      ],
+      "execution_status": "evidence_only",
+      "required_parameters": [
+        "interconnector_id",
+        "transfer_delta_mw"
+      ],
+      "required_evidence_fields": [
+        "transfer_capacity_mw",
+        "transfer_ramp_mw_per_min",
+        "counterparty_agreement"
+      ],
+      "required_safety_rules": [
+        "network_loading",
+        "islanding",
+        "renewable_share",
+        "reserve",
+        "asset_capability",
+        "timing"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "H1": [
+          "frequency"
+        ]
+      },
+      "source_reference": "Issue #51"
+    },
+    {
+      "action_id": "NETWORK_SWITCHING",
+      "name": "Network switching or sectionalising",
+      "description": "Apply a reviewed topology change only with switching authority, protection clearance and before/after security studies.",
+      "applicable_scenarios": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ],
+      "execution_status": "not_supported",
+      "required_parameters": [
+        "switching_plan_id"
+      ],
+      "required_evidence_fields": [
+        "switching_authority",
+        "protection_clearance",
+        "security_study_reference"
+      ],
+      "required_safety_rules": [
+        "network_loading",
+        "islanding",
+        "voltage",
+        "system_strength",
+        "timing"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "T2": [
+          "reserve"
+        ],
+        "T4": [
+          "reserve"
+        ]
+      },
+      "source_reference": "Issue #51"
+    },
+    {
+      "action_id": "OUTAGE_RETURN",
+      "name": "Return or reschedule outage",
+      "description": "Return out-of-service equipment or change planned work only after work-party release and restored-topology study.",
+      "applicable_scenarios": [
+        "T3",
+        "T4"
+      ],
+      "execution_status": "not_supported",
+      "required_parameters": [
+        "outage_asset_id"
+      ],
+      "required_evidence_fields": [
+        "work_party_release",
+        "return_time",
+        "restored_topology_study"
+      ],
+      "required_safety_rules": [
+        "network_loading",
+        "islanding",
+        "voltage",
+        "system_strength",
+        "timing"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "T4": [
+          "reserve"
+        ]
+      },
+      "source_reference": "Issue #51"
+    },
+    {
+      "action_id": "UNIT_COMMITMENT",
+      "name": "Commit, decommit or swap qualified units",
+      "description": "Change qualified conventional-unit commitment or technical-minimum position while preserving required services.",
+      "applicable_scenarios": [
+        "H2",
+        "H3",
+        "H4"
+      ],
+      "execution_status": "evidence_only",
+      "required_parameters": [
+        "asset_id",
+        "target_mw"
+      ],
+      "required_evidence_fields": [
+        "unit_qualification",
+        "unit_minimum_mw",
+        "unit_notice_time",
+        "service_commitments"
+      ],
+      "required_safety_rules": [
+        "minimum_online_units",
+        "inertia",
+        "reserve",
+        "asset_capability",
+        "timing"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "H4": [
+          "renewable_share"
+        ]
+      },
+      "source_reference": "Issue #51"
+    },
+    {
+      "action_id": "RESERVE_RAMP_ACTION",
+      "name": "Provide reserve or ramp capability",
+      "description": "Commit qualified generation, storage or demand response to satisfy a confirmed reserve or ramping requirement.",
+      "applicable_scenarios": [
+        "H3",
+        "H4"
+      ],
+      "execution_status": "evidence_only",
+      "required_parameters": [
+        "asset_id",
+        "power_mw"
+      ],
+      "required_evidence_fields": [
+        "service_qualification",
+        "response_time_seconds",
+        "sustain_duration_seconds"
+      ],
+      "required_safety_rules": [
+        "reserve",
+        "asset_capability",
+        "timing"
+      ],
+      "additional_safety_rules_by_scenario": {
+        "H4": [
+          "minimum_online_units"
+        ]
+      },
+      "source_reference": "Issue #51"
+    }
+  ]
+}

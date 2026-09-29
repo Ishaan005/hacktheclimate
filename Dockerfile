@@ -1,3 +1,12 @@
+# ---- Stage 1: build the React UI ----
+FROM node:22-slim AS ui
+WORKDIR /ui
+COPY frontend/package*.json ./
+RUN npm ci --include=dev
+COPY frontend ./
+RUN npm run build
+
+# ---- Stage 2: the Python API that also serves the UI ----
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -5,15 +14,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-chat.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-chat.txt
 
-# Package the API and only the scripts, data and model files it imports.
 COPY backend ./backend
-COPY scripts/__init__.py scripts/train_real_baseline.py scripts/fetch_gfs_daily_panel.py scripts/train_gfs_constraint.py scripts/verify_gfs_source_availability.py scripts/run_gfs_constraint_inference.py ./scripts/
-COPY data/processed/canonical_ie.csv data/processed/training_table_labeled_jan2026.csv data/processed/gfs_daily_2026_jan_aug_manifest.json ./data/processed/
+COPY config ./config
+COPY scripts/__init__.py scripts/train_real_baseline.py scripts/fetch_gfs_daily_panel.py scripts/train_gfs_constraint.py scripts/verify_gfs_source_availability.py scripts/run_gfs_constraint_inference.py scripts/forward_constraint.py ./scripts/
+COPY data/processed/canonical_ie.csv data/processed/training_table_labeled_jan2026.csv data/processed/training_table_eirgrid_2026_jan_aug.csv data/processed/gfs_daily_2026_jan_aug_manifest.json ./data/processed/
 COPY artifacts/real_baseline/forecast_1h_occurrence.joblib artifacts/real_baseline/forecast_1h_volume.joblib ./artifacts/real_baseline/
 COPY artifacts/gfs_constraint/final_model.joblib artifacts/gfs_constraint/metrics.json ./artifacts/gfs_constraint/
+COPY artifacts/forward_constraint ./artifacts/forward_constraint
+COPY --from=ui /ui/dist ./frontend/dist
 
 RUN useradd --uid 10001 --create-home appuser && chown -R appuser:appuser /app
 USER appuser

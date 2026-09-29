@@ -1,0 +1,18 @@
+{
+  "policy_id": "advisory-demo",
+  "version": "1.0.0",
+  "rules": [
+    {"rule_id":"network_loading","applies_to":["*"],"required_inputs":["dc_planning_screen"],"calculation":"planning_dc","limit":100.0,"unit":"percent MW/MVA proxy","source":"TYTFS rate A planning case; DC proxy only","approved":true},
+    {"rule_id":"islanding","applies_to":["*"],"required_inputs":["dc_planning_screen"],"calculation":"planning_dc","limit":0.0,"unit":"modelled new islands","source":"TYTFS planning topology screen","approved":true},
+    {"rule_id":"voltage","applies_to":["*"],"required_inputs":["voltage"],"calculation":"unavailable","limit":null,"unit":"kV","source":"No reviewed AC voltage calculation or limit","approved":false},
+    {"rule_id":"renewable_share","applies_to":["*"],"required_inputs":["snsp_pct"],"calculation":"max_le","limit":75.0,"unit":"percent","source":"Issue #5 candidate SNSP demo limit; pending review","approved":false},
+    {"rule_id":"inertia","applies_to":["*"],"required_inputs":["inertia_mws"],"calculation":"unavailable","limit":null,"unit":"MW s","source":"No reviewed action-level inertia calculation or limit","approved":false},
+    {"rule_id":"minimum_online_units","applies_to":["*"],"required_inputs":["online_units"],"calculation":"unavailable","limit":null,"unit":"units","source":"No reviewed minimum-online-unit policy","approved":false},
+    {"rule_id":"rocof","applies_to":["*"],"required_inputs":["rocof_hz_per_s"],"calculation":"unavailable","limit":null,"unit":"Hz/s","source":"No reviewed RoCoF calculation or limit","approved":false},
+    {"rule_id":"frequency","applies_to":["*"],"required_inputs":["frequency_hz"],"calculation":"unavailable","limit":null,"unit":"Hz","source":"No reviewed frequency band for the demo","approved":false},
+    {"rule_id":"reserve","applies_to":["*"],"required_inputs":["reserve_mw"],"calculation":"unavailable","limit":null,"unit":"MW","source":"No reviewed reserve requirement or feed","approved":false},
+    {"rule_id":"system_strength","applies_to":["*"],"required_inputs":["system_strength"],"calculation":"unavailable","limit":null,"unit":"source-defined","source":"No reviewed system-strength calculation or limit","approved":false},
+    {"rule_id":"asset_capability","applies_to":["*"],"required_inputs":["asset_capability"],"calculation":"unavailable","limit":null,"unit":"source-defined","source":"Requires selected action and asset-specific limits","approved":false},
+    {"rule_id":"timing","applies_to":["*"],"required_inputs":["action_timing"],"calculation":"unavailable","limit":null,"unit":"source-defined","source":"Requires selected action activation evidence","approved":false}
+  ]
+}

@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .demo import router as demo_router
+from .decision.routes import router as decision_router
 from .gfs_forecast import DEFAULT_OUTPUT_DIR, load_current_forecast
 from .dispatch_down.routes import router as dispatch_down_router
 from .network_forecast import build_network_forecast_from_files
@@ -17,6 +18,7 @@ from .network import load_case
 from .network_actions import load_action_candidates
 from .network_forecast import DEFAULT_CASE_DIR, DEFAULT_CROSSWALK_PATH, DEFAULT_INPUT_PATH, DEFAULT_PLANNED_OUTAGE, load_forecast_inputs, load_reviewed_crosswalk
 from .operator_view import build_operator_view
+from .operator_evaluation import OperatorEvaluationRequest, evaluate_operator_case
 from .proxy import add_pressure_proxy
 
 from .constraints.routes import router as constraint_router
@@ -31,6 +33,7 @@ FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
 app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
 app.include_router(demo_router)
+app.include_router(decision_router)
 app.include_router(dispatch_down_router)
 app.include_router(constraint_router)
 if chat_router is not None:
@@ -115,6 +118,23 @@ def operator_view():
         )
     except FileNotFoundError as exc:
         raise HTTPException(503, f"Required operator input is missing: {exc.filename}") from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/v1/operator/evaluate")
+def operator_evaluate(request: OperatorEvaluationRequest):
+    """Evaluate supplied point-in-time conditions and actions on the local case."""
+    if request.decision_case.as_of > datetime.now(timezone.utc):
+        raise HTTPException(422, "case decision time cannot be in the future")
+    try:
+        return evaluate_operator_case(
+            request, load_case(DEFAULT_CASE_DIR),
+            load_reviewed_crosswalk(DEFAULT_CROSSWALK_PATH),
+            planned_outage=DEFAULT_PLANNED_OUTAGE,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(503, f"Required planning case input is missing: {exc.filename}") from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 
