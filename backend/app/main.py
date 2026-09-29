@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .demo import router as demo_router
+from .decision.routes import router as decision_router
 from .gfs_forecast import DEFAULT_OUTPUT_DIR, load_current_forecast
 from .dispatch_down.routes import router as dispatch_down_router
 from .network_forecast import build_network_forecast_from_files
@@ -31,6 +32,7 @@ FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
 app = FastAPI(title="Team Blue — Hack the Climate API", version="0.1.0")
 app.include_router(demo_router)
+app.include_router(decision_router)
 app.include_router(dispatch_down_router)
 app.include_router(constraint_router)
 if chat_router is not None:

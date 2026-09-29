@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "status": "pending_review",
+  "approval_reference": null,
+  "scenario_ids": [],
+  "action_ids": [],
+  "required_facts_by_scenario": {},
+  "outcome_metrics_approved": false
+}
