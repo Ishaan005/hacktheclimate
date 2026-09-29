@@ -173,7 +173,7 @@ export const REVIEW_COPY = {
 } as const;
 
 export const EXTRACTION_LABEL = {
-  llm: 'Read by the language model',
+  llm: 'Read by the EZBreezy model',
   rules: 'Read by keyword rules',
   fixture: 'Illustrative',
   manual: 'Automatic reading unavailable',
