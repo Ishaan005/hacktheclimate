@@ -1,3 +1,4 @@
+import AssistantReplyCard from './components/AssistantReplyCard';
 import ClarificationForm from './components/ClarificationForm';
 import DispatchDownResult from './components/DispatchDownResult';
 import ScenarioWorkspace from './components/ScenarioWorkspace';
@@ -31,9 +32,19 @@ function App() {
     );
   } else if (state.status === 'solved') {
     // Key by content so a new answer resets any time the operator changed.
-    result = state.result.kind === 'scenario'
-      ? <ScenarioWorkspace key={state.result.scenario.id} scenario={state.result.scenario} />
-      : <DispatchDownResult key={state.result.target} target={state.result.target} />;
+    const solved = state.result;
+    if (solved.kind === 'scenario') {
+      result = <ScenarioWorkspace key={solved.scenario.id} scenario={solved.scenario} />;
+    } else if (solved.kind === 'assistant_reply') {
+      result = (
+        <>
+          <AssistantReplyCard reply={solved.reply} />
+          {solved.target && <DispatchDownResult key={solved.target} target={solved.target} />}
+        </>
+      );
+    } else {
+      result = <DispatchDownResult key={solved.target} target={solved.target} />;
+    }
   } else if (state.status === 'no_match') {
     result = <StatusMessage tone="empty" title={WORKSPACE_COPY.noMatchTitle} consequence={WORKSPACE_COPY.noMatchConsequence} />;
   } else if (state.status === 'unavailable') {

@@ -90,11 +90,16 @@ const TARGET_PATTERN = /(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/;
 // Questions about dispatch-down risk go to the replay view, at the time named
 // in the description when it is a valid replay half-hour. Used in both modes:
 // live mode sends these to the dispatch-down API until the LLM solver exists.
-export function resolveDispatchDownQuestion(description: string): SolverResult | null {
-  if (!DISPATCH_DOWN_PATTERN.test(description)) return null;
+// A valid replay half-hour named in the text, e.g. "2026-01-24 01:00", or null.
+export function namedTarget(description: string): string | null {
   const match = description.match(TARGET_PATTERN);
   const named = match ? `${match[1]}T${match[2]}` : null;
-  return { kind: 'dispatch_down_risk', target: named && !validateTarget(named) ? named : DEFAULT_TARGET };
+  return named && !validateTarget(named) ? named : null;
+}
+
+export function resolveDispatchDownQuestion(description: string): SolverResult | null {
+  if (!DISPATCH_DOWN_PATTERN.test(description)) return null;
+  return { kind: 'dispatch_down_risk', target: namedTarget(description) ?? DEFAULT_TARGET };
 }
 
 // Descriptions that name no limit, area or asset. The offline solver asks

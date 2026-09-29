@@ -1,10 +1,11 @@
-"""State-based chat assistant: agent -> (tools -> agent)* -> reply."""
+"""State-based chat assistant: load_actions -> agent -> (tools -> agent)* -> select_action -> reply."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated, Sequence, TypedDict
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AnyMessage, SystemMessage
+from langchain_core.messages import AIMessage, AnyMessage, SystemMessage
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
@@ -26,26 +27,68 @@ SYSTEM_PROMPT = """
 """
 
 
+ACTIONS_PATH = Path(__file__).resolve().parents[3] / "config" / "operator_actions.txt"
+
+SELECT_PROMPT = """
+    You write the final reply to a control-room operator.
+    You are given a list of candidate operator actions, the conversation, and a draft answer (the last message).
+    Pick the single best action for the situation, using only facts from tool results and the draft.
+    Keep the draft's key facts, then add "Recommended action: <ID> - <description>" and one sentence on why.
+    If the question is not about what to do, or there is not enough data to choose, return the draft
+    unchanged without recommending an action. Never invent numbers.
+"""
+
+
+def load_action_text(path: Path = ACTIONS_PATH) -> str:
+    """Read the candidate action list, skipping blank and comment lines."""
+    try:
+        lines = path.read_text().splitlines()
+    except OSError:
+        return ""
+    return "\n".join(line for line in lines if line.strip() and not line.lstrip().startswith("#"))
+
+
 class ChatState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     selected_target: str | None
+    available_actions: str | None
 
 
-def build_graph(llm: BaseChatModel, tools: Sequence[BaseTool], checkpointer=None):
+def build_graph(llm: BaseChatModel, tools: Sequence[BaseTool], checkpointer=None, actions_path: Path = ACTIONS_PATH):
     model = llm.bind_tools(list(tools))
+
+    def load_actions(state: ChatState) -> dict:
+        """Load the candidate operator actions (plain text for now)."""
+        return {"available_actions": load_action_text(actions_path)}
 
     def agent(state: ChatState) -> dict:
         prompt = SYSTEM_PROMPT
         if state.get("selected_target"):
             prompt += f"\n\nThe operator currently has {state['selected_target']} UTC selected in the UI; 'this time' refers to it."
+        if state.get("available_actions"):
+            prompt += f"\n\nCandidate operator actions:\n{state['available_actions']}"
         response = model.invoke([SystemMessage(prompt), *state["messages"]])
         return {"messages": [response]}
 
+    def select_action(state: ChatState) -> dict:
+        """Pick the best action and write the final reply, replacing the agent's draft."""
+        actions = state.get("available_actions")
+        if not actions:
+            return {}
+        draft = state["messages"][-1]
+        prompt = f"{SELECT_PROMPT}\n\nCandidate operator actions:\n{actions}"
+        response = llm.invoke([SystemMessage(prompt), *state["messages"]])
+        return {"messages": [AIMessage(response.content, id=draft.id)]}
+
     graph = StateGraph(ChatState)
+    graph.add_node("load_actions", load_actions)
     graph.add_node("agent", agent)
     graph.add_node("tools", ToolNode(list(tools)))
-    graph.add_edge(START, "agent")
-    graph.add_conditional_edges("agent", tools_condition, {"tools": "tools", END: END})
+    graph.add_node("select_action", select_action)
+    graph.add_edge(START, "load_actions")
+    graph.add_edge("load_actions", "agent")
+    graph.add_conditional_edges("agent", tools_condition, {"tools": "tools", END: "select_action"})
+    graph.add_edge("select_action", END)
     graph.add_edge("tools", "agent")
     return graph.compile(checkpointer=checkpointer or MemorySaver())
 

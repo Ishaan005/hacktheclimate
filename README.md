@@ -97,4 +97,46 @@ az extension add --name ssh   # once
 az ssh vm -n vm-hack-team12 -g rg-hack-team12-swc
 ```
 
-Send `{"message": "...", "thread_id": "optional", "selected_target": "2026-01-24T01:00"}`; reuse the returned `thread_id` to continue a conversation. `GET /v1/chat/status` shows whether credentials are configured. Change `AZURE_OPENAI_DEPLOYMENT` in `.env` to switch model (`gpt-4.1`, `gpt-4.1-mini`, `gpt-4o`).
+### Test the chat assistant
+
+Start the API (see [Run locally](#run-locally)), then check that Azure OpenAI credentials are set:
+
+```bash
+curl -sS http://127.0.0.1:8000/v1/chat/status
+```
+
+`"configured": true` means the chat route is ready. If it is `false`, set `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_API_KEY` in `.env` and restart the API.
+
+Ask a question. This runs the full LangGraph flow: `load_actions -> agent -> (tools -> agent)* -> select_action`.
+
+```bash
+curl -sS http://127.0.0.1:8000/v1/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message": "What is the dispatch-down risk at this time, and what should I do?", "selected_target": "2026-01-24T01:00"}'
+```
+
+The reply looks like:
+
+```json
+{"thread_id": "3f2c...", "reply": "... Recommended action: A2 - ...", "tools_used": ["get_dispatch_down_forecast"], "model": "gpt-4.1"}
+```
+
+To continue the same conversation, send the returned `thread_id` back:
+
+```bash
+curl -sS http://127.0.0.1:8000/v1/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message": "Why that action?", "thread_id": "PASTE_THREAD_ID_HERE"}'
+```
+
+Request fields:
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `message` | Yes | The operator's question (1 to 4000 characters) |
+| `thread_id` | No | Continues an earlier conversation; omit it to start a new one |
+| `selected_target` | No | The UTC time selected in the UI, so "this time" refers to it |
+
+The UI's situation box uses the same route. With the API and `npm run dev` running (not fixture mode), type a question such as `What is the dispatch-down risk at 2026-01-24 01:00, and what should I do?`. The reply card shows the answer, the recommended action and the tools used; when a dispatch-down tool was called for a named time, the real forecast view appears below it. If chat is not configured, dispatch-down questions still open the forecast view.
+
+Candidate actions come from `config/operator_actions.txt`. To switch model, change `AZURE_OPENAI_DEPLOYMENT` in `.env` (`gpt-4.1`, `gpt-4.1-mini` or `gpt-4o`) and restart the API. A `429` response means the shared Azure endpoint is rate-limited; wait and retry.

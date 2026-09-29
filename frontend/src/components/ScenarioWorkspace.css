@@ -273,3 +273,15 @@
   font-size: var(--font-size-13);
   font-weight: var(--font-weight-semibold);
 }
+
+/* Grid assistant reply (live /v1/chat). */
+.assistant-reply .assistant-line {
+  margin: 0 0 0.5rem;
+  white-space: pre-wrap;
+}
+
+.assistant-recommendation {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid currentColor;
+}
