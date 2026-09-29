@@ -33,25 +33,7 @@ export const COPY = {
 
 // Consequence-led state messages: what the operator can and cannot rely on.
 export const STATE_COPY = {
-  forecastUnavailableTitle: 'No national outlook yet',
-  forecastUnavailableConsequence:
-    'This screen cannot show when national constraint risk rises. The planning scenario below still works, but it says nothing about timing.',
-  forecastLoadingConsequence: 'Fetching the latest national forecast. Nothing is shown until it arrives.',
-  forecastErrorTitle: 'National forecast did not load',
-  forecastErrorConsequence: 'No forecast figures are shown, so none of them can be out of date. Try again, or check that the API is running.',
-  forecastStaleTitle: 'Some forecast inputs are out of date',
-  forecastStaleConsequence: 'Treat the timeline as less reliable until these sources refresh:',
-  scenarioEmptyTitle: 'No outage selected',
-  scenarioEmptyConsequence:
-    'Pick a reviewed outage above to see how switching that equipment off would move power in the 2024 planning model.',
-  scenarioLoadingConsequence: 'Solving the planning model for this outage.',
-  scenarioErrorTitle: 'Planning scenario did not load',
-  scenarioErrorConsequence: 'No modelled flows are shown for this outage. Try again, or pick another outage.',
-  scenarioUnavailableTitle: 'This outage cannot be modelled yet',
-  scenarioUnavailableConsequence:
-    'No flow change is shown because the equipment could not be matched to the planning model with enough confidence.',
   retry: 'Try again',
-  independence: 'The planning scenario does not change the national forecast. They answer separate questions.',
 } as const;
 
 // Scenario workspace (UX plan phase 1).

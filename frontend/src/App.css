@@ -71,9 +71,3 @@
   font-size: var(--font-size-28);
   font-weight: var(--font-weight-bold);
 }
-
-.app-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-24);
-}
