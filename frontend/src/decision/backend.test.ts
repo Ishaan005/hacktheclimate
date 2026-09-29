@@ -100,36 +100,42 @@ describe('backend workspace adapter', () => {
   it('keeps a backend mixed proposal as separate dependent UI steps', () => {
     const raw = backendResponse();
     raw.source_status = 'planning_case';
-    raw.comparisons.proposed_plan.plan.steps = [
-      {
-        step_id: 'demo-redispatch-15', action_id: 'GENERATOR_REDISPATCH', role: 'main',
-        instruction: 'Reduce WEST-GEN by 15 MW and increase EAST-GEN by 15 MW.',
-        asset_or_party: 'WEST-GEN / EAST-GEN', executor: 'WEST-GEN / EAST-GEN',
-        permission_route: 'needs_acceptance', permission: 'pending',
-        permission_party: 'Demo asset owner', starts_at: '2026-09-29T15:30:00Z',
-        effect_at: '2026-09-29T15:30:00Z', ends_at: '2026-09-29T17:30:00Z',
-        limiting_location_delta_mw: null, depends_on: [],
-      },
-      {
-        step_id: 'demo-flex-10', action_id: 'FLEX_LOAD', role: 'supporting',
-        instruction: 'Increase flexible demand by 10 MW.',
-        asset_or_party: 'Flexible demand at bus 3', executor: 'Flexible demand at bus 3',
-        permission_route: 'needs_acceptance', permission: 'pending',
-        permission_party: 'Demo asset owner', starts_at: '2026-09-29T15:30:00Z',
-        effect_at: '2026-09-29T15:30:00Z', ends_at: '2026-09-29T17:30:00Z',
-        limiting_location_delta_mw: null, depends_on: ['demo-redispatch-15'],
-      },
-    ];
-    raw.comparisons.proposed_plan.checks.push({
-      ...baseline.checks[0], check_id: 'matched_mw', family: 'action',
-      action_step_id: 'demo-redispatch-15', source: 'Synthetic redispatch evidence',
-      reason: 'Scenario-assumption evidence only',
-    });
-    raw.comparisons.proposed_plan.checks.push({
-      ...baseline.checks[0], check_id: 'metered_local_relief', family: 'action',
-      action_step_id: 'demo-flex-10', source: 'Synthetic flex evidence',
-      reason: 'Scenario-assumption evidence only',
-    });
+    raw.comparisons.proposed_plan = {
+      ...raw.comparisons.proposed_plan,
+      plan: { steps: [
+        {
+          step_id: 'demo-redispatch-15', action_id: 'GENERATOR_REDISPATCH', role: 'main',
+          instruction: 'Reduce WEST-GEN by 15 MW and increase EAST-GEN by 15 MW.',
+          asset_or_party: 'WEST-GEN / EAST-GEN', executor: 'WEST-GEN / EAST-GEN',
+          permission_route: 'needs_acceptance', permission: 'pending',
+          permission_party: 'Demo asset owner', starts_at: '2026-09-29T15:30:00Z',
+          effect_at: '2026-09-29T15:30:00Z', ends_at: '2026-09-29T17:30:00Z',
+          limiting_location_delta_mw: null, depends_on: [],
+        },
+        {
+          step_id: 'demo-flex-10', action_id: 'FLEX_LOAD', role: 'supporting',
+          instruction: 'Increase flexible demand by 10 MW.',
+          asset_or_party: 'Flexible demand at bus 3', executor: 'Flexible demand at bus 3',
+          permission_route: 'needs_acceptance', permission: 'pending',
+          permission_party: 'Demo asset owner', starts_at: '2026-09-29T15:30:00Z',
+          effect_at: '2026-09-29T15:30:00Z', ends_at: '2026-09-29T17:30:00Z',
+          limiting_location_delta_mw: null, depends_on: ['demo-redispatch-15'],
+        },
+      ] },
+      checks: [
+        ...raw.comparisons.proposed_plan.checks,
+        {
+          ...baseline.checks[0], check_id: 'matched_mw', family: 'action',
+          action_step_id: 'demo-redispatch-15', source: 'Synthetic redispatch evidence',
+          reason: 'Scenario-assumption evidence only',
+        },
+        {
+          ...baseline.checks[0], check_id: 'metered_local_relief', family: 'action',
+          action_step_id: 'demo-flex-10', source: 'Synthetic flex evidence',
+          reason: 'Scenario-assumption evidence only',
+        },
+      ],
+    };
 
     const assessment = fromBackendAssessment(raw, request());
 
