@@ -128,6 +128,31 @@ async function errorDetail(response: Response): Promise<string> {
 // dispatch-down questions still open the real dispatch-down view.
 export async function solveSituation(request: SolverRequest, signal?: AbortSignal): Promise<SolverResult | null> {
   if (USE_FIXTURE) return resolveFixtureSolver(request, illustrativeScenarios);
+
+  // Once the operator has reviewed the extracted case, use the structured
+  // decision backend. This returns the WorkspaceScenario shape the UI already
+  // renders. Direct questions without a reviewed case still use chat/forecast.
+  if (request.operatorCase) {
+    let workspaceResponse: Response;
+    try {
+      workspaceResponse = await fetch('/v1/workspace/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ case: request.operatorCase }),
+        signal,
+      });
+    } catch (err) {
+      if (signal?.aborted) throw err;
+      throw new SolverUnavailableError('The structured decision API could not be reached.');
+    }
+    if (!workspaceResponse.ok) throw new Error(await errorDetail(workspaceResponse));
+    const workspaceResult = (await workspaceResponse.json()) as SolverResult;
+    if (workspaceResult.kind !== 'scenario' && workspaceResult.kind !== 'clarification') {
+      throw new Error('/v1/workspace/evaluate returned a result the workspace cannot render');
+    }
+    return workspaceResult;
+  }
+
   const selectedTarget = namedTarget(request.description);
   let response: Response;
   try {
