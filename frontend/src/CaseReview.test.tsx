@@ -29,9 +29,12 @@ describe('fact review', () => {
     const review = await describeSituation('line overload in the west after the outage');
     const window = row(review, 'Event window');
     expect(window).toHaveTextContent('2026-09-29 15:00–16:30');
-    expect(window).toHaveTextContent('Modelled');
     expect(window).toHaveTextContent('Illustrative fixture (invented)');
-    expect(within(window).getByText('Supplied')).toBeInTheDocument();
+    expect(within(window).getByText('System inferred')).toBeInTheDocument();
+    expect(within(window).getByText(/^Modelled · Illustrative fixture \(invented\) · /)).toBeInTheDocument();
+    expect(within(row(review, 'Expected dispatch-down')).getByText('Forecast')).toBeInTheDocument();
+    expect(within(review).queryByRole('columnheader', { name: REVIEW_COPY.source })).toBeNull();
+    expect(within(review).queryByRole('columnheader', { name: REVIEW_COPY.time })).toBeNull();
     expect(row(review, 'What is limiting renewable output?')).toHaveTextContent('Local network limit, Planned outage makes it worse');
     expect(within(review).getByRole('button', { name: REVIEW_COPY.evaluate })).toBeInTheDocument();
     expect(spy).not.toHaveBeenCalled();
@@ -76,7 +79,7 @@ describe('fact review', () => {
     add('Affected area or constraint group', 'West');
 
     expect(within(review).queryByText(REVIEW_COPY.stoppedTitle)).not.toBeInTheDocument();
-    expect(within(row(review, 'Affected area')).getByText('Supplied')).toBeInTheDocument();
+    expect(within(row(review, 'Affected area')).getByText('Operator supplied')).toBeInTheDocument();
     expect(row(review, 'What is limiting renewable output?')).toHaveTextContent('Local network limit');
     expect(within(review).getByRole('button', { name: REVIEW_COPY.evaluate })).toBeInTheDocument();
   });

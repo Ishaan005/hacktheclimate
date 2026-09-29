@@ -180,7 +180,9 @@ export const EXTRACTION_LABEL = {
 } as const;
 
 export const FACT_STATUS_LABEL = {
-  supplied: 'Supplied',
+  operator_supplied: 'Operator supplied',
+  system_inferred: 'System inferred',
+  forecast: 'Forecast',
   verified: 'Verified',
   corrected: 'Corrected',
   stale: 'Stale',
