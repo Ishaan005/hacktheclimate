@@ -36,8 +36,8 @@ def _candidate_fields(candidate: Mapping[str, Any]) -> None:
         raise ValueError(f"action candidate missing fields: {sorted(required - set(candidate))}")
     if not str(candidate["action_id"]).strip() or not str(candidate["evidence_reference"]).strip():
         raise ValueError("action ID and evidence reference are required")
-    if candidate["review_status"] not in {"accepted_proxy", "accepted_verified"}:
-        raise ValueError("action location needs an accepted review status")
+    if candidate["review_status"] not in {"accepted_proxy", "accepted_verified", "scenario_assumption"}:
+        raise ValueError("action location needs a recognized review status")
     if candidate["generation_type"] not in {"wind", "solar"}:
         raise ValueError("action renewable generation_type must be wind or solar")
     power = float(candidate["power_mw"])
@@ -68,6 +68,36 @@ def rank_pass_actions(evaluations: list[dict[str, Any]]) -> list[dict[str, Any]]
         (row for row in evaluations if row["safety_overall"] == "PASS"),
         key=lambda row: (-row["modeled_capture_upper_bound_mwh"], row["action_id"]),
     )
+
+
+def _flow_changes(base: Mapping[str, Any], changed: Mapping[str, Any]) -> dict[str, Any]:
+    """Keep the largest signed DC flow changes, including their rating proxies."""
+    if base.get("status") != "ok" or changed.get("status") != "ok":
+        return {"changed_asset_count": None, "max_abs_flow_change_mw": None, "top_changes": []}
+    before = {(flow["asset_type"], flow["asset_id"]): flow for flow in base["flows"]}
+    deltas = []
+    for flow in changed["flows"]:
+        key = (flow["asset_type"], flow["asset_id"])
+        earlier = before.get(key)
+        if earlier is None:
+            continue
+        delta = float(flow["flow_mw"]) - float(earlier["flow_mw"])
+        if abs(delta) <= 1e-6:
+            continue
+        deltas.append({
+            "asset_type": key[0], "asset_id": key[1],
+            "base_flow_mw": float(earlier["flow_mw"]),
+            "with_action_flow_mw": float(flow["flow_mw"]),
+            "delta_flow_mw": delta,
+            "base_loading_proxy_pct": earlier.get("loading_pct"),
+            "with_action_loading_proxy_pct": flow.get("loading_pct"),
+        })
+    deltas.sort(key=lambda item: (-abs(item["delta_flow_mw"]), item["asset_type"], item["asset_id"]))
+    return {
+        "changed_asset_count": len(deltas),
+        "max_abs_flow_change_mw": abs(deltas[0]["delta_flow_mw"]) if deltas else 0.0,
+        "top_changes": deltas[:10],
+    }
 
 
 def screen_actions(
@@ -196,6 +226,8 @@ def screen_actions(
                 "planned_outage": CheckResult(planned_safety["overall"], "scenario result"),
                 **({"selected_n_minus_one": CheckResult(n1_safety["overall"], "scenario result")}
                    if n1_safety is not None else {}),
+                **({"action_location": CheckResult("UNKNOWN", "Action location is a scenario assumption")}
+                   if candidate["review_status"] == "scenario_assumption" else {}),
             })
             intervals.append({
                 "valid_time": row["valid_time"], "applied_mw": applied,
@@ -207,11 +239,13 @@ def screen_actions(
                         "asset_id": planned_outage.asset_id,
                         "base": _network_features(base_solve),
                         "with_action": _network_features(solve),
+                        "flow_changes": _flow_changes(base_solve, solve),
                     },
                     "selected_n_minus_one": (
                         {"asset_id": selected_contingency.asset_id,
                          "base": _network_features(n1_base),
-                         "with_action": _network_features(n1_action)}
+                         "with_action": _network_features(n1_action),
+                         "flow_changes": _flow_changes(n1_base, n1_action)}
                         if n1_base is not None and n1_action is not None else None
                     ),
                 },

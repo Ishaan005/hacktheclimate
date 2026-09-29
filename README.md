@@ -43,6 +43,7 @@ The UI calls `/v1/operator/view` by default. Without its reviewed network inputs
 | `GET /v1/forecast/constraint` | Future intervals from the latest checked experimental GFS forecast; 503 when unavailable or expired |
 | `GET /v1/network/forecast` | Input-gated planning-network scenarios |
 | `GET /v1/operator/view` | Network scenarios, conservative safety checks and action gaps |
+| `POST /v1/operator/evaluate` | Evaluate a supplied decision case, 48 forecast conditions and action set against the local planning case |
 | `POST /v1/decision/preview` | Read-only case evidence, baseline, policy and missing-data preview |
 | `GET /v1/decision/scenarios` | Locked T1–T4, H1–H4 and SNSP intake catalogue from issue #47 |
 
@@ -55,6 +56,21 @@ curl -sS http://127.0.0.1:8000/v1/demo/absorption \
   -H 'Content-Type: application/json' \
   -d '{"start_target":"2026-01-24T00:00:00Z","intervals":4,"assets":[{"name":"flexible_load","max_power_mw":10,"energy_required_mwh":8,"available":[true,false,true,true]}]}'
 ```
+
+To inspect the complete operator evaluation on the local TYTFS case, run the
+clearly synthetic planning example:
+
+```bash
+.venv/bin/python -m scripts.run_operator_evaluation --example \
+  --output data/raw/network_case/operator_example_output.json
+```
+
+The command also writes a request JSON beside the output. Edit that request to
+use sourced case conditions and actions, then rerun with `--request PATH --output
+PATH`. The checked-in [example request](examples/operator_evaluation/operator_example_output.request.json)
+and [example output](examples/operator_evaluation/operator_example_output.json)
+show the complete synthetic run. See [operator evaluation](docs/OPERATOR_EVALUATION.md)
+for the input contract and evidence gates.
 
 ## Work with the data and models
 

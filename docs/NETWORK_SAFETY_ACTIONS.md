@@ -51,6 +51,13 @@ crosswalk; both buses must be active. The load-bus review and availability
 reference must be supplied separately. The example IDs above are placeholders,
 not mapped TYTFS assets.
 
+For a local planning demonstration, `review_status` may instead be
+`scenario_assumption`. The engine will show paired network effects but forces
+the action's safety result to `UNKNOWN` unless another check fails, in which
+case the result is `FAIL`. This status does not establish a reviewed load site.
+The combined [operator evaluation](OPERATOR_EVALUATION.md) accepts the action
+catalog in a JSON request and joins it to the current-plan energy baseline.
+
 Each upstream forecast row may supply
 `"recoverable_renewable_mw": {"reviewed-region": {"wind": 10}}`. This is
 additional renewable MW that could be generated **above the forecast baseline**
@@ -64,6 +71,8 @@ generator bus and the same demand at the flexible-load bus, then re-solves the
 planned-outage and selected screened N-1 networks. The response compares the base and action stress
 features and reports a `modeled_capture_upper_bound_mwh` of applied MW times
 0.5 hours. This is an upper bound, **not expected avoided constraint MWh**.
+It also records up to ten of the largest signed per-asset DC flow changes for
+each action and topology.
 `expected_avoided_constraint_mwh` and `recommendation` remain null until a
 validated locational impact model and all required safety evidence exist.
 
