@@ -17,12 +17,15 @@ the proposed plan (right), a four-column comparison and an evidence drawer.
 The code is in `src/decision/` (types, display rules, locked scope, fixture,
 API) and `src/components/decision/`.
 
-The screen shows a backend assessment from `POST /v1/decision/assess`. That
-route does not exist yet, so live mode shows "No assessment available" (the
-API returns 405). Use `VITE_API_MODE=fixture npm run dev` to see the
-demonstration assessment. `src/decision/rules.ts` only makes the display more
-cautious. For example, a stale, unvalidated or unknown result is never shown
-as Actionable. It never creates a safety result.
+In default API mode, the screen sends reviewed locked scenarios, operator
+fact edits and alternative steps to `POST /v1/workspace/assess`. The adapter in
+`src/decision/backend.ts` maps the response into the screen's view model. The
+backend currently has no live operational feed or approved safety study, so
+the screen shows **No live connection**, unknown checks and unestablished
+benefits. An operator can create an alternative even when the backend has no
+proposal; edits remain out of date until reassessed. `src/decision/rules.ts`
+only makes the display more cautious and never creates a safety result. Use
+`VITE_API_MODE=fixture npm run dev` for the separate historical demonstration.
 
 ## Grid assistant (second tab)
 

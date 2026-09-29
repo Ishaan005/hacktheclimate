@@ -30,7 +30,7 @@ npm ci
 npm run dev
 ```
 
-The UI sends reviewed cases to `/v1/workspace/evaluate`. Without reviewed network inputs, ordinary cases show unavailable states. For layout work, use `VITE_API_MODE=fixture npm run dev`. See the [UI guide](frontend/README.md) for tests and the fixture boundary.
+The main decision workspace sends reviewed cases to `/v1/workspace/assess`. It shows explicit missing evidence while live operational feeds and approved safety studies are unconnected. The second-tab grid assistant uses `/v1/workspace/evaluate` for planning cases. For layout work, use `VITE_API_MODE=fixture npm run dev`. See the [UI guide](frontend/README.md) for tests and the fixture boundary.
 
 For the teammate walkthrough, use the [golden-path demo](docs/DEMO.md) on the `feat/golden-path-demo` branch. The intake, fact review, synthetic planning network and action-bundle calculation run without external planning files. With team Key Vault access, the existing intake step uses Azure OpenAI. The checked demo facts and calculation still work if Azure is unavailable.
 
@@ -48,6 +48,8 @@ For the teammate walkthrough, use the [golden-path demo](docs/DEMO.md) on the `f
 | `POST /v1/operator/evaluate` | Evaluate a supplied decision case, 48 forecast conditions and action set against the local planning case |
 | `POST /v1/decision/preview` | Read-only case evidence, baseline, policy and missing-data preview |
 | `GET /v1/decision/scenarios` | Locked T1–T4, H1–H4 and SNSP intake catalogue from issue #47 |
+| `GET /v1/workspace/brief` | Issue #61 situation and action-check handoff |
+| `POST /v1/workspace/assess` | Evidence-gated four-column operator workspace assessment |
 
 The January replay uses measured historical inputs and does not establish live forecasting or avoided-energy impact. The GFS model is a national constraint forecast; its August expected-MWh error did **not** beat a zero forecast. Network routes require a re-imported TYTFS case, reviewed generator crosswalk and current upstream forecasts. They do not infer a safe action from the GFS result alone.
 
@@ -82,6 +84,7 @@ for the input contract and evidence gates.
 - [GFS inference runbook](docs/GFS_INFERENCE.md): checked daily job, versioned output and API serving.
 - [Network forecast architecture](docs/NETWORK_FORECAST_ARCHITECTURE.md) and [safety checks](docs/NETWORK_SAFETY_ACTIONS.md): required inputs and operator boundaries.
 - [UI data handoff](docs/ui-handoff/README.md): response fixtures, TypeScript types, units and evaluation outputs.
+- [Operator workspace handoff](docs/WORKSPACE_BRIEF_API.md): issue #61 request/response contract and operational gates.
 - [Documentation index](docs/README.md): source audits, historical baselines, network case and deployment guides.
 
 Original organiser CSVs and EirGrid workbooks are outside Git. Processed datasets and historical model artifacts are retained for reproducibility. Run the GFS inference job after 06:00 UTC to create a current forecast; a clone has no live forecast snapshot until that job succeeds. Pull requests and pushes run the Python checks in [GitHub Actions](.github/workflows/tests.yml). For a local container and later Azure access, use the [Azure handoff](docs/AZURE_HANDOFF.md).

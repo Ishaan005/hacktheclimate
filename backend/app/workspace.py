@@ -162,7 +162,7 @@ def _fallback_scenario(
         "title": f"Advisory planning screen{suffix}",
         "intervalStart": _iso(now),
         "intervalEnd": _iso(now + timedelta(hours=24)),
-        "source": "live",
+        "source": "no_live_connection",
         "modelRunAt": None,
         "summary": reason,
         "keywords": [],
@@ -286,7 +286,7 @@ def _workspace_scenario(
         "intervalEnd": _iso(
             _parse_time(str(result["forecast"][0]["valid_time"])) + timedelta(hours=24)
         ),
-        "source": "live",
+        "source": "planning_case",
         "modelRunAt": issue_time,
         "summary": (
             "Evidence-gated planning result using the configured forecast bundle "

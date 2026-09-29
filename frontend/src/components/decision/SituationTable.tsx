@@ -62,7 +62,7 @@ type EditorProps = {
 
 // Numbers stay numbers: a numeric row cannot be saved as text.
 function FactEditor({ fact, onSave, onCancel }: EditorProps) {
-  const numeric = typeof fact.value === 'number' || fact.unit !== null;
+  const numeric = typeof fact.value === 'number' || ['MW', 'MWh', 'Hz', '%', 'units', 'min', 'seconds', 'hours', 'MW/min'].includes(fact.unit ?? '');
   const [draft, setDraft] = useState(fact.value === null ? '' : String(fact.value));
   const inputId = `situation-edit-${fact.id}`;
   const invalid = numeric && draft.trim() !== '' && !Number.isFinite(Number(draft));

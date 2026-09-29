@@ -86,8 +86,8 @@ describe('fact review', () => {
 
   it('rejects a number outside its range', async () => {
     render(<AssistantApp />);
-    const review = await describeSituation('xyzzy plugh');
-    fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.add} Material-event probability` }));
+    const review = await describeSituation('line overload in the west after the outage');
+    fireEvent.click(within(review).getByRole('button', { name: `${REVIEW_COPY.edit} Material-event probability` }));
     fireEvent.change(within(review).getByLabelText('Material-event probability'), { target: { value: '150' } });
 
     expect(within(review).getByRole('button', { name: REVIEW_COPY.save })).toBeDisabled();
@@ -114,7 +114,7 @@ describe('fact review', () => {
   });
 
   it('reviews the golden-path situation even though it asks to reduce dispatch-down', async () => {
-    render(<App />);
+    render(<AssistantApp />);
     await describeSituation('Planned outage in the west is causing a line overload. High wind around Ballylickey is constrained for the next 2 hours. What can we do to reduce dispatch-down?');
     expect(screen.queryByRole('region', { name: 'Next-hour dispatch-down risk' })).not.toBeInTheDocument();
   });

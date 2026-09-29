@@ -40,7 +40,7 @@ def test_unresolved_system_limit_returns_structured_no_action():
         "facts": {"affected_area": {"value": "All-island"}},
     }
     result = workspace._evaluate_live_case(case)
-    assert result["source"] == "live"
+    assert result["source"] == "no_live_connection"
     assert result["action"] is None
     assert result["binding"] is None
     assert "do not identify" in result["noActionReason"]
@@ -87,7 +87,7 @@ def test_workspace_mapping_preserves_unknown_and_modeled_candidate_context():
         ],
     }
     scenario = workspace._workspace_scenario(case, result, scenario_ids=["T3"])
-    assert scenario["source"] == "live"
+    assert scenario["source"] == "planning_case"
     assert scenario["binding"]["status"] == "breach"
     assert scenario["baseline"]["dispatchDownWasteMwh"] == pytest.approx(40.0)
     assert scenario["action"] is None

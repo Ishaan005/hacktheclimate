@@ -4,7 +4,7 @@ import { PERMISSION_STATE_LABEL, PLAN_COPY, ROLE_LABEL, permissionText } from '.
 import { RESULT_LABEL, STALE_NOTE } from '../../decision/copy/shared';
 import { planLabel } from '../../decision/rules';
 import { copyAsAlternative } from '../../decision/useDecisionWorkspace';
-import type { Assessment, PermissionState, Plan, PlanStep, SafetyCheck } from '../../decision/types';
+import type { ActionKind, Assessment, PermissionState, Plan, PlanStep, SafetyCheck } from '../../decision/types';
 import { formatNumber, formatSigned, formatTime, parseUtc } from '../../format';
 import { PlanLabelChip } from './ResultChip';
 import './PlanPanel.css';
@@ -261,6 +261,22 @@ function LabelLine({ plan, assessment, stale }: { plan: Plan; assessment: Assess
 function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternative, onRerun }: Props) {
   const proposed = assessment.proposed;
   const checks = allChecks(assessment);
+  const [newKind, setNewKind] = useState<ActionKind>('local_storage_or_demand');
+
+  function addStep() {
+    const step: PlanStep = {
+      id: `operator-step-${Date.now()}-${alternative?.steps.length ?? 0}`, kind: newKind,
+      role: alternative?.steps.length ? 'supporting' : 'main',
+      instruction: ACTION_KIND_LABEL[newKind], executor: '',
+      permissionRoute: 'needs_acceptance', permissionState: 'unknown',
+      permissionParty: null, startTime: null, effectTime: null,
+      durationMinutes: null, mwEffect: null, dependsOn: [], blockingCheckIds: [],
+    };
+    onSetAlternative(alternative
+      ? { ...alternative, steps: [...alternative.steps, step] }
+      : { id: 'plan-operator', name: 'Operator alternative', origin: 'operator',
+        label: 'insufficient_evidence', labelReason: 'Not assessed yet.', steps: [step] });
+  }
 
   function removeStep(stepId: string) {
     if (!alternative) return;
@@ -309,6 +325,18 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
           <>
             <p className="card-headline">{PLAN_COPY.noPlan}</p>
             <p>{assessment.overall.reason}</p>
+            {!alternative && (
+              <div className="plan-actions">
+                <label className="field-label" htmlFor="alternative-action-kind">Action to assess</label>
+                <select id="alternative-action-kind" className="input" value={newKind}
+                  onChange={(event) => setNewKind(event.target.value as ActionKind)}>
+                  {(Object.keys(ACTION_KIND_LABEL) as ActionKind[]).map((kind) => (
+                    <option key={kind} value={kind}>{ACTION_KIND_LABEL[kind]}</option>
+                  ))}
+                </select>
+                <button type="button" className="button-secondary" onClick={addStep}>Create alternative</button>
+              </div>
+            )}
           </>
         )}
       </section>
@@ -338,6 +366,16 @@ function PlanPanel({ assessment, alternative, stale, onEditStep, onSetAlternativ
           ) : (
             <p>{PLAN_COPY.noSteps}</p>
           )}
+          <div className="plan-actions">
+            <label className="field-label" htmlFor="alternative-add-kind">Add a step</label>
+            <select id="alternative-add-kind" className="input" value={newKind}
+              onChange={(event) => setNewKind(event.target.value as ActionKind)}>
+              {(Object.keys(ACTION_KIND_LABEL) as ActionKind[]).map((kind) => (
+                <option key={kind} value={kind}>{ACTION_KIND_LABEL[kind]}</option>
+              ))}
+            </select>
+            <button type="button" className="button-secondary" onClick={addStep}>Add step</button>
+          </div>
         </section>
       )}
     </section>
