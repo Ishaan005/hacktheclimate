@@ -308,6 +308,108 @@ def evaluate_transmission_family(
     )
 
 
+
+def _unavailable_family_check(label: str) -> CheckResult:
+    return CheckResult(
+        "UNKNOWN",
+        f"No reviewed {label} calculation, limit, and current evidence are available.",
+    )
+
+
+def evaluate_high_frequency_min_generation_family(
+    *,
+    frequency_margin: CheckResult | None = None,
+    minimum_conventional_units: CheckResult | None = None,
+    reserve_margin: CheckResult | None = None,
+    ramping_margin: CheckResult | None = None,
+) -> SafetyFamilyResult:
+    """Evaluate the high-frequency/minimum-generation family conservatively.
+
+    Callers may supply reviewed CheckResult values from an authoritative
+    calculation or source. Missing gates stay UNKNOWN rather than inheriting
+    assumptions from the DC network model.
+    """
+    checks = {
+        "frequency_margin": frequency_margin or _unavailable_family_check(
+            "frequency-margin"
+        ),
+        "minimum_conventional_units": (
+            minimum_conventional_units
+            or _unavailable_family_check("minimum-conventional-unit")
+        ),
+        "reserve_margin": reserve_margin or _unavailable_family_check(
+            "reserve-margin"
+        ),
+        "ramping_margin": ramping_margin or _unavailable_family_check(
+            "ramping-margin"
+        ),
+    }
+    return SafetyFamilyResult(
+        family_id="high_frequency_minimum_generation",
+        overall=combine_checks(checks),
+        checks=checks,
+    )
+
+
+def evaluate_snsp_family(
+    *,
+    snsp_pct: float | None = None,
+    approved_snsp_limit_pct: float | None = None,
+    inertia_frequency_stability: CheckResult | None = None,
+    duration_concurrent_limits: CheckResult | None = None,
+) -> SafetyFamilyResult:
+    """Evaluate SNSP ratio plus dynamic/duration evidence without inventing limits."""
+    if snsp_pct is None:
+        ratio = CheckResult(
+            "UNKNOWN",
+            "No point-in-time SNSP value was supplied.",
+        )
+    else:
+        value = float(snsp_pct)
+        if not math.isfinite(value) or not 0 <= value <= 100:
+            raise ValueError("snsp_pct must be within [0, 100]")
+        if approved_snsp_limit_pct is None:
+            ratio = CheckResult(
+                "UNKNOWN",
+                "SNSP value is available but no approved scenario limit is wired.",
+                "supplied point-in-time SNSP",
+                value=value,
+                unit="percent",
+            )
+        else:
+            limit = float(approved_snsp_limit_pct)
+            if not math.isfinite(limit) or not 0 < limit <= 100:
+                raise ValueError("approved_snsp_limit_pct must be within (0, 100]")
+            margin = limit - value
+            ratio = CheckResult(
+                "PASS" if margin >= -1e-9 else "FAIL",
+                (
+                    f"SNSP margin to approved limit is {margin:.2f} percentage points "
+                    f"({value:.2f}% versus {limit:.2f}%)."
+                ),
+                "supplied point-in-time SNSP and approved policy limit",
+                value=margin,
+                unit="percentage_points",
+            )
+
+    checks = {
+        "snsp_ratio_margin": ratio,
+        "inertia_frequency_stability": (
+            inertia_frequency_stability
+            or _unavailable_family_check("inertia/frequency-stability")
+        ),
+        "duration_concurrent_limits": (
+            duration_concurrent_limits
+            or _unavailable_family_check("SNSP-duration/concurrent-limit")
+        ),
+    }
+    return SafetyFamilyResult(
+        family_id="snsp",
+        overall=combine_checks(checks),
+        checks=checks,
+    )
+
+
 def evaluate_safety(
     solve: Mapping[str, Any],
     *,
