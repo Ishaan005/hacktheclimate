@@ -34,8 +34,8 @@ export const SUGGESTIONS: Suggestion[] = [
   { key: 'h_min_units_both', scenarioId: 'H2', family: 'high_frequency_minimum_generation', text: 'The minimum conventional units rule binds in both jurisdictions.', keywords: ['minimum units', 'min gen', 'both'] },
   { key: 'h_reserve_up', scenarioId: 'H3', family: 'high_frequency_minimum_generation', text: 'The upward reserve requirement binds.', keywords: ['reserve', 'upward reserve'] },
   { key: 'h_reserve_down', scenarioId: 'H3', family: 'high_frequency_minimum_generation', text: 'The downward reserve requirement binds, where the effective policy requires it.', keywords: ['downward reserve', 'negative reserve'] },
-  { key: 'h_ramp_up', scenarioId: 'H4', family: 'high_frequency_minimum_generation', text: 'Power needs to rise over the coming window (upward ramp).', keywords: ['ramp', 'ramp up', 'upward ramp'] },
-  { key: 'h_ramp_down', scenarioId: 'H4', family: 'high_frequency_minimum_generation', text: 'Power needs to fall over the coming window (downward ramp).', keywords: ['ramp down', 'downward ramp'] },
+  { key: 'h_ramp_up', scenarioId: 'H4', family: 'high_frequency_minimum_generation', text: 'Power needs to rise over the coming window.', keywords: ['ramp', 'ramp up', 'upward ramp'] },
+  { key: 'h_ramp_down', scenarioId: 'H4', family: 'high_frequency_minimum_generation', text: 'Power needs to fall over the coming window.', keywords: ['ramp down', 'downward ramp'] },
   { key: 'snsp_limit', scenarioId: 'SNSP', family: 'snsp', text: 'All-island SNSP is at or near its limit.', keywords: ['snsp', 'non-synchronous', 'penetration'] },
 ];
 
