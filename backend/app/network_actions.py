@@ -285,6 +285,62 @@ def screen_actions(
     }
 
 
+def _candidate_family(candidate: Mapping[str, Any]) -> str:
+    return str(candidate.get("contract_action_id") or "FLEX_LOAD")
+
+
+def _positive_finite(candidate: Mapping[str, Any], field: str) -> float:
+    value = float(candidate[field])
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(f"{field} must be positive and finite")
+    return value
+
+
+def _bundle_candidate_fields(candidate: Mapping[str, Any]) -> None:
+    common = {
+        "action_id", "power_mw", "available_from", "available_until",
+        "review_status", "evidence_reference",
+    }
+    family = _candidate_family(candidate)
+    if family == "FLEX_LOAD":
+        required = common | {
+            "load_bus_id", "renewable_bus_id", "allocation_region", "generation_type",
+        }
+    elif family == "GENERATOR_REDISPATCH":
+        required = common | {
+            "source_asset_id", "replacement_asset_id",
+            "source_bus_id", "replacement_bus_id",
+            "source_down_headroom_mw", "replacement_up_headroom_mw",
+            "source_ramp_limit_mw", "replacement_ramp_limit_mw",
+        }
+    else:
+        raise ValueError(f"planning bundle executor does not support {family}")
+    if required - set(candidate):
+        raise ValueError(
+            f"{family} action candidate missing fields: {sorted(required - set(candidate))}"
+        )
+    if not str(candidate["action_id"]).strip() or not str(candidate["evidence_reference"]).strip():
+        raise ValueError("action ID and evidence reference are required")
+    if candidate["review_status"] not in {"accepted_proxy", "accepted_verified", "scenario_assumption"}:
+        raise ValueError("action location needs a recognized review status")
+    _positive_finite(candidate, "power_mw")
+    start = _parse_time(str(candidate["available_from"]))
+    end = _parse_time(str(candidate["available_until"]))
+    if start >= end:
+        raise ValueError("action availability window must have positive duration")
+    if family == "FLEX_LOAD":
+        if candidate["generation_type"] not in {"wind", "solar"}:
+            raise ValueError("action renewable generation_type must be wind or solar")
+    else:
+        if not str(candidate["source_asset_id"]).strip() or not str(candidate["replacement_asset_id"]).strip():
+            raise ValueError("redispatch source and replacement asset IDs are required")
+        for field in (
+            "source_down_headroom_mw", "replacement_up_headroom_mw",
+            "source_ramp_limit_mw", "replacement_ramp_limit_mw",
+        ):
+            _positive_finite(candidate, field)
+
+
 def _scale_allocations(
     allocations: dict[str, float],
     candidates: dict[str, Mapping[str, Any]],
@@ -316,23 +372,31 @@ def screen_action_bundles(
     planned_outage: Asset = DEFAULT_PLANNED_OUTAGE,
     selected_contingency: Asset | None = None,
 ) -> dict[str, Any]:
-    """Simulate compatible flexible-load action bundles on one shared grid state.
+    """Simulate heterogeneous planning-supported action bundles on one grid state.
 
-    The current executable action family is paired renewable output + flexible
-    demand. Bundle allocation shares recoverable renewable MW, renewable-bus MEC
-    headroom, and national expected constraint opportunity so the same energy
-    cannot be counted twice across actions.
+    FLEX_LOAD receives the bounded renewable-capture credit because it explicitly
+    pairs recovered renewable output with flexible demand. GENERATOR_REDISPATCH
+    changes nodal injections while preserving total MW balance and receives zero
+    renewable-energy credit by itself. Its value can therefore emerge only when
+    the combined network state makes a capture action feasible or safer.
     """
     validate_forecast_rows(forecast_rows)
     if len(candidates) > MAX_CANDIDATES:
         raise ValueError(f"at most {MAX_CANDIDATES} controlled actions are supported")
+    if any(not isinstance(candidate, Mapping) for candidate in candidates):
+        raise ValueError("every action candidate must be an object")
     for candidate in candidates:
-        _candidate_fields(candidate)
+        _bundle_candidate_fields(candidate)
     candidate_by_id = {str(candidate["action_id"]): candidate for candidate in candidates}
     if len(candidate_by_id) != len(candidates):
         raise ValueError("action IDs must be unique")
 
     active_buses = {int(bus["bus_id"]) for bus in case.buses if bus["in_service"]}
+    generator_buses = {
+        int(generator["bus_id"])
+        for generator in case.generators
+        if generator.get("in_service")
+    }
     shares = normalized_load_shares(case)
     groups, mapping_confidence = reviewed_generation_groups(case, reviewed_crosswalk)
 
@@ -367,20 +431,31 @@ def screen_action_bundles(
         else:
             raise ValueError("selected contingency asset type is unsupported")
 
-    # Validate physical references once. Shared resources are enforced per interval below.
     candidate_bus_mec: dict[str, float] = {}
     for action_id, candidate in candidate_by_id.items():
-        load_bus = int(candidate["load_bus_id"])
-        renewable_bus = int(candidate["renewable_bus_id"])
-        if load_bus not in active_buses or renewable_bus not in active_buses or load_bus == renewable_bus:
-            raise ValueError("action buses must be distinct active buses")
-        region = str(candidate["allocation_region"]).strip()
-        kind = str(candidate["generation_type"])
-        sites = groups.get((region, kind), [])
-        bus_mec = sum(site["mec_mw"] for site in sites if site["bus_id"] == renewable_bus)
-        if bus_mec <= 0:
-            raise ValueError("action renewable bus lacks a reviewed region/technology match")
-        candidate_bus_mec[action_id] = bus_mec
+        family = _candidate_family(candidate)
+        if family == "FLEX_LOAD":
+            load_bus = int(candidate["load_bus_id"])
+            renewable_bus = int(candidate["renewable_bus_id"])
+            if load_bus not in active_buses or renewable_bus not in active_buses or load_bus == renewable_bus:
+                raise ValueError("flex-load action buses must be distinct active buses")
+            region = str(candidate["allocation_region"]).strip()
+            kind = str(candidate["generation_type"])
+            sites = groups.get((region, kind), [])
+            bus_mec = sum(site["mec_mw"] for site in sites if site["bus_id"] == renewable_bus)
+            if bus_mec <= 0:
+                raise ValueError("action renewable bus lacks a reviewed region/technology match")
+            candidate_bus_mec[action_id] = bus_mec
+        elif family == "GENERATOR_REDISPATCH":
+            source_bus = int(candidate["source_bus_id"])
+            replacement_bus = int(candidate["replacement_bus_id"])
+            if (
+                source_bus not in active_buses or replacement_bus not in active_buses
+                or source_bus == replacement_bus
+            ):
+                raise ValueError("redispatch buses must be distinct active buses")
+            if source_bus not in generator_buses or replacement_bus not in generator_buses:
+                raise ValueError("redispatch buses must each contain an in-service case generator")
 
     evaluations = []
     for bundle in bundles:
@@ -405,53 +480,73 @@ def screen_action_bundles(
                 row.get("regional_generation_mw", {}), groups,
             )
 
-            allocations: dict[str, float] = {}
+            flex_allocations: dict[str, float] = {}
+            redispatch_allocations: dict[str, float] = {}
             bus_limits: dict[int, float] = {}
             region_limits: dict[tuple[str, str], float] = {}
             for action_id, candidate in bundle_candidates.items():
                 start = _parse_time(str(candidate["available_from"]))
                 end = _parse_time(str(candidate["available_until"]))
                 if not start <= valid < end:
-                    allocations[action_id] = 0.0
+                    if _candidate_family(candidate) == "FLEX_LOAD":
+                        flex_allocations[action_id] = 0.0
+                    else:
+                        redispatch_allocations[action_id] = 0.0
                     continue
-                renewable_bus = int(candidate["renewable_bus_id"])
-                region = str(candidate["allocation_region"]).strip()
-                kind = str(candidate["generation_type"])
-                bus_limits[renewable_bus] = max(
-                    0.0,
-                    candidate_bus_mec[action_id] - base_renewable.get(renewable_bus, 0.0),
-                )
-                region_limits[(region, kind)] = _recoverable_mw(row, region, kind)
-                allocations[action_id] = float(candidate["power_mw"])
 
-            # One renewable bus, region/technology opportunity, and national
-            # expected-constraint opportunity are shared budgets for the bundle.
+                family = _candidate_family(candidate)
+                if family == "FLEX_LOAD":
+                    renewable_bus = int(candidate["renewable_bus_id"])
+                    region = str(candidate["allocation_region"]).strip()
+                    kind = str(candidate["generation_type"])
+                    bus_limits[renewable_bus] = max(
+                        0.0,
+                        candidate_bus_mec[action_id] - base_renewable.get(renewable_bus, 0.0),
+                    )
+                    region_limits[(region, kind)] = _recoverable_mw(row, region, kind)
+                    flex_allocations[action_id] = float(candidate["power_mw"])
+                else:
+                    redispatch_allocations[action_id] = min(
+                        float(candidate["power_mw"]),
+                        float(candidate["source_down_headroom_mw"]),
+                        float(candidate["replacement_up_headroom_mw"]),
+                        float(candidate["source_ramp_limit_mw"]),
+                        float(candidate["replacement_ramp_limit_mw"]),
+                    )
+
+            # Renewable recovery actions share the same physical opportunity.
             _scale_allocations(
-                allocations, bundle_candidates, bus_limits,
+                flex_allocations, bundle_candidates, bus_limits,
                 lambda candidate: int(candidate["renewable_bus_id"]),
             )
             _scale_allocations(
-                allocations, bundle_candidates, region_limits,
+                flex_allocations, bundle_candidates, region_limits,
                 lambda candidate: (
                     str(candidate["allocation_region"]).strip(),
                     str(candidate["generation_type"]),
                 ),
             )
-            total = sum(allocations.values())
+            renewable_capture_mw = sum(flex_allocations.values())
             national_cap_mw = max(0.0, float(row["expected_constraint_mwh"]) / 0.5)
-            if total > national_cap_mw + 1e-9 and total > 0:
-                scale = national_cap_mw / total
-                allocations = {action_id: amount * scale for action_id, amount in allocations.items()}
-                total = national_cap_mw
+            if renewable_capture_mw > national_cap_mw + 1e-9 and renewable_capture_mw > 0:
+                scale = national_cap_mw / renewable_capture_mw
+                flex_allocations = {
+                    action_id: amount * scale
+                    for action_id, amount in flex_allocations.items()
+                }
+                renewable_capture_mw = national_cap_mw
 
-            if total <= 1e-8:
+            allocations = {**flex_allocations, **redispatch_allocations}
+            total_action_mw = sum(allocations.values())
+            if total_action_mw <= 1e-8:
                 intervals.append({
                     "valid_time": row["valid_time"],
                     "applied_mw": 0.0,
+                    "renewable_capture_mw": 0.0,
                     "modeled_capture_upper_bound_mwh": 0.0,
                     "action_allocations_mw": allocations,
                     "safety": None,
-                    "reason": "No shared recoverable renewable or constraint opportunity is available.",
+                    "reason": "No action capacity is available in this interval.",
                 })
                 continue
 
@@ -460,8 +555,13 @@ def screen_action_bundles(
                 if amount <= 0:
                     continue
                 candidate = bundle_candidates[action_id]
-                changed[int(candidate["renewable_bus_id"])] += amount
-                changed[int(candidate["load_bus_id"])] -= amount
+                family = _candidate_family(candidate)
+                if family == "FLEX_LOAD":
+                    changed[int(candidate["renewable_bus_id"])] += amount
+                    changed[int(candidate["load_bus_id"])] -= amount
+                else:
+                    changed[int(candidate["source_bus_id"])] -= amount
+                    changed[int(candidate["replacement_bus_id"])] += amount
 
             base_solve = solve_dc_case(
                 case, injection_overrides_mw=injections,
@@ -497,9 +597,14 @@ def screen_action_bundles(
             })
             intervals.append({
                 "valid_time": row["valid_time"],
-                "applied_mw": total,
-                "modeled_capture_upper_bound_mwh": total * 0.5,
+                "applied_mw": total_action_mw,
+                "renewable_capture_mw": renewable_capture_mw,
+                "modeled_capture_upper_bound_mwh": renewable_capture_mw * 0.5,
                 "action_allocations_mw": allocations,
+                "action_families": {
+                    action_id: _candidate_family(candidate)
+                    for action_id, candidate in bundle_candidates.items()
+                },
                 "safety": {
                     "overall": overall,
                     "planned_outage": planned_safety,
@@ -535,6 +640,10 @@ def screen_action_bundles(
         evaluations.append({
             "bundle_id": bundle_id,
             "action_instance_ids": action_ids,
+            "contract_action_ids": [
+                _candidate_family(bundle_candidates[action_id])
+                for action_id in action_ids
+            ],
             "safety_overall": overall,
             "modeled_capture_upper_bound_mwh": sum(
                 item["modeled_capture_upper_bound_mwh"] for item in intervals
