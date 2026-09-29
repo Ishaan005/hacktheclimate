@@ -29,9 +29,20 @@ type BackendCheck = {
   worst_time: string | null; worst_failure: string | null; source: string | null; reason: string;
 };
 
-type BackendBenefit = { value: number | null; unit: string | null; method: string | null; source: string | null; reason: string };
+type BackendBenefit = { value: number | null; unit: string | null; method: string | null; source: string | null; reason: string | null };
+type BackendPlanStep = {
+  step_id: string; action_id: string;
+  role: 'main' | 'supporting' | 'parallel';
+  instruction: string | null;
+  asset_or_party: string | null; executor: string | null;
+  permission_route: 'direct' | 'needs_clearance' | 'needs_acceptance';
+  permission: 'confirmed' | 'pending' | 'denied' | 'unknown';
+  permission_party: string | null;
+  starts_at: string | null; effect_at: string | null; ends_at: string | null;
+  limiting_location_delta_mw: number | null; depends_on: string[];
+};
 type BackendColumn = {
-  plan: { steps: Array<{ step_id: string }> };
+  plan: { steps: BackendPlanStep[] };
   safety: { status: 'PASS' | 'FAIL' | 'UNKNOWN'; reason: string; missing_checks: string[] };
   plan_label: 'Actionable' | 'Conditional' | 'Unsafe' | 'Insufficient evidence';
   checks: BackendCheck[];
@@ -68,6 +79,18 @@ const ACTION_IDS: Record<ActionKind, string> = {
   commit_for_upward_ramp: 'RESERVE_RAMP_ACTION', battery_charge_keep_service: 'STORAGE_CHARGE',
   snsp_interconnector: 'INTERCONNECTOR_TRANSFER', snsp_demand_release: 'FLEX_LOAD',
   snsp_all_island_wdt: 'RENEWABLE_LIMIT',
+};
+
+const BACKEND_ACTION_KINDS: Record<string, ActionKind> = {
+  GENERATOR_REDISPATCH: 'paired_redispatch',
+  NETWORK_SWITCHING: 'switch_sectionalise',
+  OUTAGE_RETURN: 'return_equipment_early',
+  FLEX_LOAD: 'local_storage_or_demand',
+  STORAGE_CHARGE: 'local_storage_or_demand',
+  RENEWABLE_LIMIT: 'wdt_limit',
+  INTERCONNECTOR_TRANSFER: 'interconnector_transfer',
+  UNIT_COMMITMENT: 'swap_lower_minimum_unit',
+  RESERVE_RAMP_ACTION: 'replace_reserve_provider',
 };
 
 const FACT_LABELS: Record<string, string> = {
@@ -127,8 +150,11 @@ function backendPlan(plan: Plan | null) {
       ? new Date(validStart.getTime() + step.durationMinutes * 60_000) : null;
     return {
       step_id: step.id, action_id: ACTION_IDS[step.kind],
+      role: step.role, instruction: step.instruction,
       asset_or_party: step.executor || null, executor: step.executor || null,
+      permission_route: step.permissionRoute,
       permission: step.permissionState === 'refused' ? 'denied' : step.permissionState,
+      permission_party: step.permissionParty,
       starts_at: validStart?.toISOString() ?? null, effect_at: validEffect?.toISOString() ?? null,
       ends_at: end && (!validEffect || end >= validEffect) ? end.toISOString() : null,
       limiting_location_delta_mw: step.mwEffect, depends_on: step.dependsOn,
@@ -149,6 +175,17 @@ export function toBackendRequest(request: AssessmentRequest, now = new Date()) {
       asset_ids: [], as_of: asOf, starts_at: start.toISOString(), ends_at: end.toISOString(),
       existing_instructions: [],
     },
+    description: request.description,
+    conditions: request.conditions.map((condition) => ({
+      scenario_id: condition.scenarioId,
+      situation_key: condition.situationKey,
+      reach: condition.reach,
+      limiting_asset: condition.limitingAsset,
+      outage_type: condition.outageType,
+      time_setting: condition.timeSetting,
+      snsp_drivers: condition.snspDrivers,
+      jurisdiction: condition.jurisdiction,
+    })),
     view: request.view, site_id: request.view === 'site' ? request.siteId : null,
     evidence: caseEvidence(request, asOf),
     proposed_plan: { steps: [] }, operator_alternative: backendPlan(request.alternative),
@@ -211,6 +248,52 @@ function planLabel(value: BackendColumn['plan_label']): Plan['label'] {
     'Insufficient evidence': 'insufficient_evidence' } as const)[value];
 }
 
+function backendStep(step: BackendPlanStep, checks: BackendCheck[]) {
+  const kind = BACKEND_ACTION_KINDS[step.action_id];
+  if (!kind) return null;
+  const start = step.starts_at ? new Date(step.starts_at) : null;
+  const end = step.ends_at ? new Date(step.ends_at) : null;
+  const durationMinutes = start && end && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())
+    ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60_000))
+    : null;
+  return {
+    id: step.step_id,
+    kind,
+    role: step.role,
+    instruction: step.instruction ?? label(step.action_id),
+    executor: step.executor ?? step.asset_or_party ?? 'Unspecified executor',
+    permissionRoute: step.permission_route,
+    permissionState: step.permission === 'denied' ? 'refused' as const : step.permission,
+    permissionParty: step.permission_party,
+    startTime: step.starts_at,
+    effectTime: step.effect_at,
+    durationMinutes,
+    mwEffect: step.limiting_location_delta_mw,
+    dependsOn: step.depends_on,
+    blockingCheckIds: checks
+      .filter((check) => check.action_step_id === step.step_id && check.status !== 'PASS')
+      .map((check) => `${step.step_id}:${check.check_id}`),
+  };
+}
+
+function backendPlanView(
+  value: BackendColumn,
+  origin: Plan['origin'],
+  name: string,
+): Plan | null {
+  if (!value.plan.steps.length) return null;
+  const steps = value.plan.steps.map((step) => backendStep(step, value.checks)).filter((step) => step !== null);
+  if (!steps.length) return null;
+  return {
+    id: origin === 'proposed' ? 'plan-proposed' : 'plan-operator',
+    name,
+    origin,
+    steps,
+    label: planLabel(value.plan_label),
+    labelReason: value.safety.reason,
+  };
+}
+
 export function fromBackendAssessment(raw: BackendAssessment, request: AssessmentRequest): Assessment {
   const site = request.view === 'site' ? siteById(request.siteId) : undefined;
   const proposal = raw.comparisons.proposed_plan;
@@ -227,14 +310,10 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
   });
   const facts = raw.facts.map(factView);
   const dataStatus: DataStatus = facts.some((fact) => fact.state === 'conflicting') ? 'conflicting'
-    : facts.some((fact) => fact.state === 'stale') ? 'stale' : 'missing';
-  const altPlan = request.alternative ? {
-    ...request.alternative, label: planLabel(alternative.plan_label),
-    labelReason: alternative.safety.reason,
-    steps: request.alternative.steps.map((step) => ({ ...step,
-      blockingCheckIds: alternative.checks.filter((check) => check.action_step_id === step.id && check.status !== 'PASS')
-        .map((check) => `${step.id}:${check.check_id}`) })),
-  } : null;
+    : facts.some((fact) => fact.state === 'stale') ? 'stale'
+    : facts.some((fact) => fact.state === 'missing') ? 'missing' : 'current';
+  const proposedPlan = backendPlanView(proposal, 'proposed', 'Backend proposal');
+  const altPlan = backendPlanView(alternative, 'operator', request.alternative?.name ?? 'Operator alternative');
   const benefits = proposal.benefits;
   const reason = 'Not established by validated case-level outcome evidence';
   return {
@@ -253,9 +332,7 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
       missingEvidence: selected.safety.missing_checks.map(label) },
     familyChecks, crossChecks, actionChecks,
     allIslandChecks: request.view === 'site' ? familyChecks.filter((check) => check.family !== 'transmission') : [],
-    proposed: proposal.plan.steps.length ? {
-      id: 'plan-proposed', name: 'Backend proposal', origin: 'proposed', steps: [],
-      label: planLabel(proposal.plan_label), labelReason: proposal.safety.reason } : null,
+    proposed: proposedPlan,
     alternative: altPlan,
     outcomes: [
       outcome('current', raw.comparisons.current_plan, raw.window, true),
