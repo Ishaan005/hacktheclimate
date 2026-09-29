@@ -67,7 +67,7 @@ def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(503, str(exc)) from exc
 
     thread_id = request.thread_id or str(uuid.uuid4())
-    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 6}
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 10}
     try:
         before = len(graph.get_state(config).values.get("messages", []))
         result, trace = run_with_trace(

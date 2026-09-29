@@ -10,18 +10,39 @@ config:
 ---
 graph TD;
 	__start__([<p>__start__</p>]):::first
-	run_all_tools(run_all_tools)
+	resolve_inputs(resolve_inputs)
+	get_dispatch_down_forecast(get_dispatch_down_forecast)
+	get_dispatch_down_day(get_dispatch_down_day)
+	check_constraint(check_constraint)
+	get_current_constraint_forecast(get_current_constraint_forecast)
+	get_current_constraint_day(get_current_constraint_day)
+	get_network_scenario(get_network_scenario)
+	get_scenario_actions(get_scenario_actions)
 	answer(answer)
 	__end__([<p>__end__</p>]):::last
-	__start__ --> run_all_tools;
-	run_all_tools --> answer;
+	__start__ --> resolve_inputs;
+	check_constraint --> answer;
+	get_current_constraint_day --> answer;
+	get_current_constraint_forecast --> answer;
+	get_dispatch_down_day --> answer;
+	get_dispatch_down_forecast --> answer;
+	get_network_scenario --> answer;
+	get_scenario_actions --> answer;
+	resolve_inputs -.-> answer;
+	resolve_inputs -.-> check_constraint;
+	resolve_inputs -.-> get_current_constraint_day;
+	resolve_inputs -.-> get_current_constraint_forecast;
+	resolve_inputs -.-> get_dispatch_down_day;
+	resolve_inputs -.-> get_dispatch_down_forecast;
+	resolve_inputs -.-> get_network_scenario;
+	resolve_inputs -.-> get_scenario_actions;
 	answer --> __end__;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0
 	classDef last fill:#bfb6fc
 ```
 
-## Tools available to the `tools` node
+## Tool nodes
 
 - `get_dispatch_down_forecast`: One-hour-ahead national dispatch-down risk for a single half-hour.
 - `get_dispatch_down_day`: All 48 half-hourly dispatch-down predictions for the UTC day containing target_timestamp.
@@ -29,8 +50,4 @@ graph TD;
 - `get_current_constraint_forecast`: Checked experimental forward national constraint forecast for one future UTC half-hour.
 - `get_current_constraint_day`: Summary of remaining half-hours in the current experimental national constraint forecast.
 - `get_network_scenario`: Input-gated TYTFS planning-network DC scenario for one future UTC half-hour.
-
-Every tool runs on every question, in parallel, with no model call. A tool that
-does not fit the resolved time returns `{"status": "not_applicable"}`. The
-`answer` node then makes exactly one model call, with no tools bound. Results
-are reused when a follow-up has the same target time and scenario IDs.
+- `get_scenario_actions`: Return the deterministic issue #51 action families for locked scenario IDs.

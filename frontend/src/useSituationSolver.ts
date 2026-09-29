@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { solveSituation, SolverUnavailableError, startCase } from './api';
 import type { Extraction } from './api';
+import { SKIP_CASE_REVIEW } from './mode';
+import { resolveDispatchDownQuestion } from './scenarios';
 import { applyAnswers, caseSummaryText, newCase, readyForEvaluation, setCaseFact } from './case';
 import { clearSession, loadSession, saveSession, SESSION_VERSION } from './caseStore';
 import { InvalidClarificationError, parseClarificationRequest } from './clarification';
-import { resolveDispatchDownQuestion } from './scenarios';
 import type { FactValue, OperatorCase } from './case';
 import type { SavedSession, SavedState } from './caseStore';
 import type { ClarificationAnswer, ClarificationRequest, SolverRequest, SolverResult } from './types';
@@ -141,7 +142,9 @@ export function useSituationSolver() {
     // The previous case is replaced, so a reload during intake starts clean.
     clearSession();
     updateCase(newCase(text, new Date().toISOString()));
-    if (!comparisonText && resolveDispatchDownQuestion(text)) {
+    // Straight to the assistant: no intake call and no review table, so the
+    // operator gets an answer from a single model call.
+    if (!comparisonText && (SKIP_CASE_REVIEW || resolveDispatchDownQuestion(text))) {
       run(request);
       return;
     }

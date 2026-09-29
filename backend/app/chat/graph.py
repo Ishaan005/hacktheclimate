@@ -1,4 +1,4 @@
-"""Chat pipeline: START -> run_all_tools -> answer -> END.
+"""Chat pipeline: START -> resolve_inputs -> <one node per tool, in parallel> -> answer -> END.
 
 Every tool runs on every question, in code, in parallel. A tool that does not
 fit the question (e.g. a January replay for a September time) returns
@@ -51,13 +51,37 @@ _TIME_IN_TEXT = re.compile(r"\b(\d{4}-\d{2}-\d{2})[T ](\d{1,2}):(\d{2})")
 _SCENARIO_IN_TEXT = re.compile(r"\b(T[1-4]|H[1-4]|SNSP)\b", re.I)
 
 
+_RESET = "__reset__"
+
+
+def _merge_results(old: dict | None, new: dict | None) -> dict:
+    """Tool nodes run in parallel, so merge their results; resolve_inputs starts a fresh set."""
+    new = new or {}
+    if new.get(_RESET):
+        return {k: v for k, v in new.items() if k != _RESET}
+    return {**(old or {}), **new}
+
+
+_RESET = "__reset__"
+
+
+def _merge_results(old: dict | None, new: dict | None) -> dict:
+    """Tool nodes run in parallel, so merge their results; resolve_inputs starts a fresh set."""
+    new = new or {}
+    if new.get(_RESET):
+        return {k: v for k, v in new.items() if k != _RESET}
+    return {**(old or {}), **new}
+
+
 class ChatState(TypedDict, total=False):
     messages: Annotated[list[AnyMessage], add_messages]
     selected_target: str | None
     scenario_ids: list[str] | None
     # Cached from the previous turn so a follow-up on the same time reuses them.
     tool_key: str | None
-    tool_results: dict[str, dict]
+    tool_results: Annotated[dict[str, dict], _merge_results]
+    tool_plans: dict[str, dict | None]
+    reuse: bool
 
 
 # ---------- working out the inputs ----------
@@ -144,38 +168,55 @@ def _status(result: dict) -> str:
 
 # ---------- graph ----------
 
+RESOLVE_NODE = "resolve_inputs"
+ANSWER_NODE = "answer"
+
+
 def build_graph(llm: BaseChatModel, tools: Sequence[BaseTool], checkpointer=None):
+    """START -> resolve_inputs -> one node per tool (in parallel) -> answer -> END.
+
+    If the time and scenarios match the previous turn, resolve_inputs routes
+    straight to answer and the cached tool results are reused.
+    """
     by_name = {t.name: t for t in tools}
 
-    def run_all_tools(state: ChatState) -> dict:
+    def resolve_inputs(state: ChatState) -> dict:
         question = str(state["messages"][-1].content) if state.get("messages") else ""
         now = datetime.now(timezone.utc)
         target, target_source = resolve_target(question, state.get("selected_target"), now)
         scenario_ids = resolve_scenarios(question, state.get("scenario_ids"))
         key = json.dumps([target.isoformat(), scenario_ids])
         if state.get("tool_key") == key and state.get("tool_results"):
-            return {}  # same time and scenarios as last turn: reuse
-
+            return {"reuse": True}
         plans = {name: plan_tool(name, target, scenario_ids, now) for name in by_name}
+        inputs = {"target_utc": target.isoformat().replace("+00:00", "Z"),
+                  "target_source": target_source, "scenario_ids": scenario_ids}
+        return {"reuse": False, "tool_key": key, "tool_plans": plans,
+                "tool_results": {_RESET: True, "_inputs": inputs}}
 
-        def run(name: str) -> dict:
-            args = plans[name]
+    def route(state: ChatState) -> list[str] | str:
+        return ANSWER_NODE if state.get("reuse") else list(by_name)
+
+    def make_tool_node(name: str):
+        def run_tool(state: ChatState) -> dict:
+            args = (state.get("tool_plans") or {}).get(name)
             if args is None:
-                return _not_applicable(_why_not(name, target))
+                target = datetime.fromisoformat(state["tool_results"]["_inputs"]["target_utc"].replace("Z", "+00:00"))
+                return {"tool_results": {name: _not_applicable(_why_not(name, target))}}
+            started = time.perf_counter()
             try:
-                return {"args": args, **trim_result(name, by_name[name].invoke(args))}
+                result = {"args": args, **trim_result(name, by_name[name].invoke(args))}
             except Exception as exc:  # one broken tool must not fail the turn
                 logger.exception("Chat tool %s failed", name)
-                return {"args": args, "error": f"Tool failed: {type(exc).__name__}"}
-
-        with ThreadPoolExecutor(max_workers=max(1, len(by_name))) as pool:
-            results = dict(zip(by_name, pool.map(run, by_name)))
-        results["_inputs"] = {"target_utc": target.isoformat().replace("+00:00", "Z"),
-                              "target_source": target_source, "scenario_ids": scenario_ids}
-        return {"tool_key": key, "tool_results": results}
+                result = {"args": args, "error": f"Tool failed: {type(exc).__name__}"}
+            result["duration_ms"] = round((time.perf_counter() - started) * 1000)
+            return {"tool_results": {name: result}}
+        run_tool.__name__ = name
+        return run_tool
 
     def answer(state: ChatState) -> dict:
-        results = state.get("tool_results") or {}
+        results = {k: {kk: vv for kk, vv in v.items() if kk != "duration_ms"} if isinstance(v, dict) else v
+                   for k, v in (state.get("tool_results") or {}).items()}
         prompt = SYSTEM_PROMPT
         if state.get("selected_target"):
             prompt += f"\n\nThe operator currently has {state['selected_target']} UTC selected in the UI; 'this time' refers to it."
@@ -185,11 +226,16 @@ def build_graph(llm: BaseChatModel, tools: Sequence[BaseTool], checkpointer=None
         return {"messages": [response]}
 
     graph = StateGraph(ChatState)
-    graph.add_node("run_all_tools", run_all_tools)
-    graph.add_node("answer", answer)
-    graph.add_edge(START, "run_all_tools")
-    graph.add_edge("run_all_tools", "answer")
-    graph.add_edge("answer", END)
+    graph.add_node(RESOLVE_NODE, resolve_inputs)
+    for name in by_name:
+        graph.add_node(name, make_tool_node(name))
+    graph.add_node(ANSWER_NODE, answer)
+
+    graph.add_edge(START, RESOLVE_NODE)
+    graph.add_conditional_edges(RESOLVE_NODE, route, [*by_name, ANSWER_NODE])
+    if by_name:
+        graph.add_edge(list(by_name), ANSWER_NODE)  # waits for every tool
+    graph.add_edge(ANSWER_NODE, END)
     return graph.compile(checkpointer=checkpointer or MemorySaver())
 
 
@@ -201,8 +247,8 @@ def build_azure_llm(settings, *, timeout: int = 60, max_retries: int = 3) -> Bas
         api_key=settings.api_key,
         azure_deployment=settings.deployment,
         api_version=settings.api_version,
-        max_retries=max_retries,
-        timeout=timeout,
+        max_retries=1,  # fail fast; the UI shows the error with a retry button
+        timeout=20,
     )
     if not settings.is_reasoning_model:
         kwargs["temperature"] = 0
@@ -215,42 +261,45 @@ def tool_results_used(results: dict | None) -> list[str]:
     return [name for name, r in (results or {}).items() if not name.startswith("_") and _status(r) != "not_applicable"]
 
 
-def _step_tools(node: str, update: dict) -> list[dict]:
-    if node != "run_all_tools":
-        return []
-    results = update.get("tool_results") or {}
-    return [{"name": name, "args": r.get("args"), "status": _status(r), "ok": _status(r) != "error"}
-            for name, r in results.items() if not name.startswith("_")]
-
-
-def _step_detail(node: str, update: dict) -> str:
-    if node == "run_all_tools":
-        results = update.get("tool_results")
-        if not results:
-            return "same time and scenarios as last turn; reused results"
-        inputs = results.get("_inputs", {})
-        tools = _step_tools(node, update)
-        ran = sum(t["status"] != "not_applicable" for t in tools)
-        return f"target {inputs.get('target_utc')} ({inputs.get('target_source')}); ran {ran} of {len(tools)} tools"
-    if node == "answer":
-        return "wrote the reply (1 model call)"
-    return ""
+def _tool_step(name: str, r: dict) -> dict:
+    return {"name": name, "args": r.get("args"), "status": _status(r), "ok": _status(r) != "error",
+            "duration_ms": r.get("duration_ms", 0)}
 
 
 def run_with_trace(graph, inputs: dict, config: dict) -> tuple[dict, list[dict]]:
-    """Run one turn and record each node with its run time.
+    """Run one turn and record each step with its run time.
 
-    Updates arrive as each node finishes, so the gap between them is that
-    node's run time.
+    The per-tool nodes run in parallel, so they are reported as one
+    run_all_tools step listing every tool with its own run time.
     """
     trace = [{"node": "__start__", "detail": "", "duration_ms": 0, "tools": []}]
+    tool_step: dict | None = None
+    inputs_seen: dict = {}
     last = time.perf_counter()
     for chunk in graph.stream(inputs, config, stream_mode="updates"):
         now = time.perf_counter()
+        elapsed = round((now - last) * 1000)
         for node, update in chunk.items():
             update = update or {}
-            trace.append({"node": node, "detail": _step_detail(node, update),
-                          "duration_ms": round((now - last) * 1000), "tools": _step_tools(node, update)})
+            if node == RESOLVE_NODE:
+                inputs_seen = (update.get("tool_results") or {}).get("_inputs", {})
+                if update.get("reuse"):
+                    trace.append({"node": "run_all_tools", "detail": "same time and scenarios as last turn; reused results",
+                                  "duration_ms": elapsed, "tools": []})
+            elif node == ANSWER_NODE:
+                trace.append({"node": ANSWER_NODE, "detail": "wrote the reply (1 model call)", "duration_ms": elapsed, "tools": []})
+            else:
+                if tool_step is None:
+                    tool_step = {"node": "run_all_tools", "detail": "", "duration_ms": 0, "tools": []}
+                    trace.append(tool_step)
+                tool_step["duration_ms"] += elapsed
+                for name, r in (update.get("tool_results") or {}).items():
+                    tool_step["tools"].append(_tool_step(name, r))
+                elapsed = 0  # parallel tools in one chunk share the wall time
         last = now
+    if tool_step is not None:
+        ran = sum(t["status"] != "not_applicable" for t in tool_step["tools"])
+        tool_step["detail"] = (f"target {inputs_seen.get('target_utc')} ({inputs_seen.get('target_source')}); "
+                               f"ran {ran} of {len(tool_step['tools'])} tools")
     trace.append({"node": "__end__", "detail": "", "duration_ms": 0, "tools": []})
     return graph.get_state(config).values, trace

@@ -1,6 +1,5 @@
 import { WORKSPACE_COPY } from '../copy';
 import type { AssistantReply } from '../types';
-import RunTraceDiagram from './RunTraceDiagram';
 
 const RECOMMENDED = /^\s*\**\s*Recommended action:\s*\**\s*(.+)$/i;
 
@@ -41,7 +40,6 @@ function AssistantReplyCard({ reply }: { reply: AssistantReply }) {
         </div>
       </dl>
       <p className="field-hint">{WORKSPACE_COPY.assistantNote}</p>
-      {reply.trace.length > 0 && <RunTraceDiagram trace={reply.trace} />}
     </section>
   );
 }
