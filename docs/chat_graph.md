@@ -10,13 +10,17 @@ config:
 ---
 graph TD;
 	__start__([<p>__start__</p>]):::first
+	load_actions(load_actions)
 	agent(agent)
 	tools(tools)
+	select_action(select_action)
 	__end__([<p>__end__</p>]):::last
-	__start__ --> agent;
-	agent -.-> __end__;
+	__start__ --> load_actions;
+	agent -. &nbsp;__end__&nbsp; .-> select_action;
 	agent -.-> tools;
+	load_actions --> agent;
 	tools --> agent;
+	select_action --> __end__;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0
 	classDef last fill:#bfb6fc
@@ -26,4 +30,7 @@ graph TD;
 
 - `get_dispatch_down_forecast`: One-hour-ahead national dispatch-down risk for a single half-hour.
 - `get_dispatch_down_day`: All 48 half-hourly dispatch-down predictions for the UTC day containing target_timestamp.
-- `check_constraint`: National *constraint* (not total dispatch-down) forecast for a target time.
+- `check_constraint`: Historical replay of national constraint (not total dispatch-down) for a target time.
+- `get_current_constraint_forecast`: Checked experimental forward national constraint forecast for one future UTC half-hour.
+- `get_current_constraint_day`: Summary of remaining half-hours in the current experimental national constraint forecast.
+- `get_network_scenario`: Input-gated TYTFS planning-network DC scenario for one future UTC half-hour.
