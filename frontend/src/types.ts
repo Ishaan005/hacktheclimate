@@ -512,9 +512,17 @@ export type SolverResult =
   // can sit beside it.
   | { kind: 'assistant_reply'; reply: AssistantReply; target: string | null };
 
+// One LangGraph node that ran during a chat turn, in order.
+export type TraceStep = {
+  node: string;
+  detail: string;
+};
+
 export type AssistantReply = {
   threadId: string;
   text: string;
   toolsUsed: string[];
   model: string;
+  // The path this turn actually took through the graph; empty from an older API.
+  trace: TraceStep[];
 };
