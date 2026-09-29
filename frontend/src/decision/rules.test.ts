@@ -41,12 +41,14 @@ describe('combineResults', () => {
 });
 
 describe('displayOverall', () => {
-  it('keeps a pass unknown while a fact is stale, missing or conflicting', () => {
+  it('keeps a pass unknown while a fact is stale, missing, conflicting or modeled', () => {
     const assessment = cleanAssessment();
     const withStale = { ...assessment, facts: [{ ...assessment.facts[0], state: 'stale' as const }] };
     const overall = displayOverall(withStale, false);
     expect(overall.result).toBe('unknown');
     expect(overall.missingEvidence[0]).toContain('stale');
+    const withModel = { ...assessment, facts: [{ ...assessment.facts[0], state: 'modeled' as const }] };
+    expect(displayOverall(withModel, false).result).toBe('unknown');
   });
 
   it('never passes an unvalidated or out-of-date assessment', () => {

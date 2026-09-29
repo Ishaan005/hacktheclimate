@@ -4,7 +4,7 @@ import type { ScenarioFamily } from '../types';
 
 export const SITUATION_COPY = {
   title: 'Situation',
-  intro: 'Values from connected feeds where available. Edit or add a value if it is missing, out of date or wrong.',
+  intro: 'Values available for this assessment, with their source and status. Edit an out-of-date or incorrect value before rerunning.',
   fact: 'Fact',
   value: 'Value',
   sourceTime: 'Source and time',
@@ -19,7 +19,7 @@ export const SITUATION_COPY = {
   cancel: 'Cancel',
   editedWas: (previous: string) => `Edited (was ${previous})`,
   instructionsTitle: 'Current plan and instructions in force',
-  noInstructions: 'No active instructions recorded',
+  noInstructions: 'No active instructions supplied; the instruction log is not connected.',
   instruction: 'Instruction',
   asset: 'Asset',
   issued: 'Issued',

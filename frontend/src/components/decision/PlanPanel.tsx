@@ -32,17 +32,19 @@ function allChecks(assessment: Assessment): Map<string, SafetyCheck> {
   return new Map(checks.map((check) => [check.id, check]));
 }
 
-function time(iso: string | null): string {
-  return iso ? formatTime(iso) : PLAN_COPY.notAvailable;
-}
-
 // What still blocks a step: listed checks by label, plus any clearance or
 // acceptance that is not yet confirmed.
 function blockers(step: PlanStep, checks: Map<string, SafetyCheck>): string[] {
-  const items = step.blockingCheckIds.map((id) => {
+  const unknown: string[] = [];
+  const items = step.blockingCheckIds.flatMap((id) => {
     const check = checks.get(id);
-    return check ? `${check.label} (${RESULT_LABEL[check.result]})` : `${PLAN_COPY.unknownCheck}: ${id}`;
+    if (!check || check.result === 'unknown') {
+      unknown.push(id);
+      return [];
+    }
+    return [`${check.label} (${RESULT_LABEL[check.result]})`];
   });
+  if (unknown.length) items.push(`${unknown.length} safety ${unknown.length === 1 ? 'check needs' : 'checks need'} evidence`);
   if (step.permissionRoute !== 'direct' && step.permissionState !== 'confirmed') {
     items.push(PLAN_COPY.permissionPending(step.permissionParty ?? step.executor, step.permissionState));
   }
@@ -85,34 +87,34 @@ function StepFacts({ step, plan, checks, readOnlyCore }: { step: PlanStep; plan:
             )}
           </dd>
         </div>
-        {readOnlyCore && (
+        {readOnlyCore && step.startTime && (
           <div>
             <dt>{PLAN_COPY.fields.startTime}</dt>
-            <dd className="mono">{time(step.startTime)}</dd>
+            <dd className="mono">{formatTime(step.startTime)}</dd>
           </div>
         )}
-        <div>
+        {step.effectTime && <div>
           <dt>{PLAN_COPY.fields.effectTime}</dt>
-          <dd className="mono">{time(step.effectTime)}</dd>
-        </div>
+          <dd className="mono">{formatTime(step.effectTime)}</dd>
+        </div>}
         {readOnlyCore && (
           <>
-            <div>
+            {step.durationMinutes !== null && <div>
               <dt>{PLAN_COPY.fields.duration}</dt>
               <dd className="mono">{formatNumber(step.durationMinutes, 'min')}</dd>
-            </div>
-            <div>
+            </div>}
+            {step.mwEffect !== null && <div>
               <dt>{PLAN_COPY.fields.mwEffect}</dt>
               <dd className="mono" title={PLAN_COPY.mwHint}>{formatSigned(step.mwEffect, 'MW')}</dd>
-            </div>
+            </div>}
           </>
         )}
       </dl>
       <div className="plan-step-links">
-        <p className={blocking.length ? 'plan-blocking' : undefined}>
+        {blocking.length > 0 && <p className="plan-blocking">
           <strong>{PLAN_COPY.fields.blocking}: </strong>
-          {blocking.length ? blocking.join('; ') : PLAN_COPY.none}
-        </p>
+          {blocking.join('; ')}
+        </p>}
         {after.map((text, i) => (
           <p key={i} className="plan-dependency">{PLAN_COPY.fields.dependsOn}: {text}</p>
         ))}

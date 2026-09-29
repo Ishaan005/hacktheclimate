@@ -22,40 +22,43 @@ function card(label: string): HTMLElement {
 }
 
 describe('ComparisonPanel', () => {
-  it('shows the four plan columns in order and marks the baseline', () => {
+  it('shows evaluated plan columns in order and marks the baseline', () => {
     renderPanel();
     const headers = headerTexts().slice(1);
-    expect(headers).toHaveLength(4);
+    expect(headers).toHaveLength(3);
     expect(headers[0]).toMatch(/^Current plan/);
     expect(headers[1]).toMatch(/^No new instruction/);
     expect(headers[1]).toMatch(/Baseline for claimed improvements/);
     expect(headers[2]).toMatch(/^Proposed plan/);
-    expect(headers[3]).toMatch(/^Operator alternative/);
+    expect(headers.join(' ')).not.toMatch(/Operator alternative/);
   });
 
-  it('shows the operator alternative as not established with its reason', () => {
+  it('omits an unevaluated operator alternative', () => {
     renderPanel();
-    const header = within(screen.getByRole('table').querySelector('thead') as HTMLElement).getAllByRole('columnheader')[4];
-    expect(header).toHaveTextContent('Not established');
-    expect(header).toHaveTextContent('No operator alternative entered.');
+    expect(screen.queryByRole('columnheader', { name: /Operator alternative/ })).not.toBeInTheDocument();
   });
 
   it('never shows a missing value as zero MWh', () => {
     renderPanel();
     expect(screen.queryByText(/^0 MWh/)).not.toBeInTheDocument();
-    // Curtailed is not modelled: each evaluated column says so.
-    const curtailed = screen.getByRole('rowheader', { name: 'Curtailed (MWh)' }).closest('tr') as HTMLElement;
-    expect(within(curtailed).getAllByText('Not established')).toHaveLength(4);
-    expect(within(curtailed).getAllByText('No curtailment model for this window.')).toHaveLength(3);
+    expect(screen.queryByRole('rowheader', { name: 'Curtailed (MWh)' })).not.toBeInTheDocument();
   });
 
-  it('keeps constrained and curtailed as separate rows', () => {
+  it('shows constrained energy without an invented curtailed value', () => {
     renderPanel();
     const constrained = screen.getByRole('rowheader', { name: 'Constrained (MWh)' }).closest('tr') as HTMLElement;
-    const curtailed = screen.getByRole('rowheader', { name: 'Curtailed (MWh)' }).closest('tr') as HTMLElement;
-    expect(constrained).not.toBe(curtailed);
+    expect(constrained).toBeInTheDocument();
     expect(within(constrained).getByText('62 MWh')).toBeInTheDocument();
     expect(within(constrained).getByText('(40–90)')).toBeInTheDocument();
+  });
+
+  it('keeps an explicit zero when curtailment is actually supplied', () => {
+    const withZero = outcomes.map((outcome) => outcome.column === 'current'
+      ? { ...outcome, curtailedMwh: { ...outcome.curtailedMwh, value: 0, source: 'Reviewed source' } }
+      : outcome);
+    renderPanel({ outcomes: withZero });
+    const curtailed = screen.getByRole('rowheader', { name: 'Curtailed (MWh)' }).closest('tr') as HTMLElement;
+    expect(within(curtailed).getByText('0 MWh')).toBeInTheDocument();
   });
 
   it('puts safety rows above dispatch-down rows', () => {
@@ -80,12 +83,11 @@ describe('ComparisonPanel', () => {
     expect(card('Avoided dispatch-down')).not.toHaveTextContent('Cannot be claimed');
   });
 
-  it('labels the national estimate as context when site risk is not established', () => {
+  it('shows available national context without empty site and money cards', () => {
     renderPanel();
-    const site = card('Site dispatch-down risk');
-    expect(site).toHaveTextContent('Not established');
-    expect(site).toHaveTextContent('National context only, not a site outcome');
-    expect(card('Gross market opportunity')).toHaveTextContent('Estimate, not TSO profit.');
+    expect(screen.queryByText('Site dispatch-down risk')).not.toBeInTheDocument();
+    expect(screen.getByText('National context only, not a site outcome')).toBeInTheDocument();
+    expect(screen.queryByText('Gross market opportunity')).not.toBeInTheDocument();
   });
 
   it('warns when a column uses a different window', () => {

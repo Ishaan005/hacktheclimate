@@ -14,10 +14,7 @@ function formatEditValue(value: number | string | null): string {
   return value === null || value === '' ? EVIDENCE_COPY.emptyValue : String(value);
 }
 
-// Plain list, or 'None listed' so an empty list is never mistaken for a
-// hidden one.
 function TextList({ items }: { items: string[] }) {
-  if (!items.length) return <p className="evidence-empty">{EVIDENCE_COPY.none}</p>;
   return (
     <ul className="evidence-list">
       {items.map((item) => <li key={item}>{item}</li>)}
@@ -56,20 +53,19 @@ function EvidenceDrawer({ evidence, edits, validated, sourceKind }: Props) {
             <span className={`chip ${sourceKind === 'live' ? 'chip-advisory' : 'chip-unknown'}`}>{SOURCE_KIND_LABEL[sourceKind]}</span>
             <span>{validated ? EVIDENCE_COPY.validated : EVIDENCE_COPY.notValidated}</span>
           </p>
-          <dl className="evidence-fields">
-            <div>
+          {(evidence.assessedAt || evidence.auditId) && <dl className="evidence-fields">
+            {evidence.assessedAt && <div>
               <dt>{EVIDENCE_COPY.assessedAt}</dt>
               <dd>{formatWhen(evidence.assessedAt)}</dd>
-            </div>
-            <div>
+            </div>}
+            {evidence.auditId && <div>
               <dt>{EVIDENCE_COPY.auditId}</dt>
-              <dd className="mono">{evidence.auditId ?? EVIDENCE_COPY.notRecorded}</dd>
-            </div>
-          </dl>
+              <dd className="mono">{evidence.auditId}</dd>
+            </div>}
+          </dl>}
         </Section>
 
-        <Section title={EVIDENCE_COPY.inputsTitle}>
-          {evidence.inputs.length ? (
+        {evidence.inputs.length > 0 && <Section title={EVIDENCE_COPY.inputsTitle}>
             <div className="table-scroll">
               <table className="evidence-table">
                 <thead>
@@ -96,11 +92,9 @@ function EvidenceDrawer({ evidence, edits, validated, sourceKind }: Props) {
                 </tbody>
               </table>
             </div>
-          ) : <p className="evidence-empty">{EVIDENCE_COPY.noInputs}</p>}
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.editsTitle}>
-          {edits.length ? (
+        {edits.length > 0 && <Section title={EVIDENCE_COPY.editsTitle}>
             <ul className="evidence-list">
               {edits.map((edit) => (
                 <li key={`${edit.factId}-${edit.at}`}>
@@ -109,32 +103,30 @@ function EvidenceDrawer({ evidence, edits, validated, sourceKind }: Props) {
                 </li>
               ))}
             </ul>
-          ) : <p className="evidence-empty">{EVIDENCE_COPY.noEdits}</p>}
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.versionsTitle}>
+        {(evidence.ruleVersion || evidence.modelVersions.length > 0) && <Section title={EVIDENCE_COPY.versionsTitle}>
           <dl className="evidence-fields">
-            <div>
+            {evidence.ruleVersion && <div>
               <dt>{EVIDENCE_COPY.ruleVersion}</dt>
-              <dd>{evidence.ruleVersion ?? EVIDENCE_COPY.notRecorded}</dd>
-            </div>
-            <div>
+              <dd>{evidence.ruleVersion}</dd>
+            </div>}
+            {evidence.modelVersions.length > 0 && <div>
               <dt>{EVIDENCE_COPY.modelVersions}</dt>
-              <dd>{evidence.modelVersions.length ? evidence.modelVersions.join('; ') : EVIDENCE_COPY.notRecorded}</dd>
-            </div>
+              <dd>{evidence.modelVersions.join('; ')}</dd>
+            </div>}
           </dl>
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.limitsUsed}>
+        {evidence.limitsUsed.length > 0 && <Section title={EVIDENCE_COPY.limitsUsed}>
           <TextList items={evidence.limitsUsed} />
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.credibleFailuresUsed}>
+        {evidence.credibleFailuresUsed.length > 0 && <Section title={EVIDENCE_COPY.credibleFailuresUsed}>
           <TextList items={evidence.credibleFailuresUsed} />
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.actionsTitle}>
-          {evidence.actionDecisions.length ? (
+        {evidence.actionDecisions.length > 0 && <Section title={EVIDENCE_COPY.actionsTitle}>
             <ul className="evidence-list evidence-actions">
               {evidence.actionDecisions.map((action) => (
                 <li key={`${action.kind}-${action.stepId ?? 'none'}`}>
@@ -145,23 +137,21 @@ function EvidenceDrawer({ evidence, edits, validated, sourceKind }: Props) {
                 </li>
               ))}
             </ul>
-          ) : <p className="evidence-empty">{EVIDENCE_COPY.noActions}</p>}
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.assumptionsTitle}>
+        {evidence.assumptions.length > 0 && <Section title={EVIDENCE_COPY.assumptionsTitle}>
           <TextList items={evidence.assumptions} />
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.uncertaintyTitle}>
+        {evidence.uncertainty.length > 0 && <Section title={EVIDENCE_COPY.uncertaintyTitle}>
           <TextList items={evidence.uncertainty} />
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.missingChecksTitle}>
+        {evidence.missingChecks.length > 0 && <Section title={EVIDENCE_COPY.missingChecksTitle}>
           <TextList items={evidence.missingChecks} />
-        </Section>
+        </Section>}
 
-        <Section title={EVIDENCE_COPY.feedsTitle}>
-          {evidence.feedFreshness.length ? (
+        {evidence.feedFreshness.length > 0 && <Section title={EVIDENCE_COPY.feedsTitle}>
             <ul className="evidence-list">
               {evidence.feedFreshness.map((feed) => (
                 <li key={feed.feed}>
@@ -171,8 +161,7 @@ function EvidenceDrawer({ evidence, edits, validated, sourceKind }: Props) {
                 </li>
               ))}
             </ul>
-          ) : <p className="evidence-empty">{EVIDENCE_COPY.noFeeds}</p>}
-        </Section>
+        </Section>}
       </div>
     </details>
   );

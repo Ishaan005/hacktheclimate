@@ -80,7 +80,7 @@ describe('plan panel', () => {
     // A pending acceptance counts as a blocker.
     expect(main).toHaveTextContent('Permission from Tynagh generator owner (pending)');
     expect(supporting).toHaveTextContent('Direct instruction');
-    expect(supporting).toHaveTextContent('Metered relief behind the bottleneck (Unknown)');
+    expect(supporting).toHaveTextContent('1 safety check needs evidence');
   });
 
   it('shows dependencies between steps', () => {

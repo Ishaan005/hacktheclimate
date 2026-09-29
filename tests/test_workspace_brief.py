@@ -8,6 +8,8 @@ from pydantic import ValidationError
 
 from backend.app.main import app
 from backend.app.workspace_brief import WorkspaceAssessmentRequest, assess_workspace, workspace_brief
+from backend.app.decision.contracts import EvidenceValue
+from backend.app.decision.sources import EvidenceSourceResult
 
 
 DECISION = datetime(2026, 9, 29, 10, tzinfo=timezone.utc)
@@ -123,6 +125,98 @@ def test_conflicting_and_stale_facts_stay_noncurrent():
     assert facts["demand_mw"]["state"] == "conflicting"
     assert facts["normal_flow_mw"]["state"] == "stale"
     assert "normal_flow_mw" in result["bindings"][0]["missing_fields"]
+
+
+def test_explicit_case_context_fills_only_supported_intake_rows():
+    payload = request_payload()
+    payload["decision_case"]["scenario_ids"] = ["T3"]
+    payload["decision_case"]["existing_instructions"] = []
+    payload["description"] = "Planned outage is causing an overload for the next 2 hours."
+    result = assess_workspace(WorkspaceAssessmentRequest.model_validate(payload))
+    facts = {item["field"]: item for item in result["facts"]}
+    assert facts["outage_type"]["value"] == "planned"
+    assert facts["outage_type"]["source"] == "Operator description"
+    assert facts["relevant_time_window"]["value"] == "Next 2 hours from decision time"
+    assert facts["now_or_forecast"]["value"] == "forecast"
+    assert facts["active_instructions"]["state"] == "missing"
+    assert "instruction log" in facts["active_instructions"]["reason"]
+    assert "asset mapping" in facts["limiting_equipment"]["reason"]
+    assert facts["normal_flow_mw"]["state"] == "missing"
+    assert result["comparisons"]["proposed_plan"]["safety"]["status"] == "UNKNOWN"
+
+
+def test_checked_national_forecast_is_context_only(monkeypatch):
+    from backend.app import workspace_brief as module
+
+    payload = request_payload()
+    payload["decision_case"]["scenario_ids"] = ["T3"]
+    payload["decision_case"]["existing_instructions"] = []
+    start = DECISION + timedelta(minutes=30)
+    row = EvidenceValue(
+        field="constraint_mwh", value=12.5, unit="MWh per half-hour",
+        source_type="forecast", source="checked experimental GFS", source_version="test",
+        available_at=DECISION, issued_at=DECISION - timedelta(hours=1),
+        valid_at=start, max_age_seconds=86400, lower_bound=4, upper_bound=25,
+    )
+    monkeypatch.setattr(module, "load_checked_constraint", lambda _as_of: EvidenceSourceResult(
+        source="checked GFS national constraint", status="available", values=[row]))
+    result = assess_workspace(WorkspaceAssessmentRequest.model_validate(payload))
+    assert "12.5 MWh per half-hour" in result["national_constraint_context"]
+    assert "National context only" in result["national_constraint_context"]
+    assert result["comparisons"]["current_plan"]["benefits"]["constraint_mwh"]["value"] is None
+    assert result["comparisons"]["proposed_plan"]["safety"]["status"] == "UNKNOWN"
+
+
+def test_golden_path_shows_synthetic_facts_without_filling_operational_gates():
+    now = datetime.now(timezone.utc)
+    start = now.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=30 * (now.minute // 30 + 1))
+    payload = request_payload()
+    payload["decision_case"].update({
+        "scenario_ids": ["T3"], "as_of": now.isoformat(),
+        "starts_at": start.isoformat(),
+        "ends_at": (start + timedelta(hours=24)).isoformat(),
+        "existing_instructions": [],
+    })
+    payload["description"] = "Planned outage near Ballylickey causes a line overload for the next 2 hours."
+    payload["conditions"] = [{"scenario_id": "T3", "situation_key": "t_outage_overload"}]
+    result = assess_workspace(WorkspaceAssessmentRequest.model_validate(payload))
+    facts = {item["field"]: item for item in result["facts"]}
+    assert facts["limiting_equipment"]["value"] == "3:4:1"
+    assert facts["normal_flow_mw"]["value"] == pytest.approx(60)
+    assert facts["planning_rate_a_mva"]["value"] == 55
+    assert facts["planning_rate_a_mva"]["unit"] == "MVA"
+    assert facts["outage_equipment"]["value"] == "1:3:1"
+    assert all(facts[field]["state"] == "modeled" for field in (
+        "limiting_equipment", "normal_flow_mw", "planning_rate_a_mva", "outage_equipment"))
+    assert facts["normal_flow_limit_mw"]["state"] == "missing"
+    assert facts["active_instructions"]["state"] == "missing"
+    assert "normal_flow_mw" in result["bindings"][0]["missing_fields"]
+    baseline_check = next(c for c in result["comparisons"]["current_plan"]["checks"] if c["check_id"] == "planning_transmission_line")
+    proposed_check = next(c for c in result["comparisons"]["proposed_plan"]["checks"] if c["check_id"] == "planning_transmission_line")
+    assert (baseline_check["value"], baseline_check["effective_limit"], baseline_check["margin"]) == (
+        "109.1% of rate A", "100% of rate A", "-5.0 MW")
+    assert (proposed_check["value"], proposed_check["margin"]) == ("81.8% of rate A", "+10.0 MW")
+    assert "Synthetic DC baseline" in baseline_check["reason"]
+    for column in ("current_plan", "no_new_instruction", "proposed_plan"):
+        curtailment = result["comparisons"][column]["benefits"]["curtailment_mwh"]
+        assert curtailment["value"] is None
+    assert result["comparisons"]["proposed_plan"]["safety"]["status"] == "UNKNOWN"
+
+
+def test_other_outage_does_not_inherit_ballylickey_demo_facts():
+    now = datetime.now(timezone.utc)
+    start = now.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=30 * (now.minute // 30 + 1))
+    payload = request_payload()
+    payload["decision_case"].update({
+        "scenario_ids": ["T3"], "as_of": now.isoformat(),
+        "starts_at": start.isoformat(), "ends_at": (start + timedelta(hours=24)).isoformat(),
+        "existing_instructions": [],
+    })
+    payload["description"] = "An outage on another route causes a line overload."
+    payload["conditions"] = [{"scenario_id": "T3"}]
+    result = assess_workspace(WorkspaceAssessmentRequest.model_validate(payload))
+    assert all(fact["state"] != "modeled" for fact in result["facts"])
+    assert result["comparisons"]["proposed_plan"]["safety"]["status"] == "UNKNOWN"
 
 
 def test_rejects_unknown_scenario_and_unordered_dependencies():

@@ -90,7 +90,7 @@ export function planLabel(
     const unknown = required.filter((check) => check.result === 'unknown').map((check) => check.label);
     derived = {
       label: 'insufficient_evidence',
-      reason: unknown.length ? `Unknown: ${unknown.join(', ')}.` : overall.reason,
+      reason: unknown.length ? 'Required safety evidence is incomplete. See the evidence below.' : overall.reason,
     };
   } else {
     const pending = plan.steps.filter((step) => step.permissionRoute !== 'direct' && step.permissionState !== 'confirmed');

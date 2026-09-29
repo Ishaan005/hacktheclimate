@@ -19,14 +19,11 @@ function row(container: HTMLElement, checkId: string): HTMLElement {
 }
 
 describe('safety panel', () => {
-  it('shows Unknown with the missing evidence and demonstration note', () => {
+  it('shows Unknown without repeating empty evidence fields in the main panel', () => {
     renderPanel(fixtureAssessment, 'national', true);
     const overall = screen.getByText(SAFETY_COPY.overallLabel, { selector: '.safety-overall-label' }).closest('.safety-overall') as HTMLElement;
     expect(within(overall).getByText('Unknown')).toBeInTheDocument();
-    expect(within(overall).getByText(SAFETY_COPY.missingEvidence)).toBeInTheDocument();
-    for (const item of fixtureAssessment.overall.missingEvidence) {
-      expect(within(overall).getByText(item)).toBeInTheDocument();
-    }
+    expect(within(overall).queryByText(SAFETY_COPY.missingEvidence)).not.toBeInTheDocument();
     expect(within(overall).getByText(STALE_NOTE)).toBeInTheDocument();
     expect(within(overall).getByText(SAFETY_COPY.notValidated)).toBeInTheDocument();
   });
@@ -73,10 +70,11 @@ describe('safety panel', () => {
     expect(screen.getByText(SAFETY_COPY.actionChecksNote)).toBeInTheDocument();
   });
 
-  it('renders a missing value as Not available, never 0', () => {
+  it('uses a neutral dash for a partial check and omits an entirely empty check', () => {
     const { container } = renderPanel();
     const cell = row(container, 'fc-n1').querySelector(`td[data-label="${SAFETY_COPY.columns.value}"]`);
-    expect(cell).toHaveTextContent(SAFETY_COPY.notAvailable);
+    expect(cell).toHaveTextContent('—');
     expect(cell).not.toHaveTextContent('0');
+    expect(container.querySelector('tr[data-check-id="fc-stability"]')).toBeNull();
   });
 });

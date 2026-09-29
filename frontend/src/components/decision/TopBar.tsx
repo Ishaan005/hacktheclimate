@@ -22,6 +22,7 @@ const STATUS_TONE: Record<DataStatus, string> = {
   stale: 'chip chip-unknown',
   missing: 'chip chip-unknown',
   conflicting: 'chip chip-unknown',
+  modeled: 'chip chip-unknown',
 };
 
 // One day shows once: "24 Jan, 16:00–18:00 UTC".
@@ -100,35 +101,29 @@ function TopBar({ context, view, siteId, validated, onViewChange }: Props) {
             </div>
           </>
         )}
-        <div>
-          <dt>{TOP_BAR_COPY.currentTime}</dt>
-          <dd>{context ? formatDateTime(context.currentTime) : <Placeholder />}</dd>
-        </div>
-        <div>
-          <dt>{TOP_BAR_COPY.window}</dt>
-          <dd>{context ? formatWindow(context.windowStart, context.windowEnd) : <Placeholder />}</dd>
-        </div>
-        <div>
-          <dt>{TOP_BAR_COPY.dataStatus}</dt>
-          <dd>
-            {context
-              ? <span className={STATUS_TONE[context.dataStatus]}>{DATA_STATUS_LABEL[context.dataStatus]}</span>
-              : <Placeholder />}
-          </dd>
-        </div>
-        <div>
-          <dt>{TOP_BAR_COPY.source}</dt>
-          <dd>{context ? <SourceBadge kind={context.sourceKind} validated={validated} /> : <Placeholder />}</dd>
-        </div>
+        {context && <>
+          <div>
+            <dt>{TOP_BAR_COPY.currentTime}</dt>
+            <dd>{formatDateTime(context.currentTime)}</dd>
+          </div>
+          <div>
+            <dt>{TOP_BAR_COPY.window}</dt>
+            <dd>{formatWindow(context.windowStart, context.windowEnd)}</dd>
+          </div>
+          <div>
+            <dt>{TOP_BAR_COPY.dataStatus}</dt>
+            <dd><span className={STATUS_TONE[context.dataStatus]}>{DATA_STATUS_LABEL[context.dataStatus]}</span></dd>
+          </div>
+          <div>
+            <dt>{TOP_BAR_COPY.source}</dt>
+            <dd><SourceBadge kind={context.sourceKind} validated={validated} /></dd>
+          </div>
+        </>}
       </dl>
 
       {view === 'site' && <p className="field-hint top-bar-note">{TOP_BAR_COPY.siteAllIslandNote}</p>}
     </header>
   );
-}
-
-function Placeholder() {
-  return <span className="top-bar-placeholder">{TOP_BAR_COPY.noAssessment}</span>;
 }
 
 export default TopBar;

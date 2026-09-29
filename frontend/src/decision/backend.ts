@@ -25,7 +25,7 @@ type BackendCheck = {
   check_id: string; family: ScenarioFamily | 'action' | 'cross_family' | 'intake';
   action_step_id: string | null; status: 'PASS' | 'FAIL' | 'UNKNOWN';
   value: number | string | boolean | null; unit: string | null;
-  effective_limit: number | string | boolean | null; margin: number | null;
+  effective_limit: number | string | boolean | null; margin: number | string | null;
   worst_time: string | null; worst_failure: string | null; source: string | null; reason: string;
 };
 
@@ -60,6 +60,7 @@ export type BackendAssessment = {
   source_status: 'no_live_connection' | 'planning_case' | 'historical_demonstration' | 'live';
   bindings: Array<{ scenario_id: string; missing_fields: string[] }>;
   facts: BackendFact[];
+  national_constraint_context?: string | null;
   active_instructions: Array<{ instruction_id: string; starts_at: string; ends_at: string; evidence_reference: string }>;
   comparisons: Record<'current_plan' | 'no_new_instruction' | 'proposed_plan' | 'operator_alternative', BackendColumn>;
   evidence: {
@@ -96,6 +97,7 @@ const BACKEND_ACTION_KINDS: Record<string, ActionKind> = {
 const FACT_LABELS: Record<string, string> = {
   active_instructions: 'Current instructions', limiting_equipment: 'Limiting equipment',
   normal_flow_mw: 'Normal route flow', normal_flow_limit_mw: 'Normal flow limit',
+  planning_rate_a_mva: 'Planning case rate A (MVA proxy)',
   post_failure_flow_mw: 'Post-failure flow', post_failure_limit_mw: 'Post-failure limit',
   credible_failure: 'Credible failure', measured_frequency_hz: 'Measured frequency',
   effective_high_frequency_limit_hz: 'Effective high-frequency limit',
@@ -209,8 +211,9 @@ function factView(fact: BackendFact): SituationFact {
     unit: fact.unit, source: fact.source,
     timestamp: fact.valid_at ?? fact.observed_at ?? fact.issued_at ?? fact.available_at,
     origin: fact.source_type === 'measurement' ? 'measured' : fact.source_type === 'forecast' ? 'forecast'
-      : fact.source_type === 'operator' ? 'operator' : 'inferred',
+      : fact.source_type === 'operator' ? 'operator' : fact.source_type === 'planning_model' ? 'planning' : 'inferred',
     state: fact.state, family: fact.family, conflictNote: alternatives,
+    missingReason: fact.state === 'missing' ? fact.reason : null,
     editable: fact.state !== 'current' || fact.source_type !== 'measurement', editedFrom: null };
 }
 
@@ -311,7 +314,8 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
   const facts = raw.facts.map(factView);
   const dataStatus: DataStatus = facts.some((fact) => fact.state === 'conflicting') ? 'conflicting'
     : facts.some((fact) => fact.state === 'stale') ? 'stale'
-    : facts.some((fact) => fact.state === 'missing') ? 'missing' : 'current';
+    : facts.some((fact) => fact.state === 'missing') ? 'missing'
+    : facts.some((fact) => fact.state === 'modeled') ? 'modeled' : 'current';
   const proposedPlan = backendPlanView(proposal, 'proposed', 'Backend proposal');
   const altPlan = backendPlanView(alternative, 'operator', request.alternative?.name ?? 'Operator alternative');
   const benefits = proposal.benefits;
@@ -349,7 +353,7 @@ export function fromBackendAssessment(raw: BackendAssessment, request: Assessmen
       avoidedDispatchDownMwh: established(benefits.avoided_dispatch_down_mwh, 'MWh', reason),
       siteRiskProbability: established(undefined, '%', reason),
       siteRiskExpectedMwh: established(undefined, 'MWh', reason),
-      nationalContext: null,
+      nationalContext: raw.national_constraint_context ?? null,
       netSystemResourceCostEur: { ...established(benefits.system_resource_cost_eur, 'EUR', reason), perspective: null },
       grossMarketOpportunityEur: established(benefits.gross_market_opportunity_eur, 'EUR', reason),
       netFinancialValueEur: { ...established(benefits.net_financial_value_eur, 'EUR', reason), perspective: null },

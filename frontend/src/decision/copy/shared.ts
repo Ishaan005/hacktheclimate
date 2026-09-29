@@ -27,6 +27,7 @@ export const DATA_STATUS_LABEL: Record<DataStatus, string> = {
   stale: 'Stale',
   missing: 'Missing',
   conflicting: 'Conflicting',
+  modeled: 'Modeled',
 };
 
 export const ORIGIN_LABEL: Record<FactOrigin, string> = {
@@ -34,6 +35,7 @@ export const ORIGIN_LABEL: Record<FactOrigin, string> = {
   forecast: 'Forecast',
   inferred: 'Inferred',
   operator: 'Entered by operator',
+  planning: 'Synthetic planning model',
 };
 
 export const NOT_ESTABLISHED = 'Not established';

@@ -39,12 +39,22 @@ describe('situation table', () => {
     expect(screen.queryByText('Wind output')).not.toBeInTheDocument();
   });
 
-  it('shows a missing value as Missing, never zero', () => {
-    renderTable();
+  it('omits a missing value rather than showing an empty field', () => {
+    renderTable({ facts: facts.map((fact) => fact.id === 'actual_flow'
+      ? { ...fact, missingReason: 'No decision-time operational measurement supplied' } : fact) });
+    expect(screen.queryByRole('rowheader', { name: 'Actual flow on limiting route' })).not.toBeInTheDocument();
+    expect(screen.queryByText('No decision-time operational measurement supplied')).not.toBeInTheDocument();
+    expect(within(rowFor('Solar output')).getByText('0 MW')).toBeInTheDocument();
+  });
+
+  it('marks a planning value as modeled with its synthetic source', () => {
+    renderTable({ facts: facts.map((fact) => fact.id === 'actual_flow'
+      ? { ...fact, value: 60, source: 'Synthetic planning case (not live)',
+        origin: 'planning' as const, state: 'modeled' as const } : fact) });
     const row = rowFor('Actual flow on limiting route');
-    expect(within(row).getAllByText(SITUATION_COPY.missing).length).toBeGreaterThan(0);
-    expect(within(row).queryByText(/^0/)).not.toBeInTheDocument();
-    expect(within(row).getByRole('button', { name: 'Add Actual flow on limiting route' })).toBeInTheDocument();
+    expect(within(row).getByText('Modeled')).toBeInTheDocument();
+    expect(within(row).getByText('Synthetic planning model')).toBeInTheDocument();
+    expect(within(row).getByText('Synthetic planning case (not live)', { exact: false })).toBeInTheDocument();
   });
 
   it('does not ask for a reliable, current feed value', () => {
@@ -75,9 +85,9 @@ describe('situation table', () => {
     expect(screen.getByText('North-west wind group')).toBeInTheDocument();
   });
 
-  it('says when no instructions are recorded', () => {
+  it('omits an empty instruction section', () => {
     renderTable({ activeInstructions: [] });
-    expect(screen.getByText(SITUATION_COPY.noInstructions)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: SITUATION_COPY.instructionsTitle })).not.toBeInTheDocument();
   });
 
   it('marks edited rows and logs the edit', () => {

@@ -35,6 +35,7 @@ const STATE_TONE: Record<DataStatus, string> = {
   stale: 'chip-unknown',
   missing: 'chip-unknown',
   conflicting: 'chip-unknown',
+  modeled: 'chip-unknown',
 };
 
 // Null means not supplied: show Missing, never zero.
@@ -45,6 +46,7 @@ function valueText(value: number | string | null, unit: string | null): string {
 }
 
 function provenanceText(fact: SituationFact): string {
+  if (fact.state === 'missing' && fact.missingReason) return fact.missingReason;
   const parts = [fact.source, fact.timestamp ? formatDateTime(fact.timestamp) : null].filter(Boolean);
   return parts.length ? parts.join(' · ') : SITUATION_COPY.noSource;
 }
@@ -62,7 +64,7 @@ type EditorProps = {
 
 // Numbers stay numbers: a numeric row cannot be saved as text.
 function FactEditor({ fact, onSave, onCancel }: EditorProps) {
-  const numeric = typeof fact.value === 'number' || ['MW', 'MWh', 'Hz', '%', 'units', 'min', 'seconds', 'hours', 'MW/min'].includes(fact.unit ?? '');
+  const numeric = typeof fact.value === 'number' || ['MW', 'MVA', 'MWh', 'Hz', '%', 'units', 'min', 'seconds', 'hours', 'MW/min'].includes(fact.unit ?? '');
   const [draft, setDraft] = useState(fact.value === null ? '' : String(fact.value));
   const inputId = `situation-edit-${fact.id}`;
   const invalid = numeric && draft.trim() !== '' && !Number.isFinite(Number(draft));
@@ -181,10 +183,7 @@ function InstructionList({ instructions }: { instructions: ActiveInstruction[] }
   return (
     <div className="fact-section">
       <h3 id="situation-instructions" className="fact-section-title">{SITUATION_COPY.instructionsTitle}</h3>
-      {instructions.length === 0 ? (
-        <p className="situation-empty">{SITUATION_COPY.noInstructions}</p>
-      ) : (
-        <table className="fact-table" aria-labelledby="situation-instructions">
+      <table className="fact-table" aria-labelledby="situation-instructions">
           <thead>
             <tr>
               <th scope="col">{SITUATION_COPY.instruction}</th>
@@ -207,8 +206,7 @@ function InstructionList({ instructions }: { instructions: ActiveInstruction[] }
               </tr>
             ))}
           </tbody>
-        </table>
-      )}
+      </table>
     </div>
   );
 }
@@ -242,8 +240,10 @@ function SituationTable({ facts, conditions, activeInstructions, edits, stale, o
   const families = new Set<FactGroup>(['general', ...conditions.map((condition) => familyOf(condition.scenarioId))]);
   const groups = GROUP_ORDER
     .filter((group) => families.has(group))
-    .map((group) => ({ group, rows: facts.filter((fact) => fact.family === group) }))
+    .map((group) => ({ group, rows: facts.filter((fact) => fact.family === group && (fact.value !== null || fact.state === 'conflicting')) }))
     .filter(({ rows }) => rows.length > 0);
+
+  if (!groups.length && !activeInstructions.length && !edits.length && !stale) return null;
 
   return (
     <section className="card situation-table" aria-labelledby="situation-heading">
@@ -255,11 +255,10 @@ function SituationTable({ facts, conditions, activeInstructions, edits, stale, o
           <button type="button" className="button-primary" onClick={onRerun}>{SITUATION_COPY.rerun}</button>
         </div>
       )}
-      {groups.length === 0 && <p className="situation-empty">{SITUATION_COPY.noFacts}</p>}
       {groups.map(({ group, rows }) => (
         <FactGroupTable key={group} group={group} facts={rows} edits={edits} onEdit={onEdit} />
       ))}
-      <InstructionList instructions={activeInstructions} />
+      {activeInstructions.length > 0 && <InstructionList instructions={activeInstructions} />}
       {edits.length > 0 && <EditLog edits={edits} facts={facts} />}
     </section>
   );

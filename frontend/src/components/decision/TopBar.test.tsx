@@ -27,9 +27,11 @@ describe('top bar', () => {
     expect(onViewChange).toHaveBeenLastCalledWith('national', null);
   });
 
-  it('shows placeholders before an assessment', () => {
+  it('omits assessment fields before an assessment', () => {
     render(<TopBar context={null} view="national" siteId={null} validated={false} onViewChange={vi.fn()} />);
-    expect(screen.getAllByText(TOP_BAR_COPY.noAssessment)).toHaveLength(4);
+    expect(screen.queryByText(TOP_BAR_COPY.noAssessment)).not.toBeInTheDocument();
+    expect(screen.queryByText(TOP_BAR_COPY.currentTime)).not.toBeInTheDocument();
+    expect(screen.queryByText(TOP_BAR_COPY.window)).not.toBeInTheDocument();
     expect(screen.getByText(TOP_BAR_COPY.allIsland)).toBeInTheDocument();
   });
 

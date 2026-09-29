@@ -42,7 +42,7 @@ describe('decision workspace end to end (fixture)', () => {
   it('makes the assessment stale after a fact edit until it is rerun', async () => {
     await assessOutageAndSnsp();
     expect(screen.queryAllByText(STALE_NOTE)).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button', { name: /Add Actual flow on limiting route/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Edit Studied flow on limiting route/ }));
     const input = screen.getByRole('spinbutton');
     fireEvent.change(input, { target: { value: '420' } });
     fireEvent.click(screen.getByRole('button', { name: /Save/ }));
