@@ -1,0 +1,34 @@
+FROM node:22-slim AS ui
+WORKDIR /ui
+COPY frontend/package*.json ./
+RUN npm ci --include=dev
+COPY frontend ./
+RUN npm run build
+
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Package the API and only the scripts, data and model files it imports.
+COPY backend ./backend
+COPY scripts/__init__.py scripts/train_real_baseline.py scripts/fetch_gfs_daily_panel.py scripts/train_gfs_constraint.py scripts/verify_gfs_source_availability.py scripts/run_gfs_constraint_inference.py ./scripts/
+COPY data/processed/canonical_ie.csv data/processed/training_table_labeled_jan2026.csv data/processed/gfs_daily_2026_jan_aug_manifest.json ./data/processed/
+COPY artifacts/real_baseline/forecast_1h_occurrence.joblib artifacts/real_baseline/forecast_1h_volume.joblib ./artifacts/real_baseline/
+COPY artifacts/gfs_constraint/final_model.joblib artifacts/gfs_constraint/metrics.json ./artifacts/gfs_constraint/
+
+RUN useradd --uid 10001 --create-home appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8000
+CMD ["python", "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+COPY requirements-chat.txt .
+RUN pip install --no-cache-dir -r requirements-chat.txt
+COPY config ./config
+COPY --from=ui /ui/dist ./frontend/dist
