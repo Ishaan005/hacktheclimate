@@ -96,3 +96,15 @@ def test_bundle_requires_every_action_to_pass_operational_gates():
     # Permission failure blocks execution, but physical response timing itself
     # is still fast enough for the transmission time-to-relief check.
     assert result.relief_timing_verified is True
+
+
+def test_stale_operational_evidence_becomes_unknown():
+    candidate = _evidenced_candidate()
+    candidate["operational_evidence"]["available_at"] = "2026-09-28T22:00:00Z"
+    candidate["operational_evidence"]["max_age_seconds"] = 60
+
+    result = evaluate_action_operational_safety(candidate, _case())
+
+    assert result.asset_capability.status == "UNKNOWN"
+    assert result.timing.status == "UNKNOWN"
+    assert result.overall == "UNKNOWN"
