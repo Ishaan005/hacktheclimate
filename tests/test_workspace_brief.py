@@ -108,7 +108,19 @@ def test_golden_path_bridges_existing_planning_evaluator_into_new_workspace():
     assert result["source_status"] == "planning_case"
     proposal = result["comparisons"]["proposed_plan"]
     assert proposal["plan"]["steps"]
-    assert proposal["plan"]["steps"][0]["action_id"] in {"FLEX_LOAD", "STORAGE_CHARGE"}
+    assert [step["action_id"] for step in proposal["plan"]["steps"]] == [
+        "GENERATOR_REDISPATCH", "FLEX_LOAD",
+    ]
+    assert proposal["plan"]["steps"][1]["depends_on"] == ["demo-redispatch-15"]
+    assert proposal["plan"]["steps"][0]["limiting_location_delta_mw"] is None
+    assert proposal["plan"]["steps"][1]["limiting_location_delta_mw"] is None
+    action_checks = [
+        check for check in proposal["checks"]
+        if check["action_step_id"] in {"demo-redispatch-15", "demo-flex-10"}
+    ]
+    assert action_checks
+    assert all(check["source"] for check in action_checks)
+    assert any("Synthetic demo assumption" in check["source"] for check in action_checks)
     assert proposal["benefits"]["constraint_mwh"]["value"] is not None
     assert proposal["benefits"]["avoided_dispatch_down_mwh"]["value"] is not None
     assert "Synthetic" in " ".join(result["evidence"]["assumptions"])

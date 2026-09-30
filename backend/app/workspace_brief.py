@@ -108,6 +108,8 @@ class PlanStep(Contract):
     permission_route: Literal["direct", "needs_clearance", "needs_acceptance"] = "direct"
     permission: Literal["confirmed", "pending", "denied", "unknown"] = "unknown"
     permission_party: str | None = None
+    review_status: Literal["accepted_proxy", "accepted_verified", "scenario_assumption", "unknown"] = "unknown"
+    evidence_reference: str | None = None
     starts_at: datetime | None = None
     effect_at: datetime | None = None
     ends_at: datetime | None = None
@@ -282,11 +284,11 @@ def _national_context(case: DecisionCase) -> str | None:
 
 
 def _check(check_id: str, family: str, reason: str, *, action_step_id: str | None = None,
-           status: CheckState = "UNKNOWN") -> dict[str, Any]:
+           status: CheckState = "UNKNOWN", source: str | None = None) -> dict[str, Any]:
     return {"check_id": check_id, "family": family, "action_step_id": action_step_id,
             "status": status, "value": None, "unit": None, "effective_limit": None,
             "margin": None, "worst_time": None, "worst_failure": None,
-            "source": None, "reason": reason}
+            "source": source, "reason": reason}
 
 
 def _family_check(check_id: str, family: str, facts: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -338,6 +340,16 @@ def _legacy_case(request: WorkspaceAssessmentRequest) -> dict[str, Any]:
 
 
 def _planning_plan(scenario: Mapping[str, Any]) -> Plan:
+    structured = scenario.get("planSteps")
+    if isinstance(structured, list):
+        steps = [
+            PlanStep.model_validate(item)
+            for item in structured
+            if isinstance(item, Mapping)
+        ]
+        if steps:
+            return Plan(steps=steps)
+
     action = scenario.get("action")
     if not isinstance(action, Mapping):
         return Plan()
@@ -370,6 +382,8 @@ def _planning_plan(scenario: Mapping[str, Any]) -> Plan:
         permission_route=permission_route,
         permission=permission,
         permission_party="External asset owner" if permission == "pending" else None,
+        review_status="unknown",
+        evidence_reference=None,
         starts_at=action.get("startTime"),
         effect_at=action.get("targetTime"),
         ends_at=action.get("effectiveUntil"),
@@ -499,11 +513,22 @@ def _plan_state(name: str, plan: Plan, family_checks: list[dict[str, Any]],
     checks = [dict(item) for item in family_checks]
     for step in plan.steps:
         action_checks = ACTION_CHECKS.get(step.action_id)
+        evidence_reason = (
+            "Scenario-assumption evidence is present, but no validated action-specific study or approved rule is connected"
+            if step.review_status == "scenario_assumption"
+            else "No validated action-specific study or approved rule is connected"
+        )
         if action_checks is None:
-            checks.append(_check("unsupported_action", "action", f"No reviewed check set for {step.action_id}", action_step_id=step.step_id))
+            checks.append(_check(
+                "unsupported_action", "action", f"No reviewed check set for {step.action_id}",
+                action_step_id=step.step_id, source=step.evidence_reference,
+            ))
         else:
             for check_id in action_checks:
-                checks.append(_check(check_id, "action", "No validated action-specific study or approved rule is connected", action_step_id=step.step_id))
+                checks.append(_check(
+                    check_id, "action", evidence_reason,
+                    action_step_id=step.step_id, source=step.evidence_reference,
+                ))
         extras: list[str] = []
         if "H1" in scenario_ids and step.action_id == "INTERCONNECTOR_TRANSFER":
             extras.append("emergency_response_direction_approval")
@@ -522,7 +547,8 @@ def _plan_state(name: str, plan: Plan, family_checks: list[dict[str, Any]],
                              "Permission awaits acceptance" if step.permission == "pending" else
                              "Permission evidence is not connected to an approved authority source",
                              action_step_id=step.step_id,
-                             status="FAIL" if step.permission == "denied" else "UNKNOWN"))
+                             status="FAIL" if step.permission == "denied" else "UNKNOWN",
+                             source=step.evidence_reference))
     if plan.steps:
         checks.append(_check("other_affected_limits", "cross_family",
                              "The full action combination has not been studied for other affected limits"))

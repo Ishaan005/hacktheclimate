@@ -68,6 +68,13 @@ def test_t3_golden_path_selects_mixed_bundle_and_clears_thermal_screen():
     assert result["action"] is not None
     assert result["action"]["executability"] == "conditional"
     assert "10 MW flexible demand + 15 MW redispatch" in result["action"]["assetName"]
+    assert [step["action_id"] for step in result["planSteps"]] == [
+        "GENERATOR_REDISPATCH", "FLEX_LOAD",
+    ]
+    assert result["planSteps"][0]["instruction"].startswith("Reduce WEST-GEN by 15 MW")
+    assert result["planSteps"][1]["depends_on"] == ["demo-redispatch-15"]
+    assert result["planSteps"][0]["limiting_location_delta_mw"] is None
+    assert result["planSteps"][1]["limiting_location_delta_mw"] is None
     assert result["binding"]["status"] == "breach"
     assert "109.1%" in result["binding"]["metric"]
     assert result["baseline"]["dispatchDownWasteMwh"] == pytest.approx(40.0)

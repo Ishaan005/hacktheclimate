@@ -247,6 +247,72 @@ def _fallback_action_times(rows: list[dict[str, Any]]) -> tuple[str, str, str, s
     return issue, start, target, end
 
 
+def _structured_plan_steps(
+    selected: Mapping[str, Any] | None,
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose each selected bundle member without inventing per-step route relief."""
+    if selected is None:
+        return []
+    by_id = {str(candidate["action_id"]): candidate for candidate in candidates}
+    selected_ids = [str(item) for item in selected.get("action_instance_ids", [])]
+    members = [by_id[action_id] for action_id in selected_ids if action_id in by_id]
+    members.sort(
+        key=lambda item: (
+            0 if str(item.get("contract_action_id")) == "GENERATOR_REDISPATCH" else 1,
+            str(item["action_id"]),
+        )
+    )
+    if not members:
+        return []
+
+    main_id = str(members[0]["action_id"])
+    steps: list[dict[str, Any]] = []
+    for index, candidate in enumerate(members):
+        action_id = str(candidate["action_id"])
+        family = str(candidate.get("contract_action_id") or "FLEX_LOAD")
+        power_mw = float(candidate["power_mw"])
+        if family == "GENERATOR_REDISPATCH":
+            source = str(candidate["source_asset_id"])
+            replacement = str(candidate["replacement_asset_id"])
+            instruction = (
+                f"Reduce {source} by {power_mw:g} MW and increase "
+                f"{replacement} by {power_mw:g} MW."
+            )
+            executor = f"{source} / {replacement}"
+        else:
+            load_bus = int(candidate["load_bus_id"])
+            renewable_bus = int(candidate["renewable_bus_id"])
+            instruction = (
+                f"Increase flexible demand at bus {load_bus} by {power_mw:g} MW "
+                f"while releasing up to {power_mw:g} MW renewable output at bus "
+                f"{renewable_bus}."
+            )
+            executor = f"Flexible demand at bus {load_bus}"
+
+        steps.append({
+            "step_id": action_id,
+            "action_id": family,
+            "role": "main" if index == 0 else "supporting",
+            "instruction": instruction,
+            "asset_or_party": executor,
+            "executor": executor,
+            "permission_route": "needs_acceptance",
+            "permission": "pending",
+            "permission_party": "Demo asset owner",
+            "starts_at": candidate["available_from"],
+            "effect_at": candidate["available_from"],
+            "ends_at": candidate["available_until"],
+            # The combined DC solve proves bundle-level route relief. It does
+            # not isolate a causal limiting-location MW contribution per step.
+            "limiting_location_delta_mw": None,
+            "depends_on": [] if index == 0 else [main_id],
+            "review_status": candidate["review_status"],
+            "evidence_reference": candidate["evidence_reference"],
+        })
+    return steps
+
+
 def _workspace_result(
     case: Mapping[str, Any],
     scenario_ids: list[str],
@@ -255,6 +321,7 @@ def _workspace_result(
     baseline_peak: Mapping[str, Any],
     selected: Mapping[str, Any] | None,
     selected_bundle_id: str | None,
+    candidates: list[dict[str, Any]],
     fallback: bool = False,
 ) -> dict[str, Any]:
     issue, start, target, end = _fallback_action_times(rows)
@@ -314,6 +381,7 @@ def _workspace_result(
                 "status": baseline_status,
             },
             "action": None,
+            "planSteps": [],
             "actionPresentation": "modeled_candidate",
             "noActionReason": reason,
             "baseline": {
@@ -475,6 +543,7 @@ def _workspace_result(
                 "reboundCostEur": None,
             },
         },
+        "planSteps": _structured_plan_steps(selected, candidates),
         "actionPresentation": "modeled_candidate",
         "noActionReason": (
             f"{selected_bundle_id} is a modeled candidate only; unsupported safety "
@@ -615,6 +684,7 @@ def evaluate_west_outage_demo(
         baseline_peak=baseline_peak,
         selected=selected,
         selected_bundle_id=selected["bundle_id"] if selected else None,
+        candidates=candidates,
     )
 
 
@@ -636,6 +706,7 @@ def fallback_west_outage_demo(
         },
         "safety": {"thermal": {"status": "FAIL"}},
     }
+    candidates = demo_action_candidates(rows)
     if "T4" in scenario_ids:
         return _workspace_result(
             case,
@@ -644,10 +715,13 @@ def fallback_west_outage_demo(
             baseline_peak=baseline_peak,
             selected=None,
             selected_bundle_id=None,
+            candidates=candidates,
             fallback=True,
         )
     selected = {
         "bundle_id": "BUNDLE:demo-flex-10+demo-redispatch-15",
+        "action_instance_ids": ["demo-flex-10", "demo-redispatch-15"],
+        "contract_action_ids": ["FLEX_LOAD", "GENERATOR_REDISPATCH"],
         "modeled_capture_upper_bound_mwh": 20.0,
         "intervals": [{
             "valid_time": rows[0]["valid_time"],
@@ -669,5 +743,6 @@ def fallback_west_outage_demo(
         baseline_peak=baseline_peak,
         selected=selected,
         selected_bundle_id=selected["bundle_id"],
+        candidates=candidates,
         fallback=True,
     )
